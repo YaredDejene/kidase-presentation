@@ -1,0 +1,211 @@
+import { Presentation } from '../domain/entities/Presentation';
+import { Slide } from '../domain/entities/Slide';
+import { Template, createDefaultTemplate } from '../domain/entities/Template';
+import { Variable } from '../domain/entities/Variable';
+import {
+  presentationRepository,
+  slideRepository,
+  templateRepository,
+  variableRepository,
+} from '../repositories';
+import { excelImportService, ImportResult } from './ExcelImportService';
+
+export interface LoadedPresentation {
+  presentation: Presentation;
+  slides: Slide[];
+  template: Template;
+  variables: Variable[];
+}
+
+export class PresentationService {
+  /**
+   * Load a complete presentation with all related data
+   */
+  async loadPresentation(id: string): Promise<LoadedPresentation | null> {
+    const presentation = await presentationRepository.getById(id);
+    if (!presentation) return null;
+
+    const [slides, template, variables] = await Promise.all([
+      slideRepository.getByPresentationId(id),
+      templateRepository.getById(presentation.templateId),
+      variableRepository.getByPresentationId(id),
+    ]);
+
+    if (!template) {
+      throw new Error(`Template ${presentation.templateId} not found`);
+    }
+
+    return { presentation, slides, template, variables };
+  }
+
+  /**
+   * Create a new empty presentation
+   */
+  async createPresentation(
+    name: string,
+    type: string,
+    templateId: string,
+    languageMap: Presentation['languageMap']
+  ): Promise<LoadedPresentation> {
+    const presentation = await presentationRepository.create({
+      name,
+      type,
+      templateId,
+      languageMap,
+      isActive: false,
+    });
+
+    const template = await templateRepository.getById(templateId);
+    if (!template) {
+      throw new Error(`Template ${templateId} not found`);
+    }
+
+    return {
+      presentation,
+      slides: [],
+      template,
+      variables: [],
+    };
+  }
+
+  /**
+   * Import presentation from Excel file
+   */
+  async importFromExcel(
+    file: File,
+    templateId: string
+  ): Promise<LoadedPresentation> {
+    const result = await excelImportService.importFromFile(file, templateId);
+    return this.saveImportResult(result);
+  }
+
+  /**
+   * Import presentation from Excel buffer
+   */
+  async importFromExcelBuffer(
+    buffer: ArrayBuffer,
+    templateId: string
+  ): Promise<LoadedPresentation> {
+    const result = await excelImportService.importFromArrayBuffer(buffer, templateId);
+    return this.saveImportResult(result);
+  }
+
+  private async saveImportResult(result: ImportResult): Promise<LoadedPresentation> {
+    // Create presentation
+    const presentation = await presentationRepository.create(result.presentation);
+
+    // Create slides with presentation ID
+    const slidesWithId = result.slides.map(s => ({
+      ...s,
+      presentationId: presentation.id,
+    }));
+    const slides = await slideRepository.createMany(slidesWithId);
+
+    // Create variables with presentation ID
+    const variablesWithId = result.variables.map(v => ({
+      ...v,
+      presentationId: presentation.id,
+    }));
+    const variables = await variableRepository.createMany(variablesWithId);
+
+    // Get template
+    const template = await templateRepository.getById(presentation.templateId);
+    if (!template) {
+      throw new Error(`Template ${presentation.templateId} not found`);
+    }
+
+    return { presentation, slides, template, variables };
+  }
+
+  /**
+   * Delete a presentation and all related data
+   */
+  async deletePresentation(id: string): Promise<void> {
+    await Promise.all([
+      slideRepository.deleteByPresentationId(id),
+      variableRepository.deleteByPresentationId(id),
+    ]);
+    await presentationRepository.delete(id);
+  }
+
+  /**
+   * Duplicate a presentation
+   */
+  async duplicatePresentation(id: string, newName: string): Promise<LoadedPresentation> {
+    const original = await this.loadPresentation(id);
+    if (!original) {
+      throw new Error('Presentation not found');
+    }
+
+    // Create new presentation
+    const presentation = await presentationRepository.create({
+      name: newName,
+      type: original.presentation.type,
+      templateId: original.presentation.templateId,
+      languageMap: original.presentation.languageMap,
+      isActive: false,
+    });
+
+    // Duplicate slides
+    const slidesWithNewId = original.slides.map(s => ({
+      presentationId: presentation.id,
+      slideOrder: s.slideOrder,
+      lineId: s.lineId,
+      titleJson: s.titleJson,
+      blocksJson: s.blocksJson,
+      notes: s.notes,
+      isDisabled: s.isDisabled,
+    }));
+    const slides = await slideRepository.createMany(slidesWithNewId);
+
+    // Duplicate variables
+    const variablesWithNewId = original.variables.map(v => ({
+      presentationId: presentation.id,
+      name: v.name,
+      value: v.value,
+    }));
+    const variables = await variableRepository.createMany(variablesWithNewId);
+
+    return {
+      presentation,
+      slides,
+      template: original.template,
+      variables,
+    };
+  }
+
+  /**
+   * Ensure a default template exists
+   */
+  async ensureDefaultTemplate(): Promise<Template> {
+    const templates = await templateRepository.getAll();
+
+    if (templates.length === 0) {
+      return templateRepository.create({
+        name: 'Default Template',
+        maxLangCount: 4,
+        definitionJson: createDefaultTemplate(),
+      });
+    }
+
+    return templates[0];
+  }
+
+  /**
+   * Set a presentation as active
+   */
+  async setActivePresentation(id: string): Promise<void> {
+    await presentationRepository.setActive(id);
+  }
+
+  /**
+   * Get the currently active presentation
+   */
+  async getActivePresentation(): Promise<LoadedPresentation | null> {
+    const active = await presentationRepository.getActive();
+    if (!active) return null;
+    return this.loadPresentation(active.id);
+  }
+}
+
+export const presentationService = new PresentationService();
