@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { readFile } from '@tauri-apps/plugin-fs';
 import { Presentation, LanguageMap } from '../domain/entities/Presentation';
 import { Slide, SlideBlock, SlideTitle } from '../domain/entities/Slide';
 import { Variable } from '../domain/entities/Variable';
@@ -15,15 +16,23 @@ interface ImportMetadata {
 }
 
 interface ImportedSlideRow {
+  // Support both naming conventions
   LineID?: string;
+  LineId?: string;
   Title_Lang1?: string;
   Title_Lang2?: string;
   Title_Lang3?: string;
   Title_Lang4?: string;
+  // Original format
   Lang1?: string;
   Lang2?: string;
   Lang3?: string;
   Lang4?: string;
+  // Excel file format
+  Lang1Text?: string;
+  Lang2Text?: string;
+  Lang3Text?: string;
+  Lang4Text?: string;
   Notes?: string;
 }
 
@@ -48,6 +57,11 @@ export class ExcelImportService {
     return this.importFromArrayBuffer(buffer, templateId);
   }
 
+  async importFromPath(filePath: string, templateId: string): Promise<ImportResult> {
+    const data = await readFile(filePath);
+    return this.importFromArrayBuffer(data.buffer, templateId);
+  }
+
   private parseWorkbook(workbook: XLSX.WorkBook, templateId: string): ImportResult {
     const warnings: string[] = [];
 
@@ -61,12 +75,14 @@ export class ExcelImportService {
       ? this.parseMetadata(metadataSheet)
       : this.getDefaultMetadata();
 
-    // Read content sheet
+    // Read content sheet (support multiple naming conventions)
     const contentSheet =
+      workbook.Sheets['Slides'] ||
+      workbook.Sheets['slides'] ||
       workbook.Sheets['Content'] ||
       workbook.Sheets['content'] ||
       workbook.Sheets[workbook.SheetNames.find(name =>
-        name.toLowerCase() !== 'metadata'
+        !['metadata', 'variables'].includes(name.toLowerCase())
       ) || workbook.SheetNames[0]];
 
     if (!contentSheet) {
@@ -108,11 +124,25 @@ export class ExcelImportService {
     const data = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
     const metadata: Record<string, string> = {};
 
-    for (const row of data as unknown[][]) {
-      if (Array.isArray(row) && row.length >= 2 && row[0]) {
-        const key = String(row[0]).trim();
-        const value = String(row[1] || '').trim();
-        metadata[key] = value;
+    // Check if first row looks like headers (has multiple columns)
+    const rows = data as unknown[][];
+    if (rows.length >= 2 && Array.isArray(rows[0]) && rows[0].length > 2) {
+      // Header row format: row 0 = headers, row 1 = values
+      const headers = rows[0].map(h => String(h || '').trim());
+      const values = rows[1] || [];
+      headers.forEach((header, i) => {
+        if (header) {
+          metadata[header] = String(values[i] || '').trim();
+        }
+      });
+    } else {
+      // Key-value format: column A = key, column B = value
+      for (const row of rows) {
+        if (Array.isArray(row) && row.length >= 2 && row[0]) {
+          const key = String(row[0]).trim();
+          const value = String(row[1] || '').trim();
+          metadata[key] = value;
+        }
       }
     }
 
@@ -142,16 +172,21 @@ export class ExcelImportService {
       if (row.Title_Lang3) title.Lang3 = row.Title_Lang3;
       if (row.Title_Lang4) title.Lang4 = row.Title_Lang4;
 
+      // Support both column naming conventions (Lang1 or Lang1Text)
       const block: SlideBlock = {};
-      if (row.Lang1) block.Lang1 = row.Lang1;
-      if (row.Lang2) block.Lang2 = row.Lang2;
-      if (row.Lang3) block.Lang3 = row.Lang3;
-      if (row.Lang4) block.Lang4 = row.Lang4;
+      const lang1 = row.Lang1 || row.Lang1Text;
+      const lang2 = row.Lang2 || row.Lang2Text;
+      const lang3 = row.Lang3 || row.Lang3Text;
+      const lang4 = row.Lang4 || row.Lang4Text;
+      if (lang1) block.Lang1 = lang1;
+      if (lang2) block.Lang2 = lang2;
+      if (lang3) block.Lang3 = lang3;
+      if (lang4) block.Lang4 = lang4;
 
       return {
         presentationId: '', // Will be set after presentation is created
         slideOrder: index + 1,
-        lineId: row.LineID,
+        lineId: row.LineID || row.LineId,
         titleJson: Object.keys(title).length > 0 ? title : undefined,
         blocksJson: [block],
         notes: row.Notes,

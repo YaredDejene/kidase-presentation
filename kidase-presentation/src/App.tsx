@@ -94,7 +94,7 @@ function App() {
     if (!filePath || typeof filePath !== 'string') return;
 
     try {
-      const result = await excelImportService.importFromFile(
+      const result = await excelImportService.importFromPath(
         filePath,
         templates[0].id // Use first template as default
       );
