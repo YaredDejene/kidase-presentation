@@ -143,3 +143,65 @@ input, textarea, select {
 .mb-lg {
   margin-bottom: var(--spacing-lg);
 }
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Table styling */
+table {
+  color: inherit;
+}
+
+th, td {
+  color: inherit;
+}
+
+/* Button focus */
+button:focus {
+  outline: 2px solid #4a4a8a;
+  outline-offset: 2px;
+}
+
+/* Input styling */
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* Fullscreen presentation mode */
+:-webkit-full-screen {
+  background-color: #000000;
+}
+
+:fullscreen {
+  background-color: #000000;
+}
