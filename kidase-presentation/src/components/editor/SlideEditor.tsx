@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useSlides } from '../../hooks/useSlides';
 import { SlideRow } from './SlideRow';
@@ -24,6 +24,9 @@ export const SlideEditor: React.FC = () => {
   } = useSlides();
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [listWidth, setListWidth] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isResizing = useRef(false);
 
   const handleDragStart = useCallback((index: number) => {
     setDraggedIndex(index);
@@ -47,6 +50,35 @@ export const SlideEditor: React.FC = () => {
     });
   }, [createSlide]);
 
+  // Resizable panel handlers
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current || !containerRef.current) return;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidth = e.clientX - containerRect.left;
+      // Constrain between 300px and container width - 350px (for preview)
+      const minWidth = 300;
+      const maxWidth = containerRect.width - 350;
+      setListWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
+    };
+
+    const handleMouseUp = () => {
+      isResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
   if (!currentPresentation || !currentTemplate) {
     return (
       <div className="editor-empty">
@@ -58,9 +90,12 @@ export const SlideEditor: React.FC = () => {
   }
 
   return (
-    <div className="editor-container">
+    <div className="editor-container" ref={containerRef}>
       {/* Slide list */}
-      <div className="editor-slide-list">
+      <div
+        className="editor-slide-list"
+        style={listWidth ? { width: `${listWidth}px`, flex: 'none' } : undefined}
+      >
         <div className="editor-slide-list-header">
           <h3>Slides ({slides.length})</h3>
           <button
@@ -78,8 +113,7 @@ export const SlideEditor: React.FC = () => {
               <tr>
                 <th className="col-order">#</th>
                 <th className="col-content">Content</th>
-                <th className="col-status">Status</th>
-                <th className="col-actions">Actions</th>
+                <th className="col-actions"></th>
               </tr>
             </thead>
             <tbody>
@@ -109,6 +143,12 @@ export const SlideEditor: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Resize handle */}
+      <div
+        className="editor-resize-handle"
+        onMouseDown={handleResizeStart}
+      />
 
       {/* Preview panel */}
       <div className="editor-preview-panel">

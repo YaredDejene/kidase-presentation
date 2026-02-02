@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Slide } from '../../domain/entities/Slide';
 import { LanguageMap } from '../../domain/entities/Presentation';
 
@@ -29,28 +29,51 @@ export const SlideRow: React.FC<SlideRowProps> = ({
   onDragEnd,
   isDragging,
 }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const block = slide.blocksJson[0] || {};
 
   // Get preview text from first available language
   const previewText = block.Lang1 || block.Lang2 || block.Lang3 || block.Lang4 || '';
-  const truncatedText = previewText.length > 80
-    ? previewText.substring(0, 80) + '...'
+  const truncatedText = previewText.length > 100
+    ? previewText.substring(0, 100) + '...'
     : previewText;
 
   // Get title text
   const titleText = slide.titleJson?.Lang1 || slide.titleJson?.Lang2 ||
                    slide.titleJson?.Lang3 || slide.titleJson?.Lang4;
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this slide?')) {
-      onDelete();
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
+
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMenu(!showMenu);
   };
 
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleDisable();
+    setShowMenu(false);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this slide?')) {
+      onDelete();
+    }
+    setShowMenu(false);
   };
 
   return (
@@ -82,33 +105,35 @@ export const SlideRow: React.FC<SlideRowProps> = ({
         </div>
         {slide.notes && (
           <div className="slide-notes-preview">
-            📝 {slide.notes}
+            {slide.notes}
           </div>
         )}
       </td>
 
-      <td className="col-status">
-        <span className={`slide-status-badge ${slide.isDisabled ? 'status-disabled' : 'status-active'}`}>
-          {slide.isDisabled ? 'Disabled' : 'Active'}
-        </span>
-      </td>
-
       <td className="col-actions">
-        <div className="slide-actions">
+        <div className="slide-actions-menu" ref={menuRef}>
           <button
-            onClick={handleToggle}
-            className="slide-action-btn"
-            title={slide.isDisabled ? 'Enable slide' : 'Disable slide'}
+            onClick={handleMenuClick}
+            className="slide-menu-btn"
+            title="Actions"
           >
-            {slide.isDisabled ? '👁️' : '🚫'}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="8" cy="3" r="1.5" />
+              <circle cx="8" cy="8" r="1.5" />
+              <circle cx="8" cy="13" r="1.5" />
+            </svg>
           </button>
-          <button
-            onClick={handleDelete}
-            className="slide-action-btn slide-action-btn-danger"
-            title="Delete slide"
-          >
-            🗑️
-          </button>
+
+          {showMenu && (
+            <div className="slide-dropdown-menu">
+              <button onClick={handleToggle} className="slide-dropdown-item">
+                {slide.isDisabled ? 'Enable Slide' : 'Disable Slide'}
+              </button>
+              <button onClick={handleDelete} className="slide-dropdown-item slide-dropdown-item-danger">
+                Delete Slide
+              </button>
+            </div>
+          )}
         </div>
       </td>
     </tr>

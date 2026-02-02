@@ -31,11 +31,12 @@
 /* Slide List */
 
 .editor-slide-list {
-  flex: 1;
+  flex: 0 0 auto;
+  width: 60%;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #333;
   overflow: hidden;
+  min-width: 300px;
 }
 
 .editor-slide-list-header {
@@ -101,8 +102,7 @@
 
 .col-order { width: 50px; text-align: center; }
 .col-content { }
-.col-status { width: 100px; text-align: center; }
-.col-actions { width: 100px; text-align: center; }
+.col-actions { width: 50px; text-align: center; }
 
 /* Slide Row */
 
@@ -121,7 +121,7 @@
 }
 
 .slide-row-disabled {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .slide-row-dragging {
@@ -164,54 +164,71 @@
 }
 
 .slide-notes-preview {
-  color: #888;
+  color: #666;
   font-size: 11px;
   margin-top: 6px;
   font-style: italic;
 }
 
-.slide-status-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
+/* Actions Dropdown Menu */
 
-.status-active {
-  background-color: #1a3a1a;
-  color: #4a9a4a;
-}
-
-.status-disabled {
-  background-color: #3a1a1a;
-  color: #9a4a4a;
-}
-
-.slide-actions {
+.slide-actions-menu {
+  position: relative;
   display: flex;
-  gap: 8px;
   justify-content: center;
 }
 
-.slide-action-btn {
-  padding: 6px 10px;
-  background-color: #333;
-  border: 1px solid #444;
-  border-radius: 4px;
+.slide-menu-btn {
+  background: transparent;
+  border: none;
+  color: #666;
   cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s ease;
+  padding: 6px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
 }
 
-.slide-action-btn:hover {
-  background-color: #444;
+.slide-menu-btn:hover {
+  background-color: #333;
+  color: #ccc;
 }
 
-.slide-action-btn-danger:hover {
-  background-color: #5a2a2a;
-  border-color: #7a3a3a;
+.slide-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  min-width: 140px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.slide-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #ccc;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.slide-dropdown-item:hover {
+  background-color: #3a3a3a;
+}
+
+.slide-dropdown-item-danger:hover {
+  background-color: #4a2a2a;
+  color: #ff6b6b;
 }
 
 .editor-no-slides {
@@ -222,15 +239,31 @@
   color: #555;
 }
 
+/* Resize Handle */
+
+.editor-resize-handle {
+  width: 6px;
+  background-color: #1a1a1a;
+  cursor: col-resize;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.editor-resize-handle:hover {
+  background-color: #3a3a5a;
+}
+
 /* Preview Panel */
 
 .editor-preview-panel {
-  width: 420px;
+  flex: 1 1 auto;
+  min-width: 300px;
   padding: 20px;
   background-color: #0f0f0f;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow: hidden;
 }
 
 .editor-preview-panel h3 {
@@ -251,6 +284,7 @@
 
 .slide-preview-container {
   position: relative;
+  width: 100%;
   border: 2px solid #333;
   border-radius: 4px;
   overflow: hidden;
@@ -258,6 +292,7 @@
 
 .slide-preview-wrapper {
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .slide-preview-disabled-overlay {

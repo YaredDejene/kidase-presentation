@@ -48,33 +48,49 @@ export interface Template {
 
 export function createDefaultTemplate(): TemplateDefinition {
   return {
-    layout: { columns: 2, rows: 1, gap: 40 },
+    layout: { columns: 1, rows: 1, gap: 18 },
     title: {
       show: true,
-      fontSize: 32,
+      fontSize: 64,
       color: '#FFD700',
-      alignment: 'center',
+      alignment: 'left',
     },
     languages: [
       {
         slot: 'Lang1',
-        fontSize: 28,
+        fontSize: 62,
         fontFamily: 'Nyala, serif',
         color: '#FFFFFF',
-        alignment: 'center',
-        lineHeight: 1.5,
+        alignment: 'left',
+        lineHeight: 1.15,
       },
       {
         slot: 'Lang2',
-        fontSize: 24,
-        fontFamily: 'Arial, sans-serif',
-        color: '#FFFFFF',
-        alignment: 'center',
-        lineHeight: 1.4,
+        fontSize: 46,
+        fontFamily: 'Nyala, serif',
+        color: '#FFFF00',
+        alignment: 'left',
+        lineHeight: 1.15,
+      },
+      {
+        slot: 'Lang3',
+        fontSize: 46,
+        fontFamily: 'Nyala, serif',
+        color: '#00FF00',
+        alignment: 'left',
+        lineHeight: 1.15,
+      },
+      {
+        slot: 'Lang4',
+        fontSize: 46,
+        fontFamily: 'Nyala, serif',
+        color: '#00BFFF',
+        alignment: 'left',
+        lineHeight: 1.15,
       },
     ],
     background: { color: '#000000' },
-    margins: { top: 40, right: 60, bottom: 40, left: 60 },
+    margins: { top: 20, right: 40, bottom: 20, left: 40 },
     safeArea: { horizontal: 5, vertical: 5 },
   };
 }

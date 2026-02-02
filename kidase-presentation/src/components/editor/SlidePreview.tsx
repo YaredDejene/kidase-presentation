@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Slide } from '../../domain/entities/Slide';
 import { Template } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
@@ -18,13 +18,34 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
   variables,
   languageMap,
 }) => {
-  // Calculate scale based on preview container width
-  // Preview container is typically around 350-400px
-  // Full slide is 1920px, so scale is roughly 0.2
-  const scale = 0.2;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.2);
+
+  // Dynamically calculate scale based on container width
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        // Leave some padding (subtract 4 for border)
+        const availableWidth = containerWidth - 4;
+        const newScale = availableWidth / 1920;
+        setScale(Math.min(newScale, 0.5)); // Cap at 0.5 max scale
+      }
+    };
+
+    updateScale();
+
+    // Use ResizeObserver for responsive updates
+    const resizeObserver = new ResizeObserver(updateScale);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   return (
-    <div className="slide-preview-container">
+    <div className="slide-preview-container" ref={containerRef}>
       <div
         className="slide-preview-wrapper"
         style={{

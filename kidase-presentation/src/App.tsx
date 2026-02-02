@@ -41,14 +41,26 @@ function App() {
         // Load all templates
         let loadedTemplates = await templateRepository.getAll();
 
-        // Create default template if none exist
-        if (loadedTemplates.length === 0) {
+        // Create or update default template
+        const defaultDef = createDefaultTemplate();
+        const existingDefault = loadedTemplates.find(t => t.name === 'Default Template');
+
+        if (existingDefault) {
+          // Update existing default template with latest definition
+          const updated = await templateRepository.update(existingDefault.id, {
+            definitionJson: defaultDef,
+          });
+          loadedTemplates = loadedTemplates.map(t =>
+            t.id === updated.id ? updated : t
+          );
+        } else {
+          // Create default template if none exist
           const defaultTemplate = await templateRepository.create({
             name: 'Default Template',
             maxLangCount: 4,
-            definitionJson: createDefaultTemplate(),
+            definitionJson: defaultDef,
           });
-          loadedTemplates = [defaultTemplate];
+          loadedTemplates = [...loadedTemplates, defaultTemplate];
         }
         setTemplates(loadedTemplates);
 
@@ -137,11 +149,18 @@ function App() {
     if (!filePath) return;
 
     try {
-      await pdfExportService.exportToPdf(
+      const blob = await pdfExportService.exportToPdf(
         currentSlides,
         currentTemplate,
-        filePath
+        currentVariables,
+        currentPresentation.languageMap
       );
+
+      // Convert blob to array buffer and write to file
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      const arrayBuffer = await blob.arrayBuffer();
+      await writeFile(filePath, new Uint8Array(arrayBuffer));
+
       alert('PDF exported successfully!');
     } catch (error) {
       console.error('Export failed:', error);
