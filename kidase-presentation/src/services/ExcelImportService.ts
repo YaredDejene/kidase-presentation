@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { Presentation, LanguageMap } from '../domain/entities/Presentation';
-import { Slide, SlideBlock, SlideTitle } from '../domain/entities/Slide';
+import { Slide, SlideBlock, SlideTitle, SlideFooter } from '../domain/entities/Slide';
 import { Variable } from '../domain/entities/Variable';
 import { placeholderService } from './PlaceholderService';
 
@@ -16,23 +16,39 @@ interface ImportMetadata {
 }
 
 interface ImportedSlideRow {
-  // Support both naming conventions
+  // Line ID
   LineID?: string;
   LineId?: string;
+  // Title columns
   Title_Lang1?: string;
   Title_Lang2?: string;
   Title_Lang3?: string;
   Title_Lang4?: string;
-  // Original format
-  Lang1?: string;
-  Lang2?: string;
-  Lang3?: string;
-  Lang4?: string;
-  // Excel file format
+  // Text columns (new format: Text_Lang1)
+  Text_Lang1?: string;
+  Text_Lang2?: string;
+  Text_Lang3?: string;
+  Text_Lang4?: string;
+  // Legacy format (Lang1Text)
   Lang1Text?: string;
   Lang2Text?: string;
   Lang3Text?: string;
   Lang4Text?: string;
+  // Original format (Lang1)
+  Lang1?: string;
+  Lang2?: string;
+  Lang3?: string;
+  Lang4?: string;
+  // Footer columns
+  FooterTitle_Lang1?: string;
+  FooterTitle_Lang2?: string;
+  FooterTitle_Lang3?: string;
+  FooterTitle_Lang4?: string;
+  FooterText_Lang1?: string;
+  FooterText_Lang2?: string;
+  FooterText_Lang3?: string;
+  FooterText_Lang4?: string;
+  // Notes
   Notes?: string;
 }
 
@@ -166,22 +182,50 @@ export class ExcelImportService {
 
   private parseSlides(rows: ImportedSlideRow[]): Omit<Slide, 'id'>[] {
     return rows.map((row, index) => {
+      // Parse title
       const title: SlideTitle = {};
       if (row.Title_Lang1) title.Lang1 = row.Title_Lang1;
       if (row.Title_Lang2) title.Lang2 = row.Title_Lang2;
       if (row.Title_Lang3) title.Lang3 = row.Title_Lang3;
       if (row.Title_Lang4) title.Lang4 = row.Title_Lang4;
 
-      // Support both column naming conventions (Lang1 or Lang1Text)
+      // Parse text content - support multiple column naming conventions
       const block: SlideBlock = {};
-      const lang1 = row.Lang1 || row.Lang1Text;
-      const lang2 = row.Lang2 || row.Lang2Text;
-      const lang3 = row.Lang3 || row.Lang3Text;
-      const lang4 = row.Lang4 || row.Lang4Text;
+      const lang1 = row.Text_Lang1 || row.Lang1Text || row.Lang1;
+      const lang2 = row.Text_Lang2 || row.Lang2Text || row.Lang2;
+      const lang3 = row.Text_Lang3 || row.Lang3Text || row.Lang3;
+      const lang4 = row.Text_Lang4 || row.Lang4Text || row.Lang4;
       if (lang1) block.Lang1 = lang1;
       if (lang2) block.Lang2 = lang2;
       if (lang3) block.Lang3 = lang3;
       if (lang4) block.Lang4 = lang4;
+
+      // Parse footer (optional)
+      let footerJson: SlideFooter | undefined;
+      const hasFooterTitle = row.FooterTitle_Lang1 || row.FooterTitle_Lang2 ||
+                            row.FooterTitle_Lang3 || row.FooterTitle_Lang4;
+      const hasFooterText = row.FooterText_Lang1 || row.FooterText_Lang2 ||
+                           row.FooterText_Lang3 || row.FooterText_Lang4;
+
+      if (hasFooterTitle || hasFooterText) {
+        footerJson = {};
+
+        if (hasFooterTitle) {
+          footerJson.title = {};
+          if (row.FooterTitle_Lang1) footerJson.title.Lang1 = row.FooterTitle_Lang1;
+          if (row.FooterTitle_Lang2) footerJson.title.Lang2 = row.FooterTitle_Lang2;
+          if (row.FooterTitle_Lang3) footerJson.title.Lang3 = row.FooterTitle_Lang3;
+          if (row.FooterTitle_Lang4) footerJson.title.Lang4 = row.FooterTitle_Lang4;
+        }
+
+        if (hasFooterText) {
+          footerJson.text = {};
+          if (row.FooterText_Lang1) footerJson.text.Lang1 = row.FooterText_Lang1;
+          if (row.FooterText_Lang2) footerJson.text.Lang2 = row.FooterText_Lang2;
+          if (row.FooterText_Lang3) footerJson.text.Lang3 = row.FooterText_Lang3;
+          if (row.FooterText_Lang4) footerJson.text.Lang4 = row.FooterText_Lang4;
+        }
+      }
 
       return {
         presentationId: '', // Will be set after presentation is created
@@ -189,6 +233,7 @@ export class ExcelImportService {
         lineId: row.LineID || row.LineId,
         titleJson: Object.keys(title).length > 0 ? title : undefined,
         blocksJson: [block],
+        footerJson,
         notes: row.Notes,
         isDisabled: false,
       };

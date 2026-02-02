@@ -10,6 +10,7 @@ interface SlideRow {
   line_id: string | null;
   title_json: string | null;
   blocks_json: string;
+  footer_json: string | null;
   notes: string | null;
   is_disabled: number;
 }
@@ -23,6 +24,7 @@ export class SlideRepository implements ISlideRepository {
       lineId: row.line_id ?? undefined,
       titleJson: row.title_json ? JSON.parse(row.title_json) : undefined,
       blocksJson: JSON.parse(row.blocks_json),
+      footerJson: row.footer_json ? JSON.parse(row.footer_json) : undefined,
       notes: row.notes ?? undefined,
       isDisabled: row.is_disabled === 1,
     };
@@ -70,8 +72,8 @@ export class SlideRepository implements ISlideRepository {
 
     await db.execute(
       `INSERT INTO slides
-       (id, presentation_id, slide_order, line_id, title_json, blocks_json, notes, is_disabled)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, presentation_id, slide_order, line_id, title_json, blocks_json, footer_json, notes, is_disabled)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         slide.presentationId,
@@ -79,6 +81,7 @@ export class SlideRepository implements ISlideRepository {
         slide.lineId ?? null,
         slide.titleJson ? JSON.stringify(slide.titleJson) : null,
         JSON.stringify(slide.blocksJson),
+        slide.footerJson ? JSON.stringify(slide.footerJson) : null,
         slide.notes ?? null,
         slide.isDisabled ? 1 : 0,
       ]
@@ -108,13 +111,14 @@ export class SlideRepository implements ISlideRepository {
     await db.execute(
       `UPDATE slides
        SET slide_order = ?, line_id = ?, title_json = ?, blocks_json = ?,
-           notes = ?, is_disabled = ?
+           footer_json = ?, notes = ?, is_disabled = ?
        WHERE id = ?`,
       [
         updated.slideOrder,
         updated.lineId ?? null,
         updated.titleJson ? JSON.stringify(updated.titleJson) : null,
         JSON.stringify(updated.blocksJson),
+        updated.footerJson ? JSON.stringify(updated.footerJson) : null,
         updated.notes ?? null,
         updated.isDisabled ? 1 : 0,
         id,

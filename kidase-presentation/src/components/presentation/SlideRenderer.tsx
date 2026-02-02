@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Slide, SlideBlock } from '../../domain/entities/Slide';
+import { Slide, SlideBlock, SlideTitle } from '../../domain/entities/Slide';
 import { Template, TemplateDefinition } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
 import { LanguageMap } from '../../domain/entities/Presentation';
@@ -53,6 +53,20 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       }
     }
 
+    // Count footer content
+    if (slide.footerJson) {
+      if (slide.footerJson.title) {
+        const footerTitle = slide.footerJson.title.Lang1 || slide.footerJson.title.Lang2 ||
+                           slide.footerJson.title.Lang3 || slide.footerJson.title.Lang4;
+        if (footerTitle) totalChars += footerTitle.length;
+      }
+      if (slide.footerJson.text) {
+        const footerText = slide.footerJson.text.Lang1 || slide.footerJson.text.Lang2 ||
+                          slide.footerJson.text.Lang3 || slide.footerJson.text.Lang4;
+        if (footerText) totalChars += footerText.length;
+      }
+    }
+
     // Dynamic scaling based on content length
     // These thresholds are tuned for typical liturgical text
     // More aggressive scaling to fill the slide
@@ -77,8 +91,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
   const renderLanguageContent = (
     langSlot: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4',
-    langDef: TemplateDefinition['languages'][0],
-    index: number
+    langDef: TemplateDefinition['languages'][0]
   ) => {
     const block = slide.blocksJson[0] || {};
     const processedBlock = getProcessedBlock(block);
@@ -141,6 +154,78 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     );
   };
 
+  const renderFooter = () => {
+    if (!slide.footerJson) return null;
+
+    const { title: footerTitle, text: footerText } = slide.footerJson;
+
+    // Process footer title and text
+    const processedFooterTitle = footerTitle
+      ? placeholderService.replaceInTitle(footerTitle, variables)
+      : null;
+    const processedFooterText = footerText
+      ? getProcessedBlock(footerText)
+      : null;
+
+    // Check if there's any footer content
+    const hasContent = processedFooterTitle || processedFooterText;
+    if (!hasContent) return null;
+
+    // Footer uses same size as header title
+    const footerFontSize = def.title.fontSize * scale;
+    const separator = ' • ';
+
+    // Build footer parts for each language
+    const footerParts: React.ReactNode[] = [];
+    for (const langDef of def.languages) {
+      const titlePart = processedFooterTitle?.[langDef.slot];
+      const textPart = processedFooterText?.[langDef.slot];
+
+      if (titlePart || textPart) {
+        // Add separator between languages
+        if (footerParts.length > 0) {
+          footerParts.push(
+            <span key={`sep-${langDef.slot}`} style={{ color: '#888888' }}>
+              {separator}
+            </span>
+          );
+        }
+
+        footerParts.push(
+          <span
+            key={`footer-${langDef.slot}`}
+            style={{
+              fontFamily: langDef.fontFamily,
+              color: langDef.color,
+            }}
+          >
+            {titlePart && (
+              <span style={{ fontWeight: 'bold' }}>
+                {titlePart}
+                {textPart && ': '}
+              </span>
+            )}
+            {textPart && <span>{textPart}</span>}
+          </span>
+        );
+      }
+    }
+
+    if (footerParts.length === 0) return null;
+
+    return (
+      <div
+        style={{
+          marginTop: `${20 * scale}px`,
+          fontSize: `${footerFontSize}px`,
+          textAlign: 'left',
+        }}
+      >
+        {footerParts}
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -165,10 +250,12 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
           gap: `${def.layout.gap * scale}px`,
         }}
       >
-        {def.languages.map((langDef, index) =>
-          renderLanguageContent(langDef.slot, langDef, index)
+        {def.languages.map((langDef) =>
+          renderLanguageContent(langDef.slot, langDef)
         )}
       </div>
+
+      {renderFooter()}
     </div>
   );
 };

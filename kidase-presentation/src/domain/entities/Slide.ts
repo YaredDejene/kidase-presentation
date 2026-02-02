@@ -17,6 +17,11 @@ export interface SlideBlock {
   Lang4?: string;
 }
 
+export interface SlideFooter {
+  title?: SlideTitle;
+  text?: SlideBlock;
+}
+
 export interface Slide {
   id: string;
   presentationId: string;
@@ -24,6 +29,7 @@ export interface Slide {
   lineId?: string;
   titleJson?: SlideTitle;
   blocksJson: SlideBlock[];
+  footerJson?: SlideFooter;
   notes?: string;
   isDisabled: boolean;
 }

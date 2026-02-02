@@ -60,6 +60,14 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 2,
+            description: "add_footer_to_slides",
+            sql: r#"
+                ALTER TABLE slides ADD COLUMN footer_json TEXT;
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
