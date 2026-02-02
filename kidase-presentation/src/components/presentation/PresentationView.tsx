@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { SlideRenderer } from './SlideRenderer';
 import '../../styles/presentation.css';
@@ -10,6 +10,7 @@ export const PresentationView: React.FC = () => {
     currentVariables,
     currentSlideIndex,
     isPresenting,
+    appSettings,
     nextSlide,
     previousSlide,
     stopPresentation,
@@ -116,9 +117,11 @@ export const PresentationView: React.FC = () => {
       />
 
       {/* Slide counter */}
-      <div className="presentation-counter">
-        {currentSlideIndex + 1} / {enabledSlides.length}
-      </div>
+      {appSettings.showSlideNumbers && (
+        <div className="presentation-counter">
+          {currentSlideIndex + 1} / {enabledSlides.length}
+        </div>
+      )}
 
       {/* Navigation hints (visible on hover) */}
       <div className="presentation-nav-hint presentation-nav-hint-left">

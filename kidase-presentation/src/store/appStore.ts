@@ -4,6 +4,7 @@ import { Presentation } from '../domain/entities/Presentation';
 import { Slide } from '../domain/entities/Slide';
 import { Template } from '../domain/entities/Template';
 import { Variable } from '../domain/entities/Variable';
+import { AppSettings, defaultAppSettings } from '../domain/entities/AppSettings';
 
 interface AppState {
   // Current presentation data
@@ -11,6 +12,9 @@ interface AppState {
   currentSlides: Slide[];
   currentTemplate: Template | null;
   currentVariables: Variable[];
+
+  // App settings
+  appSettings: AppSettings;
 
   // Presentation mode state
   isPresenting: boolean;
@@ -29,6 +33,7 @@ interface AppState {
   setCurrentSlides: (slides: Slide[]) => void;
   setCurrentTemplate: (template: Template | null) => void;
   setCurrentVariables: (variables: Variable[]) => void;
+  setAppSettings: (settings: AppSettings) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -79,6 +84,7 @@ export const useAppStore = create<AppState>()(
     currentSlides: [],
     currentTemplate: null,
     currentVariables: [],
+    appSettings: defaultAppSettings,
     isPresenting: false,
     currentSlideIndex: 0,
     isEditing: false,
@@ -91,6 +97,7 @@ export const useAppStore = create<AppState>()(
     setCurrentSlides: (slides) => set({ currentSlides: slides }),
     setCurrentTemplate: (template) => set({ currentTemplate: template }),
     setCurrentVariables: (variables) => set({ currentVariables: variables }),
+    setAppSettings: (settings) => set({ appSettings: settings }),
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
@@ -242,6 +249,7 @@ export const selectCurrentPresentation = (state: AppState) => state.currentPrese
 export const selectCurrentSlides = (state: AppState) => state.currentSlides;
 export const selectCurrentTemplate = (state: AppState) => state.currentTemplate;
 export const selectCurrentVariables = (state: AppState) => state.currentVariables;
+export const selectAppSettings = (state: AppState) => state.appSettings;
 export const selectIsPresenting = (state: AppState) => state.isPresenting;
 export const selectCurrentSlideIndex = (state: AppState) => state.currentSlideIndex;
 export const selectIsLoading = (state: AppState) => state.isLoading;

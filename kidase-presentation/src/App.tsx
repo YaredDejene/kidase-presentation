@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from './store/appStore';
 import { SlideEditor } from './components/editor/SlideEditor';
 import { PresentationView } from './components/presentation/PresentationView';
@@ -8,7 +8,8 @@ import {
   templateRepository,
   presentationRepository,
   slideRepository,
-  variableRepository
+  variableRepository,
+  appSettingsRepository
 } from './repositories';
 import { Template, createDefaultTemplate } from './domain/entities/Template';
 import { Presentation } from './domain/entities/Presentation';
@@ -29,6 +30,7 @@ function App() {
     setCurrentSlides,
     setCurrentTemplate,
     setCurrentVariables,
+    setAppSettings,
     startPresentation,
   } = useAppStore();
 
@@ -36,13 +38,17 @@ function App() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showPresentationSettings, setShowPresentationSettings] = useState(false);
-  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showAppSettings, setShowAppSettings] = useState(false);
 
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
+        // Load app settings
+        const settings = await appSettingsRepository.get();
+        setAppSettings(settings);
+
         // Load all templates
         let loadedTemplates = await templateRepository.getAll();
 
@@ -209,10 +215,48 @@ function App() {
         borderBottom: '1px solid #333',
         backgroundColor: '#1a1a1a',
       }}>
-        <h1 style={{ fontSize: '18px', margin: 0 }}>
-          Kidase Presentation
-        </h1>
+        {/* Left side: App title and global settings */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1 style={{ fontSize: '18px', margin: 0 }}>
+            Kidase Presentation
+          </h1>
+          <button
+            onClick={() => setShowAppSettings(true)}
+            style={{
+              height: '32px',
+              width: '32px',
+              padding: '0',
+              backgroundColor: 'transparent',
+              border: '1px solid #444',
+              borderRadius: '4px',
+              color: '#888',
+              cursor: 'pointer',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#333';
+              e.currentTarget.style.color = '#fff';
+              e.currentTarget.style.borderColor = '#555';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#888';
+              e.currentTarget.style.borderColor = '#444';
+            }}
+            title="Application Settings"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </div>
 
+        {/* Right side: Presentation actions */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {/* Presentation selector */}
           <select
@@ -274,38 +318,21 @@ function App() {
             disabled={!currentPresentation}
             style={{
               height: '36px',
-              padding: '0 16px',
+              padding: '0 14px',
               backgroundColor: currentPresentation ? '#2a3a4a' : '#333',
               border: 'none',
               borderRadius: '4px',
               color: 'white',
               cursor: currentPresentation ? 'pointer' : 'not-allowed',
               fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
             title="Presentation settings"
           >
+            <span style={{ fontSize: '16px' }}>⚙</span>
             Settings
-          </button>
-
-          <button
-            onClick={() => setShowSettingsDialog(true)}
-            style={{
-              height: '36px',
-              width: '36px',
-              padding: '0',
-              backgroundColor: '#333',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            title="Global Settings"
-          >
-            ⚙
           </button>
 
           <button
@@ -366,9 +393,10 @@ function App() {
         />
       )}
 
+      {/* Application Settings Dialog */}
       <SettingsDialog
-        isOpen={showSettingsDialog}
-        onClose={() => setShowSettingsDialog(false)}
+        isOpen={showAppSettings}
+        onClose={() => setShowAppSettings(false)}
       />
     </div>
   );

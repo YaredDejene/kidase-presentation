@@ -10,7 +10,7 @@ interface TemplateEditorProps {
  * TemplateEditor - Component for creating and editing templates
  * TODO: Implement visual template editor with layout and styling options
  */
-export const TemplateEditor: React.FC<TemplateEditorProps> = ({ templateId, onSave }) => {
+export const TemplateEditor: React.FC<TemplateEditorProps> = ({ templateId: _templateId, onSave: _onSave }) => {
   return (
     <div className="template-editor">
       <h3>Template Editor</h3>

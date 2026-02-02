@@ -20,7 +20,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
   slide,
   index,
   isSelected,
-  languageMap,
+  languageMap: _languageMap,
   onSelect,
   onToggleDisable,
   onDelete,

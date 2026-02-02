@@ -2,6 +2,7 @@ import { TemplateRepository } from './sqlite/TemplateRepository';
 import { PresentationRepository } from './sqlite/PresentationRepository';
 import { SlideRepository } from './sqlite/SlideRepository';
 import { VariableRepository } from './sqlite/VariableRepository';
+import { AppSettingsRepository } from './sqlite/AppSettingsRepository';
 
 // Export interfaces
 export type { ITemplateRepository } from '../domain/interfaces/ITemplateRepository';
@@ -14,6 +15,7 @@ export const templateRepository = new TemplateRepository();
 export const presentationRepository = new PresentationRepository();
 export const slideRepository = new SlideRepository();
 export const variableRepository = new VariableRepository();
+export const appSettingsRepository = new AppSettingsRepository();
 
 // Export classes for testing/mocking
-export { TemplateRepository, PresentationRepository, SlideRepository, VariableRepository };
+export { TemplateRepository, PresentationRepository, SlideRepository, VariableRepository, AppSettingsRepository };

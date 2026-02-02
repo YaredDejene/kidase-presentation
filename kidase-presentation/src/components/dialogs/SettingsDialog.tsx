@@ -1,20 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Modal } from '../common/Modal';
+import { useState, useEffect } from 'react';
+import { useAppStore } from '../../store/appStore';
+import { appSettingsRepository } from '../../repositories';
+import { AppSettings, defaultAppSettings } from '../../domain/entities/AppSettings';
 import '../../styles/dialogs.css';
-
-interface Settings {
-  defaultFontScaling: boolean;
-  presentationTransition: 'none' | 'fade' | 'slide';
-  autoSave: boolean;
-  theme: 'dark' | 'light';
-}
-
-const DEFAULT_SETTINGS: Settings = {
-  defaultFontScaling: true,
-  presentationTransition: 'none',
-  autoSave: true,
-  theme: 'dark',
-};
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -25,143 +13,155 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const { appSettings, setAppSettings } = useAppStore();
+  const [localSettings, setLocalSettings] = useState<AppSettings>(defaultAppSettings);
+  const [activeTab, setActiveTab] = useState<'general' | 'display' | 'export'>('general');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Load settings from localStorage
-    const savedSettings = localStorage.getItem('kidase-settings');
-    if (savedSettings) {
-      try {
-        setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) });
-      } catch {
-        setSettings(DEFAULT_SETTINGS);
-      }
+    if (isOpen) {
+      setLocalSettings(appSettings);
     }
-  }, [isOpen]);
+  }, [isOpen, appSettings]);
 
-  const handleChange = <K extends keyof Settings>(key: K, value: Settings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      localStorage.setItem('kidase-settings', JSON.stringify(settings));
+      await appSettingsRepository.setAll(localSettings);
+      setAppSettings(localSettings);
       onClose();
     } catch (error) {
       console.error('Failed to save settings:', error);
-      alert('Failed to save settings');
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
-  const handleReset = () => {
-    if (confirm('Reset all settings to defaults?')) {
-      setSettings(DEFAULT_SETTINGS);
-    }
+  const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+    setLocalSettings(prev => ({ ...prev, [key]: value }));
   };
+
+  if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Settings">
-      <div className="dialog-content">
-        {/* Display Settings */}
-        <div className="dialog-section">
-          <h4>Display</h4>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <h2 className="modal-title">Application Settings</h2>
+        <button className="modal-close" onClick={onClose}>&times;</button>
 
-          <div className="setting-row">
-            <label className="setting-label">
-              <span>Dynamic Font Scaling</span>
-              <span className="setting-hint">Automatically adjust font size based on content length</span>
-            </label>
-            <input
-              type="checkbox"
-              checked={settings.defaultFontScaling}
-              onChange={e => handleChange('defaultFontScaling', e.target.checked)}
-              className="setting-checkbox"
-            />
-          </div>
-
-          <div className="setting-row">
-            <label className="setting-label">
-              <span>Theme</span>
-              <span className="setting-hint">Application color theme</span>
-            </label>
-            <select
-              value={settings.theme}
-              onChange={e => handleChange('theme', e.target.value as 'dark' | 'light')}
-              className="setting-select"
+        <div className="modal-body">
+          <div className="dialog-tabs">
+            <button
+              className={`dialog-tab ${activeTab === 'general' ? 'active' : ''}`}
+              onClick={() => setActiveTab('general')}
             >
-              <option value="dark">Dark</option>
-              <option value="light">Light (Coming Soon)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Presentation Settings */}
-        <div className="dialog-section">
-          <h4>Presentation</h4>
-
-          <div className="setting-row">
-            <label className="setting-label">
-              <span>Slide Transition</span>
-              <span className="setting-hint">Animation between slides</span>
-            </label>
-            <select
-              value={settings.presentationTransition}
-              onChange={e => handleChange('presentationTransition', e.target.value as 'none' | 'fade' | 'slide')}
-              className="setting-select"
+              General
+            </button>
+            <button
+              className={`dialog-tab ${activeTab === 'display' ? 'active' : ''}`}
+              onClick={() => setActiveTab('display')}
             >
-              <option value="none">None</option>
-              <option value="fade">Fade</option>
-              <option value="slide">Slide</option>
-            </select>
+              Display
+            </button>
+            <button
+              className={`dialog-tab ${activeTab === 'export' ? 'active' : ''}`}
+              onClick={() => setActiveTab('export')}
+            >
+              Export
+            </button>
+          </div>
+
+          <div className="dialog-content" style={{ flex: 1 }}>
+            {activeTab === 'general' && (
+              <>
+                <div className="setting-row">
+                  <div className="setting-label">
+                    <span>Theme</span>
+                    <span className="setting-hint">Application color theme</span>
+                  </div>
+                  <select
+                    value={localSettings.theme}
+                    onChange={e => updateSetting('theme', e.target.value as 'dark' | 'light')}
+                    className="setting-select"
+                  >
+                    <option value="dark">Dark</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'display' && (
+              <>
+                <div className="setting-row">
+                  <div className="setting-label">
+                    <span>Show Slide Numbers</span>
+                    <span className="setting-hint">Display slide counter during presentation</span>
+                  </div>
+                  <button
+                    className={`toggle-switch ${localSettings.showSlideNumbers ? 'active' : ''}`}
+                    onClick={() => updateSetting('showSlideNumbers', !localSettings.showSlideNumbers)}
+                  >
+                    <span className="toggle-knob"></span>
+                  </button>
+                </div>
+
+                <div className="setting-row">
+                  <div className="setting-label">
+                    <span>Presentation Display</span>
+                    <span className="setting-hint">Which display to use for presentations</span>
+                  </div>
+                  <select
+                    value={localSettings.presentationDisplay}
+                    onChange={e => updateSetting('presentationDisplay', e.target.value as 'primary' | 'secondary' | 'auto')}
+                    className="setting-select"
+                  >
+                    <option value="auto">Auto-detect</option>
+                    <option value="primary">Primary Monitor</option>
+                    <option value="secondary">Secondary Monitor</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'export' && (
+              <>
+                <div className="setting-row">
+                  <div className="setting-label">
+                    <span>Default Export Format</span>
+                    <span className="setting-hint">Default format when exporting presentations</span>
+                  </div>
+                  <select
+                    value={localSettings.defaultExportFormat}
+                    onChange={e => updateSetting('defaultExportFormat', e.target.value as 'pdf' | 'pptx')}
+                    className="setting-select"
+                  >
+                    <option value="pdf">PDF</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Editor Settings */}
-        <div className="dialog-section">
-          <h4>Editor</h4>
-
-          <div className="setting-row">
-            <label className="setting-label">
-              <span>Auto-Save</span>
-              <span className="setting-hint">Automatically save changes</span>
-            </label>
-            <input
-              type="checkbox"
-              checked={settings.autoSave}
-              onChange={e => handleChange('autoSave', e.target.checked)}
-              className="setting-checkbox"
-            />
-          </div>
-        </div>
-
-        {/* About */}
-        <div className="dialog-section">
-          <h4>About</h4>
-          <div className="about-info">
-            <p><strong>Kidase Presentation</strong></p>
-            <p>Version 1.0.0</p>
-            <p className="setting-hint">A presentation tool for Ethiopian Orthodox liturgical texts</p>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="dialog-actions">
-          <button onClick={handleReset} className="btn-reset">
-            Reset to Defaults
+        {/* Footer with buttons */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: '8px',
+          padding: '16px 20px',
+          borderTop: '1px solid #333',
+          backgroundColor: '#1a1a1a',
+        }}>
+          <button className="btn-cancel" onClick={onClose}>
+            Cancel
           </button>
-          <div className="dialog-actions-right">
-            <button onClick={onClose} className="btn-cancel">
-              Cancel
-            </button>
-            <button onClick={handleSave} className="btn-save" disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+          <button className="btn-save" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Settings'}
+          </button>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
+
+export default SettingsDialog;

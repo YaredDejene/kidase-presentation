@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Slide, SlideBlock, SlideTitle } from '../../domain/entities/Slide';
+import { Slide, SlideBlock } from '../../domain/entities/Slide';
 import { Template, TemplateDefinition } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
 import { LanguageMap, LanguageSettings } from '../../domain/entities/Presentation';
