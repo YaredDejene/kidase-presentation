@@ -68,6 +68,14 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "add_language_settings_to_presentations",
+            sql: r#"
+                ALTER TABLE presentations ADD COLUMN language_settings TEXT;
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

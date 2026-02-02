@@ -159,6 +159,7 @@ export const SlideEditor: React.FC = () => {
             template={currentTemplate}
             variables={currentVariables}
             languageMap={currentPresentation.languageMap}
+            languageSettings={currentPresentation.languageSettings}
           />
         ) : (
           <div className="editor-preview-empty">

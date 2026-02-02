@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Slide, SlideBlock, SlideTitle } from '../../domain/entities/Slide';
 import { Template, TemplateDefinition } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
-import { LanguageMap } from '../../domain/entities/Presentation';
+import { LanguageMap, LanguageSettings } from '../../domain/entities/Presentation';
 import { placeholderService } from '../../services/PlaceholderService';
 
 interface SlideRendererProps {
@@ -10,6 +10,7 @@ interface SlideRendererProps {
   template: Template;
   variables: Variable[];
   languageMap: LanguageMap;
+  languageSettings?: LanguageSettings;
   scale?: number;
 }
 
@@ -17,10 +18,30 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   slide,
   template,
   variables,
-  languageMap: _languageMap,
+  languageMap,
+  languageSettings,
   scale = 1,
 }) => {
   const def = template.definitionJson;
+
+  // Get enabled languages in the correct order
+  const enabledLanguages = useMemo(() => {
+    const slots: ('Lang1' | 'Lang2' | 'Lang3' | 'Lang4')[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'];
+
+    if (languageSettings) {
+      // Use languageSettings for order and enabled status
+      return slots
+        .filter(slot => languageSettings[slot]?.enabled)
+        .map(slot => ({
+          ...def.languages.find(l => l.slot === slot)!,
+          order: languageSettings[slot]!.order,
+        }))
+        .sort((a, b) => a.order - b.order);
+    }
+
+    // Fallback to languageMap (backward compatibility)
+    return def.languages.filter(lang => languageMap[lang.slot] !== undefined);
+  }, [def.languages, languageMap, languageSettings]);
 
   const getProcessedBlock = (block: SlideBlock): SlideBlock => {
     return placeholderService.replaceInBlock(block, variables);
@@ -31,11 +52,11 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const block = slide.blocksJson[0] || {};
     const processedBlock = getProcessedBlock(block);
 
-    // Count total characters across all languages
+    // Count total characters across enabled languages only
     let totalChars = 0;
     let langCount = 0;
 
-    for (const langDef of def.languages) {
+    for (const langDef of enabledLanguages) {
       const text = processedBlock[langDef.slot];
       if (text) {
         totalChars += text.length;
@@ -87,7 +108,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     } else {
       return 0.55; // Extra long - much smaller
     }
-  }, [slide, def.languages, variables]);
+  }, [slide, enabledLanguages, variables]);
 
   const renderLanguageContent = (
     langSlot: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4',
@@ -175,9 +196,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
     const footerFontSize = def.title.fontSize * scale;
     const separator = ' • ';
 
-    // Build footer parts for each language
+    // Build footer parts for each enabled language
     const footerParts: React.ReactNode[] = [];
-    for (const langDef of def.languages) {
+    for (const langDef of enabledLanguages) {
       const titlePart = processedFooterTitle?.[langDef.slot];
       const textPart = processedFooterText?.[langDef.slot];
 
@@ -250,7 +271,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
           gap: `${def.layout.gap * scale}px`,
         }}
       >
-        {def.languages.map((langDef) =>
+        {enabledLanguages.map((langDef) =>
           renderLanguageContent(langDef.slot, langDef)
         )}
       </div>

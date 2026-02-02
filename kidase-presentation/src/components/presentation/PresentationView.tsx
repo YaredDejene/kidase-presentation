@@ -112,6 +112,7 @@ export const PresentationView: React.FC = () => {
         template={currentTemplate}
         variables={currentVariables}
         languageMap={currentPresentation.languageMap}
+        languageSettings={currentPresentation.languageSettings}
       />
 
       {/* Slide counter */}

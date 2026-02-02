@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from './store/appStore';
 import { SlideEditor } from './components/editor/SlideEditor';
 import { PresentationView } from './components/presentation/PresentationView';
+import { PresentationSettingsDialog } from './components/dialogs/PresentationSettingsDialog';
+import { SettingsDialog } from './components/dialogs/SettingsDialog';
 import {
   templateRepository,
   presentationRepository,
@@ -10,6 +12,7 @@ import {
 } from './repositories';
 import { Template, createDefaultTemplate } from './domain/entities/Template';
 import { Presentation } from './domain/entities/Presentation';
+import { Variable } from './domain/entities/Variable';
 import { excelImportService } from './services/ExcelImportService';
 import { pdfExportService } from './services/PdfExportService';
 import { open, save } from '@tauri-apps/plugin-dialog';
@@ -32,6 +35,8 @@ function App() {
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showPresentationSettings, setShowPresentationSettings] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -138,6 +143,10 @@ function App() {
     }
   };
 
+  const handleVariablesChange = (updatedVariables: Variable[]) => {
+    setCurrentVariables(updatedVariables);
+  };
+
   const handleExportPdf = async () => {
     if (!currentPresentation || !currentTemplate) return;
 
@@ -204,18 +213,20 @@ function App() {
           Kidase Presentation
         </h1>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {/* Presentation selector */}
           <select
             value={currentPresentation?.id || ''}
             onChange={(e) => e.target.value && loadPresentation(e.target.value)}
             style={{
-              padding: '8px 12px',
+              height: '36px',
+              padding: '0 12px',
               backgroundColor: '#333',
               border: '1px solid #555',
               borderRadius: '4px',
               color: 'white',
               minWidth: '200px',
+              fontSize: '14px',
             }}
           >
             <option value="">Select Presentation</option>
@@ -228,12 +239,14 @@ function App() {
           <button
             onClick={handleImportExcel}
             style={{
-              padding: '8px 16px',
+              height: '36px',
+              padding: '0 16px',
               backgroundColor: '#2a4a2a',
               border: 'none',
               borderRadius: '4px',
               color: 'white',
               cursor: 'pointer',
+              fontSize: '14px',
             }}
           >
             Import Excel
@@ -243,22 +256,64 @@ function App() {
             onClick={handleExportPdf}
             disabled={!currentPresentation}
             style={{
-              padding: '8px 16px',
+              height: '36px',
+              padding: '0 16px',
               backgroundColor: currentPresentation ? '#4a2a4a' : '#333',
               border: 'none',
               borderRadius: '4px',
               color: 'white',
               cursor: currentPresentation ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
             }}
           >
             Export PDF
           </button>
 
           <button
+            onClick={() => setShowPresentationSettings(true)}
+            disabled={!currentPresentation}
+            style={{
+              height: '36px',
+              padding: '0 16px',
+              backgroundColor: currentPresentation ? '#2a3a4a' : '#333',
+              border: 'none',
+              borderRadius: '4px',
+              color: 'white',
+              cursor: currentPresentation ? 'pointer' : 'not-allowed',
+              fontSize: '14px',
+            }}
+            title="Presentation settings"
+          >
+            Settings
+          </button>
+
+          <button
+            onClick={() => setShowSettingsDialog(true)}
+            style={{
+              height: '36px',
+              width: '36px',
+              padding: '0',
+              backgroundColor: '#333',
+              border: 'none',
+              borderRadius: '4px',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="Global Settings"
+          >
+            ⚙
+          </button>
+
+          <button
             onClick={startPresentation}
             disabled={!currentPresentation || currentSlides.length === 0}
             style={{
-              padding: '8px 16px',
+              height: '36px',
+              padding: '0 16px',
               backgroundColor: currentPresentation && currentSlides.length > 0
                 ? '#4a4a2a'
                 : '#333',
@@ -269,6 +324,7 @@ function App() {
                 ? 'pointer'
                 : 'not-allowed',
               fontWeight: 'bold',
+              fontSize: '14px',
             }}
           >
             Present (F5)
@@ -283,6 +339,37 @@ function App() {
 
       {/* Presentation overlay */}
       {isPresenting && <PresentationView />}
+
+      {/* Dialogs */}
+      {currentPresentation && currentTemplate && (
+        <PresentationSettingsDialog
+          isOpen={showPresentationSettings}
+          onClose={async () => {
+            setShowPresentationSettings(false);
+            // Reload template to get any changes made in the dialog
+            if (currentPresentation) {
+              const updatedTemplate = await templateRepository.getById(currentPresentation.templateId);
+              if (updatedTemplate) setCurrentTemplate(updatedTemplate);
+            }
+          }}
+          presentation={currentPresentation}
+          variables={currentVariables}
+          slides={currentSlides}
+          template={currentTemplate}
+          templates={templates}
+          onPresentationChange={(p) => setCurrentPresentation(p)}
+          onVariablesChange={handleVariablesChange}
+          onTemplateChange={async (templateId) => {
+            const newTemplate = await templateRepository.getById(templateId);
+            if (newTemplate) setCurrentTemplate(newTemplate);
+          }}
+        />
+      )}
+
+      <SettingsDialog
+        isOpen={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+      />
     </div>
   );
 }

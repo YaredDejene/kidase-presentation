@@ -9,6 +9,7 @@ interface PresentationRow {
   type: string;
   template_id: string;
   language_map: string;
+  language_settings: string | null;
   is_active: number;
   created_at: string;
 }
@@ -21,6 +22,7 @@ export class PresentationRepository implements IPresentationRepository {
       type: row.type,
       templateId: row.template_id,
       languageMap: JSON.parse(row.language_map),
+      languageSettings: row.language_settings ? JSON.parse(row.language_settings) : undefined,
       isActive: row.is_active === 1,
       createdAt: row.created_at,
     };
@@ -87,14 +89,15 @@ export class PresentationRepository implements IPresentationRepository {
 
     await db.execute(
       `INSERT INTO presentations
-       (id, name, type, template_id, language_map, is_active, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (id, name, type, template_id, language_map, language_settings, is_active, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         presentation.name,
         presentation.type,
         presentation.templateId,
         JSON.stringify(presentation.languageMap),
+        presentation.languageSettings ? JSON.stringify(presentation.languageSettings) : null,
         presentation.isActive ? 1 : 0,
         createdAt,
       ]
@@ -112,13 +115,14 @@ export class PresentationRepository implements IPresentationRepository {
 
     await db.execute(
       `UPDATE presentations
-       SET name = ?, type = ?, template_id = ?, language_map = ?, is_active = ?
+       SET name = ?, type = ?, template_id = ?, language_map = ?, language_settings = ?, is_active = ?
        WHERE id = ?`,
       [
         updated.name,
         updated.type,
         updated.templateId,
         JSON.stringify(updated.languageMap),
+        updated.languageSettings ? JSON.stringify(updated.languageSettings) : null,
         updated.isActive ? 1 : 0,
         id,
       ]

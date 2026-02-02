@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Slide } from '../../domain/entities/Slide';
 import { Template } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
-import { LanguageMap } from '../../domain/entities/Presentation';
+import { LanguageMap, LanguageSettings } from '../../domain/entities/Presentation';
 import { SlideRenderer } from '../presentation/SlideRenderer';
 
 interface SlidePreviewProps {
@@ -10,6 +10,7 @@ interface SlidePreviewProps {
   template: Template;
   variables: Variable[];
   languageMap: LanguageMap;
+  languageSettings?: LanguageSettings;
 }
 
 export const SlidePreview: React.FC<SlidePreviewProps> = ({
@@ -17,6 +18,7 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
   template,
   variables,
   languageMap,
+  languageSettings,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.2);
@@ -58,6 +60,7 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
           template={template}
           variables={variables}
           languageMap={languageMap}
+          languageSettings={languageSettings}
           scale={scale}
         />
       </div>
