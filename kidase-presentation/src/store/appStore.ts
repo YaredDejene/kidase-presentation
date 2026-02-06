@@ -24,6 +24,9 @@ interface AppState {
   isEditing: boolean;
   selectedSlideId: string | null;
 
+  // Rule engine state
+  ruleFilteredSlideIds: string[] | null; // null = no filtering, array = only these IDs visible
+
   // Loading state
   isLoading: boolean;
   error: string | null;
@@ -34,6 +37,7 @@ interface AppState {
   setCurrentTemplate: (template: Template | null) => void;
   setCurrentVariables: (variables: Variable[]) => void;
   setAppSettings: (settings: AppSettings) => void;
+  setRuleFilteredSlideIds: (ids: string[] | null) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -85,6 +89,7 @@ export const useAppStore = create<AppState>()(
     currentTemplate: null,
     currentVariables: [],
     appSettings: defaultAppSettings,
+    ruleFilteredSlideIds: null,
     isPresenting: false,
     currentSlideIndex: 0,
     isEditing: false,
@@ -98,6 +103,7 @@ export const useAppStore = create<AppState>()(
     setCurrentTemplate: (template) => set({ currentTemplate: template }),
     setCurrentVariables: (variables) => set({ currentVariables: variables }),
     setAppSettings: (settings) => set({ appSettings: settings }),
+    setRuleFilteredSlideIds: (ids) => set({ ruleFilteredSlideIds: ids }),
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
@@ -115,6 +121,7 @@ export const useAppStore = create<AppState>()(
       currentSlides: [],
       currentTemplate: null,
       currentVariables: [],
+      ruleFilteredSlideIds: null,
       isPresenting: false,
       currentSlideIndex: 0,
       isEditing: false,
@@ -123,7 +130,7 @@ export const useAppStore = create<AppState>()(
 
     // Presentation mode controls
     startPresentation: () => {
-      const slides = get().currentSlides.filter(s => !s.isDisabled);
+      const slides = get().getEnabledSlides();
       if (slides.length > 0) {
         set({ isPresenting: true, currentSlideIndex: 0, isEditing: false });
         document.documentElement.requestFullscreen?.().catch(() => {
@@ -133,15 +140,15 @@ export const useAppStore = create<AppState>()(
     },
 
     stopPresentation: () => {
-      set({ isPresenting: false, currentSlideIndex: 0 });
+      set({ isPresenting: false, currentSlideIndex: 0, ruleFilteredSlideIds: null });
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => {});
       }
     },
 
     nextSlide: () => {
-      const { currentSlideIndex, currentSlides } = get();
-      const enabledSlides = currentSlides.filter(s => !s.isDisabled);
+      const { currentSlideIndex } = get();
+      const enabledSlides = get().getEnabledSlides();
       if (currentSlideIndex < enabledSlides.length - 1) {
         set({ currentSlideIndex: currentSlideIndex + 1 });
       }
@@ -155,7 +162,7 @@ export const useAppStore = create<AppState>()(
     },
 
     goToSlide: (index) => {
-      const enabledSlides = get().currentSlides.filter(s => !s.isDisabled);
+      const enabledSlides = get().getEnabledSlides();
       if (index >= 0 && index < enabledSlides.length) {
         set({ currentSlideIndex: index });
       }
@@ -229,12 +236,19 @@ export const useAppStore = create<AppState>()(
     },
 
     // Computed getters
-    getEnabledSlides: () => get().currentSlides.filter(s => !s.isDisabled),
+    getEnabledSlides: () => {
+      const { currentSlides, ruleFilteredSlideIds, isPresenting } = get();
+      let slides = currentSlides.filter(s => !s.isDisabled);
+      if (isPresenting && ruleFilteredSlideIds !== null) {
+        slides = slides.filter(s => ruleFilteredSlideIds.includes(s.id));
+      }
+      return slides;
+    },
 
     getCurrentSlide: () => {
-      const { currentSlides, currentSlideIndex, isPresenting } = get();
+      const { currentSlideIndex, isPresenting } = get();
       if (!isPresenting) return null;
-      const enabledSlides = currentSlides.filter(s => !s.isDisabled);
+      const enabledSlides = get().getEnabledSlides();
       return enabledSlides[currentSlideIndex] || null;
     },
 
@@ -250,6 +264,7 @@ export const selectCurrentSlides = (state: AppState) => state.currentSlides;
 export const selectCurrentTemplate = (state: AppState) => state.currentTemplate;
 export const selectCurrentVariables = (state: AppState) => state.currentVariables;
 export const selectAppSettings = (state: AppState) => state.appSettings;
+export const selectRuleFilteredSlideIds = (state: AppState) => state.ruleFilteredSlideIds;
 export const selectIsPresenting = (state: AppState) => state.isPresenting;
 export const selectCurrentSlideIndex = (state: AppState) => state.currentSlideIndex;
 export const selectIsLoading = (state: AppState) => state.isLoading;

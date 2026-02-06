@@ -7,7 +7,9 @@ import {
   slideRepository,
   templateRepository,
   variableRepository,
+  ruleRepository,
 } from '../repositories';
+import { createRuleDefinition } from '../domain/entities/RuleDefinition';
 import { excelImportService, ImportResult } from './ExcelImportService';
 
 export interface LoadedPresentation {
@@ -108,6 +110,26 @@ export class PresentationService {
     }));
     const variables = await variableRepository.createMany(variablesWithId);
 
+    // Create display rules linked to slides
+    if (result.displayRules.length > 0) {
+      for (const displayRule of result.displayRules) {
+        const slide = slides[displayRule.slideIndex];
+        if (!slide) continue;
+
+        const ruleDef = createRuleDefinition(
+          displayRule.name,
+          'slide',
+          displayRule.ruleJson,
+          {
+            presentationId: presentation.id,
+            slideId: slide.id,
+            isEnabled: true,
+          }
+        );
+        await ruleRepository.create(ruleDef);
+      }
+    }
+
     // Get template
     const template = await templateRepository.getById(presentation.templateId);
     if (!template) {
@@ -124,6 +146,7 @@ export class PresentationService {
     await Promise.all([
       slideRepository.deleteByPresentationId(id),
       variableRepository.deleteByPresentationId(id),
+      ruleRepository.deleteByPresentationId(id),
     ]);
     await presentationRepository.delete(id);
   }
@@ -165,6 +188,26 @@ export class PresentationService {
       value: v.value,
     }));
     const variables = await variableRepository.createMany(variablesWithNewId);
+
+    // Duplicate rules with remapped slideIds
+    const originalRules = await ruleRepository.getByPresentationId(id);
+    for (const rule of originalRules) {
+      let newSlideId = rule.slideId;
+      if (rule.slideId) {
+        const oldSlideIndex = original.slides.findIndex(s => s.id === rule.slideId);
+        if (oldSlideIndex >= 0 && oldSlideIndex < slides.length) {
+          newSlideId = slides[oldSlideIndex].id;
+        }
+      }
+      await ruleRepository.create({
+        name: rule.name,
+        scope: rule.scope,
+        presentationId: presentation.id,
+        slideId: newSlideId,
+        ruleJson: rule.ruleJson,
+        isEnabled: rule.isEnabled,
+      });
+    }
 
     return {
       presentation,

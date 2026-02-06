@@ -50,12 +50,21 @@ interface ImportedSlideRow {
   FooterText_Lang4?: string;
   // Notes
   Notes?: string;
+  // Display rule (JSON when clause for conditional visibility)
+  DisplayRule?: string;
+}
+
+export interface ImportedDisplayRule {
+  slideIndex: number;
+  ruleJson: string;
+  name: string;
 }
 
 export interface ImportResult {
   presentation: Omit<Presentation, 'id' | 'createdAt'>;
   slides: Omit<Slide, 'id'>[];
   variables: Omit<Variable, 'id'>[];
+  displayRules: ImportedDisplayRule[];
   warnings: string[];
 }
 
@@ -133,7 +142,10 @@ export class ExcelImportService {
     // Extract variables from content
     const variables = this.extractVariables(slides);
 
-    return { presentation, slides, variables, warnings };
+    // Parse display rules
+    const displayRules = this.parseDisplayRules(rows, warnings);
+
+    return { presentation, slides, variables, displayRules, warnings };
   }
 
   private parseMetadata(sheet: XLSX.WorkSheet): ImportMetadata {
@@ -261,6 +273,38 @@ export class ExcelImportService {
     }));
   }
 
+  private parseDisplayRules(rows: ImportedSlideRow[], warnings: string[]): ImportedDisplayRule[] {
+    const rules: ImportedDisplayRule[] = [];
+
+    rows.forEach((row, index) => {
+      const raw = row.DisplayRule?.trim();
+      if (!raw) return;
+
+      try {
+        const whenClause = JSON.parse(raw);
+
+        const ruleEntry = {
+          id: `display-rule-slide-${index + 1}`,
+          when: whenClause,
+          then: { visible: true },
+          otherwise: { visible: false },
+        };
+
+        rules.push({
+          slideIndex: index,
+          ruleJson: JSON.stringify(ruleEntry),
+          name: `DisplayRule: slide ${index + 1}`,
+        });
+      } catch (err) {
+        warnings.push(
+          `Row ${index + 2}: Invalid DisplayRule JSON, skipping rule. Error: ${(err as Error).message}`
+        );
+      }
+    });
+
+    return rules;
+  }
+
   /**
    * Generate a sample Excel template for users
    */
@@ -282,12 +326,12 @@ export class ExcelImportService {
     // Content sheet
     const contentHeaders = [
       'LineID', 'Title_Lang1', 'Title_Lang2', 'Title_Lang3', 'Title_Lang4',
-      'Lang1', 'Lang2', 'Lang3', 'Lang4', 'Notes'
+      'Lang1', 'Lang2', 'Lang3', 'Lang4', 'Notes', 'DisplayRule'
     ];
     const contentData = [
       contentHeaders,
-      ['1', 'ቅዳሴ', 'ቅዳሴ', 'Divine Liturgy', '', 'ብስመ አብ...', 'በአብ ስም...', 'In the name of...', '', 'Opening'],
-      ['2', '', '', '', '', 'ቅዱስ ቅዱስ ቅዱስ', 'ቅዱስ ቅዱስ ቅዱስ', 'Holy Holy Holy', '', 'Trisagion'],
+      ['1', 'ቅዳሴ', 'ቅዳሴ', 'Divine Liturgy', '', 'ብስመ አብ...', 'በአብ ስም...', 'In the name of...', '', 'Opening', ''],
+      ['2', '', '', '', '', 'ቅዱስ ቅዱስ ቅዱስ', 'ቅዱስ ቅዱስ ቅዱስ', 'Holy Holy Holy', '', 'Weekday only', '{"meta.dayOfWeek":{"$in":["Mon","Tue","Wed","Thu","Fri"]}}'],
     ];
     const contentSheet = XLSX.utils.aoa_to_sheet(contentData);
     XLSX.utils.book_append_sheet(workbook, contentSheet, 'Content');

@@ -87,6 +87,32 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "create_rule_definitions_table",
+            sql: r#"
+                CREATE TABLE IF NOT EXISTS rule_definitions (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    scope TEXT NOT NULL,
+                    presentation_id TEXT,
+                    slide_id TEXT,
+                    rule_json TEXT NOT NULL,
+                    is_enabled INTEGER NOT NULL DEFAULT 1,
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_rules_presentation
+                    ON rule_definitions(presentation_id);
+
+                CREATE INDEX IF NOT EXISTS idx_rules_slide
+                    ON rule_definitions(slide_id);
+
+                CREATE INDEX IF NOT EXISTS idx_rules_scope
+                    ON rule_definitions(scope);
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

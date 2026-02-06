@@ -9,11 +9,13 @@ import {
   presentationRepository,
   slideRepository,
   variableRepository,
-  appSettingsRepository
+  appSettingsRepository,
+  ruleRepository,
 } from './repositories';
 import { Template, createDefaultTemplate } from './domain/entities/Template';
 import { Presentation } from './domain/entities/Presentation';
 import { Variable } from './domain/entities/Variable';
+import { createRuleDefinition } from './domain/entities/RuleDefinition';
 import { excelImportService } from './services/ExcelImportService';
 import { pdfExportService } from './services/PdfExportService';
 import { open, save } from '@tauri-apps/plugin-dialog';
@@ -130,7 +132,7 @@ function App() {
         ...s,
         presentationId: presentation.id,
       }));
-      await slideRepository.createMany(slidesWithId);
+      const createdSlides = await slideRepository.createMany(slidesWithId);
 
       // Create variables with presentation ID
       for (const variable of result.variables) {
@@ -138,6 +140,24 @@ function App() {
           ...variable,
           presentationId: presentation.id,
         });
+      }
+
+      // Create display rules linked to slides
+      for (const displayRule of result.displayRules) {
+        const slide = createdSlides[displayRule.slideIndex];
+        if (!slide) continue;
+
+        const ruleDef = createRuleDefinition(
+          displayRule.name,
+          'slide',
+          displayRule.ruleJson,
+          {
+            presentationId: presentation.id,
+            slideId: slide.id,
+            isEnabled: true,
+          }
+        );
+        await ruleRepository.create(ruleDef);
       }
 
       // Refresh and load the new presentation
@@ -389,6 +409,10 @@ function App() {
           onTemplateChange={async (templateId) => {
             const newTemplate = await templateRepository.getById(templateId);
             if (newTemplate) setCurrentTemplate(newTemplate);
+          }}
+          onDelete={async () => {
+            useAppStore.getState().clearPresentationData();
+            setPresentations(await presentationRepository.getAll());
           }}
         />
       )}

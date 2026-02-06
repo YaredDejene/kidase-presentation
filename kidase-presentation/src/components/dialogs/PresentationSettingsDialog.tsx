@@ -5,10 +5,11 @@ import { Presentation, LanguageMap, LanguageSettings } from '../../domain/entiti
 import { Template, TemplateDefinition } from '../../domain/entities/Template';
 import { Slide } from '../../domain/entities/Slide';
 import { variableRepository, presentationRepository, templateRepository } from '../../repositories';
+import { presentationService } from '../../services/PresentationService';
 import { placeholderService } from '../../services/PlaceholderService';
 import '../../styles/dialogs.css';
 
-type TabId = 'general' | 'languages' | 'template' | 'placeholders';
+type TabId = 'general' | 'languages' | 'template' | 'placeholders' | 'danger';
 
 interface PresentationSettingsDialogProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface PresentationSettingsDialogProps {
   onPresentationChange: (presentation: Presentation) => void;
   onVariablesChange: (variables: Variable[]) => void;
   onTemplateChange: (templateId: string) => void;
+  onDelete?: () => void;
 }
 
 interface LanguageConfig {
@@ -52,6 +54,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   onPresentationChange,
   onVariablesChange,
   onTemplateChange,
+  onDelete,
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -297,11 +300,31 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     setIsSaving(false);
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete "${presentation.name}"? This will permanently remove the presentation and all its slides, variables, and rules.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await presentationService.deletePresentation(presentation.id);
+      onClose();
+      onDelete?.();
+    } catch (error) {
+      console.error('Failed to delete presentation:', error);
+      alert('Failed to delete presentation');
+    }
+    setIsDeleting(false);
+  };
+
   const tabs: { id: TabId; label: string }[] = [
     { id: 'general', label: 'General' },
     { id: 'languages', label: 'Languages' },
     { id: 'template', label: 'Template' },
     { id: 'placeholders', label: 'Placeholders' },
+    { id: 'danger', label: 'Danger Zone' },
   ];
 
   const sortedLanguages = [...languages].sort((a, b) => a.order - b.order);
@@ -655,6 +678,43 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Danger Zone Tab */}
+        {activeTab === 'danger' && (
+          <div className="tab-content">
+            <div style={{
+              border: '1px solid #c53030',
+              borderRadius: '8px',
+              padding: '20px',
+              backgroundColor: 'rgba(197, 48, 48, 0.08)',
+            }}>
+              <h3 style={{ margin: '0 0 8px 0', color: '#fc8181', fontSize: '16px' }}>
+                Delete Presentation
+              </h3>
+              <p style={{ margin: '0 0 16px 0', color: '#aaa', fontSize: '14px' }}>
+                Permanently delete <strong style={{ color: '#fff' }}>{presentation.name}</strong> and
+                all its slides ({slides.length}), variables ({variables.length}), and display rules.
+                This action cannot be undone.
+              </p>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                style={{
+                  padding: '8px 20px',
+                  backgroundColor: '#c53030',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: 'white',
+                  cursor: isDeleting ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                }}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete This Presentation'}
+              </button>
+            </div>
           </div>
         )}
 
