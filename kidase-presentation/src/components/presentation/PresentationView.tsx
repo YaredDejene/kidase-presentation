@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from 'react';
 import { useAppStore } from '../../store/appStore';
-import { useRules } from '../../hooks/useRules';
 import { SlideRenderer } from './SlideRenderer';
 import '../../styles/presentation.css';
 
@@ -18,15 +17,6 @@ export const PresentationView: React.FC = () => {
     goToSlide,
     getEnabledSlides,
   } = useAppStore();
-
-  const { evaluateRules } = useRules();
-
-  // Evaluate display rules when entering presentation mode
-  useEffect(() => {
-    if (isPresenting) {
-      evaluateRules();
-    }
-  }, [isPresenting, evaluateRules]);
 
   const enabledSlides = getEnabledSlides();
   const currentSlide = enabledSlides[currentSlideIndex];

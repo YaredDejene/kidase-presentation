@@ -11,6 +11,7 @@ export function useRules() {
     currentSlides,
     currentVariables,
     appSettings,
+    ruleEvaluationDate,
     setRuleFilteredSlideIds,
   } = useAppStore();
 
@@ -98,16 +99,33 @@ export function useRules() {
   // Evaluate all enabled rules and update filtered slide IDs in store
   const evaluateRules = useCallback((): EvaluationResult[] => {
     const enabledRules = rules.filter(r => r.isEnabled);
+
+    // DEBUG: Log all rules loaded for this presentation
+    console.group('[RuleEngine] Evaluating rules');
+    console.log('Total rules:', rules.length, 'Enabled:', enabledRules.length);
+    console.log('Rules:', rules.map(r => ({ id: r.id, name: r.name, slideId: r.slideId, enabled: r.isEnabled })));
+
     if (enabledRules.length === 0) {
+      console.log('No enabled rules — showing all slides');
+      console.groupEnd();
       setRuleFilteredSlideIds(null);
       return [];
     }
+
+    // Parse as local date (YYYY-MM-DD → local midnight) to avoid UTC timezone shift
+    const overrideDate = ruleEvaluationDate
+      ? new Date(ruleEvaluationDate + 'T12:00:00')
+      : undefined;
 
     const context = RuleEngine.buildContext({
       presentation: currentPresentation,
       variables: currentVariables,
       appSettings,
+      overrideDate,
     });
+
+    // DEBUG: Log the base context
+    console.log('Base context:', JSON.stringify(context, null, 2));
 
     const results: EvaluationResult[] = [];
     const hiddenSlideIds = new Set<string>();
@@ -115,6 +133,8 @@ export function useRules() {
     for (const ruleDef of enabledRules) {
       try {
         const ruleEntry: RuleEntry = JSON.parse(ruleDef.ruleJson);
+        console.group(`Rule: "${ruleDef.name}" (scope=${ruleDef.scope}, slideId=${ruleDef.slideId || 'all'})`);
+        console.log('RuleEntry:', JSON.stringify(ruleEntry, null, 2));
 
         // Evaluate per-slide if scope is slide, otherwise once
         if (ruleDef.scope === 'slide') {
@@ -127,13 +147,18 @@ export function useRules() {
                 slide: targetSlide,
                 variables: currentVariables,
                 appSettings,
+                overrideDate,
               });
               const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
               results.push(result);
 
+              console.log(`Slide #${targetSlide.slideOrder} (${targetSlide.id}): matched=${result.matched}, visible=${result.outcome.visible}`);
+
               if (result.outcome.visible === false) {
                 hiddenSlideIds.add(targetSlide.id);
               }
+            } else {
+              console.warn(`Slide ${ruleDef.slideId} not found in current slides`);
             }
           } else {
             // Rule applies to all slides
@@ -143,9 +168,12 @@ export function useRules() {
                 slide,
                 variables: currentVariables,
                 appSettings,
+                overrideDate,
               });
               const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
               results.push(result);
+
+              console.log(`Slide #${slide.slideOrder} (${slide.id}): matched=${result.matched}, visible=${result.outcome.visible}`);
 
               if (result.outcome.visible === false) {
                 hiddenSlideIds.add(slide.id);
@@ -155,24 +183,30 @@ export function useRules() {
         } else {
           const result = ruleEngine.evaluateRule(ruleEntry, context);
           results.push(result);
+          console.log(`Presentation-level: matched=${result.matched}, outcome=`, result.outcome);
         }
+        console.groupEnd();
       } catch (err) {
         console.error(`Failed to evaluate rule ${ruleDef.id}:`, err);
       }
     }
 
     // Compute filtered slide IDs (slides not hidden by rules)
+    console.log('Hidden slide IDs:', [...hiddenSlideIds]);
     if (hiddenSlideIds.size > 0) {
       const visibleIds = currentSlides
         .filter(s => !hiddenSlideIds.has(s.id))
         .map(s => s.id);
+      console.log(`Filtering: ${currentSlides.length} total → ${visibleIds.length} visible, ${hiddenSlideIds.size} hidden`);
       setRuleFilteredSlideIds(visibleIds);
     } else {
+      console.log('No slides hidden by rules — showing all');
       setRuleFilteredSlideIds(null);
     }
+    console.groupEnd();
 
     return results;
-  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, setRuleFilteredSlideIds]);
+  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, setRuleFilteredSlideIds]);
 
   // Validate a rule JSON string
   const validateRule = useCallback((ruleJson: string) => {

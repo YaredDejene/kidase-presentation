@@ -1,18 +1,29 @@
 import {
-  RuleEntry, RuleContext, EvaluationResult, ValidationResult,
-  NormalizedRule, WhenClause,
-} from './types';
-import { OperatorRegistry } from './operators';
-import { RefResolver } from './resolver';
-import { RuleNormalizer } from './normalizer';
-import { RuleValidator } from './validator';
-import { RuleEvaluator } from './evaluator';
-import { ExpressionEvaluator } from './expressions';
-import { ASTCache } from './cache';
-import type { Presentation } from '../domain/entities/Presentation';
-import type { Slide } from '../domain/entities/Slide';
-import type { Variable } from '../domain/entities/Variable';
-import type { AppSettings } from '../domain/entities/AppSettings';
+  RuleEntry,
+  RuleContext,
+  EvaluationResult,
+  ValidationResult,
+  NormalizedRule,
+  WhenClause,
+} from "./types";
+import { OperatorRegistry } from "./operators";
+import { RefResolver } from "./resolver";
+import { RuleNormalizer } from "./normalizer";
+import { RuleValidator } from "./validator";
+import { RuleEvaluator } from "./evaluator";
+import { ExpressionEvaluator } from "./expressions";
+import { ASTCache } from "./cache";
+import type { Presentation } from "../domain/entities/Presentation";
+import type { Slide } from "../domain/entities/Slide";
+import type { Variable } from "../domain/entities/Variable";
+import type { AppSettings } from "../domain/entities/AppSettings";
+
+import {
+  getHolidaysForYear,
+  HolidayTags,
+  toEC,
+  toGC,
+} from "kenat";
 
 export class RuleEngine {
   private operators: OperatorRegistry;
@@ -29,19 +40,25 @@ export class RuleEngine {
     this.normalizer = new RuleNormalizer();
     this.validator = new RuleValidator();
     this.exprEvaluator = new ExpressionEvaluator(this.resolver);
-    this.evaluator = new RuleEvaluator(this.operators, this.resolver, this.exprEvaluator);
+    this.evaluator = new RuleEvaluator(
+      this.operators,
+      this.resolver,
+      this.exprEvaluator,
+    );
     this.cache = new ASTCache(cacheSize, cacheTtlMs);
 
     // Wire up $cond support: ExpressionEvaluator needs to call back into the
     // normalizer + evaluator for condition evaluation.
-    this.exprEvaluator.setCondEvaluator((when: WhenClause, ctx: RuleContext) => {
-      const ast = this.normalizer.normalize({
-        id: '__cond__',
-        when,
-        then: {},
-      });
-      return this.evaluator.evaluate(ast, ctx).matched;
-    });
+    this.exprEvaluator.setCondEvaluator(
+      (when: WhenClause, ctx: RuleContext) => {
+        const ast = this.normalizer.normalize({
+          id: "__cond__",
+          when,
+          then: {},
+        });
+        return this.evaluator.evaluate(ast, ctx).matched;
+      },
+    );
   }
 
   // ── Public API ────────────────────────────────────────────────────────
@@ -69,12 +86,15 @@ export class RuleEngine {
 
   /** Evaluate multiple rules, return all results */
   evaluateAll(rules: RuleEntry[], context: RuleContext): EvaluationResult[] {
-    return rules.map(rule => this.evaluateRule(rule, context));
+    return rules.map((rule) => this.evaluateRule(rule, context));
   }
 
   /** Evaluate rules and return only matched results */
-  evaluateMatched(rules: RuleEntry[], context: RuleContext): EvaluationResult[] {
-    return this.evaluateAll(rules, context).filter(r => r.matched);
+  evaluateMatched(
+    rules: RuleEntry[],
+    context: RuleContext,
+  ): EvaluationResult[] {
+    return this.evaluateAll(rules, context).filter((r) => r.matched);
   }
 
   /** Invalidate cached AST for a rule */
@@ -88,7 +108,10 @@ export class RuleEngine {
   }
 
   /** Register a custom operator */
-  registerOperator(name: string, fn: (fieldVal: unknown, ruleVal: unknown) => boolean): void {
+  registerOperator(
+    name: string,
+    fn: (fieldVal: unknown, ruleVal: unknown) => boolean,
+  ): void {
     this.operators.register(name, fn);
   }
 
@@ -104,6 +127,7 @@ export class RuleEngine {
     slide?: Slide | null;
     variables?: Variable[];
     appSettings?: AppSettings | null;
+    overrideDate?: Date;
     extra?: Record<string, unknown>;
   }): RuleContext {
     const vars: Record<string, string> = {};
@@ -111,15 +135,48 @@ export class RuleEngine {
       for (const v of args.variables) {
         // Store by clean name (without braces) and raw name
         vars[v.name] = v.value;
-        const clean = v.name.replace(/^\{\{|\}\}$/g, '');
+        const clean = v.name.replace(/^\{\{|\}\}$/g, "");
         if (clean !== v.name) {
           vars[clean] = v.value;
         }
       }
     }
 
-    const now = new Date();
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const pad = (n: number) => n.toString().padStart(2, "0");
+
+    // Gregorian date info
+    const now = args.overrideDate ?? new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+
+    // Ethiopian date info
+    const ethDate = toEC(year, month, day);
+    const holidaysInEth = getHolidaysForYear(ethDate.year, { filter: [HolidayTags.CHRISTIAN] });
+
+    // Convert holidays to GC date strings for easier use in rules
+    const holidaysObj = holidaysInEth.reduce((acc, h) => {
+      const gcDate = toGC(h.ethiopian.year, h.ethiopian.month, h.ethiopian.day);
+      const gcDateStr = `${gcDate.year}-${pad(gcDate.month)}-${pad(gcDate.day)}`; // "YYYY-MM-DD"
+      acc[h.key] = gcDateStr;
+      return acc;
+    }, {});
+
 
     return {
       presentation: args.presentation ? toRecord(args.presentation) : {},
@@ -128,7 +185,17 @@ export class RuleEngine {
       settings: args.appSettings ? toRecord(args.appSettings) : {},
       meta: {
         now: now.toISOString(),
+        date: `${year}-${pad(month)}-${pad(day)}`,
+        year: year,
+        month: month,
+        monthName: monthNames[now.getMonth()],
+        day: day,
         dayOfWeek: dayNames[now.getDay()],
+        ethDate: `${ethDate.year}-${pad(ethDate.month)}-${pad(ethDate.day)}`,
+        ethYear: ethDate.year,
+        ethMonth: ethDate.month,
+        ethDay: ethDate.day,
+        holidays: holidaysObj,
         ...args.extra,
       },
     };

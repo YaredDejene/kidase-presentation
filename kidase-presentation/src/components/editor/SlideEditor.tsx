@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useSlides } from '../../hooks/useSlides';
+import { useRules } from '../../hooks/useRules';
 import { SlideRow } from './SlideRow';
 import { SlidePreview } from './SlidePreview';
 import '../../styles/editor.css';
@@ -10,6 +11,7 @@ export const SlideEditor: React.FC = () => {
     currentTemplate,
     currentPresentation,
     currentVariables,
+    ruleFilteredSlideIds,
   } = useAppStore();
 
   const {
@@ -22,6 +24,22 @@ export const SlideEditor: React.FC = () => {
     deleteSlide,
     createSlide,
   } = useSlides();
+
+  const { evaluateRules } = useRules();
+
+  // Evaluate rules whenever deps change
+  useEffect(() => {
+    if (currentPresentation) {
+      evaluateRules();
+    }
+  }, [evaluateRules, currentPresentation]);
+
+  // Compute set of rule-hidden slide IDs for quick lookup
+  const ruleHiddenIds = useMemo(() => {
+    if (ruleFilteredSlideIds === null) return new Set<string>();
+    const visibleSet = new Set(ruleFilteredSlideIds);
+    return new Set(slides.filter(s => !visibleSet.has(s.id)).map(s => s.id));
+  }, [ruleFilteredSlideIds, slides]);
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [listWidth, setListWidth] = useState<number | null>(null);
@@ -117,22 +135,28 @@ export const SlideEditor: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {slides.map((slide, index) => (
-                <SlideRow
-                  key={slide.id}
-                  slide={slide}
-                  index={index}
-                  isSelected={slide.id === selectedSlideId}
-                  languageMap={currentPresentation.languageMap}
-                  onSelect={() => selectSlide(slide.id)}
-                  onToggleDisable={() => toggleDisabled(slide.id)}
-                  onDelete={() => deleteSlide(slide.id)}
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragEnd={handleDragEnd}
-                  isDragging={draggedIndex === index}
-                />
-              ))}
+              {slides.map((slide, index) => {
+                const isRuleHidden = ruleHiddenIds.has(slide.id);
+                return (
+                  <SlideRow
+                    key={slide.id}
+                    slide={slide}
+                    index={index}
+                    isSelected={slide.id === selectedSlideId}
+                    isRuleHidden={isRuleHidden}
+                    languageMap={currentPresentation.languageMap}
+                    onSelect={() => {
+                      if (!isRuleHidden) selectSlide(slide.id);
+                    }}
+                    onToggleDisable={() => toggleDisabled(slide.id)}
+                    onDelete={() => deleteSlide(slide.id)}
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedIndex === index}
+                  />
+                );
+              })}
             </tbody>
           </table>
 
@@ -160,6 +184,7 @@ export const SlideEditor: React.FC = () => {
             variables={currentVariables}
             languageMap={currentPresentation.languageMap}
             languageSettings={currentPresentation.languageSettings}
+            isRuleHidden={ruleHiddenIds.has(selectedSlide.id)}
           />
         ) : (
           <div className="editor-preview-empty">

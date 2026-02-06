@@ -7,6 +7,7 @@ import { Slide } from '../../domain/entities/Slide';
 import { variableRepository, presentationRepository, templateRepository } from '../../repositories';
 import { presentationService } from '../../services/PresentationService';
 import { placeholderService } from '../../services/PlaceholderService';
+import { useAppStore } from '../../store/appStore';
 import '../../styles/dialogs.css';
 
 type TabId = 'general' | 'languages' | 'template' | 'placeholders' | 'danger';
@@ -56,6 +57,8 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   onTemplateChange,
   onDelete,
 }) => {
+  const { ruleEvaluationDate, setRuleEvaluationDate } = useAppStore();
+
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -310,8 +313,8 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     setIsDeleting(true);
     try {
       await presentationService.deletePresentation(presentation.id);
-      onClose();
       onDelete?.();
+      onClose();
     } catch (error) {
       console.error('Failed to delete presentation:', error);
       alert('Failed to delete presentation');
@@ -371,6 +374,30 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                 <option value="Wazema">Wazema</option>
                 <option value="Custom">Custom</option>
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Presentation Date</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="date"
+                  value={ruleEvaluationDate || ''}
+                  onChange={e => setRuleEvaluationDate(e.target.value || null)}
+                  className="form-input"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  onClick={() => setRuleEvaluationDate(null)}
+                  className="btn-cancel"
+                  style={{ padding: '6px 12px', fontSize: '13px' }}
+                  title="Reset to today"
+                >
+                  Today
+                </button>
+              </div>
+              <p style={{ margin: '6px 0 0', color: '#888', fontSize: '12px' }}>
+                Set the presentation date. Display rules will evaluate against this date. Leave empty to use today's date.
+              </p>
             </div>
 
             <div className="form-group">

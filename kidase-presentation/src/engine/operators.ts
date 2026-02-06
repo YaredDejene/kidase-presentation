@@ -84,11 +84,17 @@ export class OperatorRegistry {
       return a.endsWith(b);
     });
 
-    // ── Range ──
+    // ── Range (works with numbers and strings like "YYYY-MM-DD") ──
     this.register('$between', (a, b) => {
       if (!Array.isArray(b) || b.length !== 2) return false;
+      const lo = b[0];
+      const hi = b[1];
+      // Use string comparison when all values are strings (e.g. date strings)
+      if (typeof a === 'string' && typeof lo === 'string' && typeof hi === 'string') {
+        return a >= lo && a <= hi;
+      }
       const num = toNum(a);
-      return num >= toNum(b[0]) && num <= toNum(b[1]);
+      return num >= toNum(lo) && num <= toNum(hi);
     });
 
     // ── Array: all elements present ──

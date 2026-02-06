@@ -6,6 +6,7 @@ interface SlideRowProps {
   slide: Slide;
   index: number;
   isSelected: boolean;
+  isRuleHidden?: boolean;
   languageMap: LanguageMap;
   onSelect: () => void;
   onToggleDisable: () => void;
@@ -20,6 +21,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
   slide,
   index,
   isSelected,
+  isRuleHidden,
   languageMap: _languageMap,
   onSelect,
   onToggleDisable,
@@ -87,6 +89,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
         slide-row
         ${isSelected ? 'slide-row-selected' : ''}
         ${slide.isDisabled ? 'slide-row-disabled' : ''}
+        ${isRuleHidden ? 'slide-row-rule-hidden' : ''}
         ${isDragging ? 'slide-row-dragging' : ''}
       `}
     >

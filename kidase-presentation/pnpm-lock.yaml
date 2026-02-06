@@ -29,6 +29,9 @@ dependencies:
   jspdf:
     specifier: ^4.0.0
     version: 4.0.0
+  kenat:
+    specifier: ^3.2.0
+    version: 3.2.0
   react:
     specifier: ^19.1.0
     version: 19.2.4
@@ -1204,6 +1207,10 @@ packages:
       core-js: 3.48.0
       dompurify: 3.3.1
       html2canvas: 1.4.1
+    dev: false
+
+  /kenat@3.2.0:
+    resolution: {integrity: sha512-u8Vkny8QiarSJ3jNMGSt+OfC5mhsDr06fF6mlOLhQpXCIqBs487lK+EH3UiNIj2u2/KEHHFqekPeeWSEW0OktA==}
     dev: false
 
   /lru-cache@5.1.1:

@@ -26,6 +26,7 @@ interface AppState {
 
   // Rule engine state
   ruleFilteredSlideIds: string[] | null; // null = no filtering, array = only these IDs visible
+  ruleEvaluationDate: string | null; // null = use today, ISO string = override date for rule evaluation
 
   // Loading state
   isLoading: boolean;
@@ -38,6 +39,7 @@ interface AppState {
   setCurrentVariables: (variables: Variable[]) => void;
   setAppSettings: (settings: AppSettings) => void;
   setRuleFilteredSlideIds: (ids: string[] | null) => void;
+  setRuleEvaluationDate: (date: string | null) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -90,6 +92,7 @@ export const useAppStore = create<AppState>()(
     currentVariables: [],
     appSettings: defaultAppSettings,
     ruleFilteredSlideIds: null,
+    ruleEvaluationDate: null,
     isPresenting: false,
     currentSlideIndex: 0,
     isEditing: false,
@@ -104,6 +107,7 @@ export const useAppStore = create<AppState>()(
     setCurrentVariables: (variables) => set({ currentVariables: variables }),
     setAppSettings: (settings) => set({ appSettings: settings }),
     setRuleFilteredSlideIds: (ids) => set({ ruleFilteredSlideIds: ids }),
+    setRuleEvaluationDate: (date) => set({ ruleEvaluationDate: date }),
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
@@ -122,6 +126,7 @@ export const useAppStore = create<AppState>()(
       currentTemplate: null,
       currentVariables: [],
       ruleFilteredSlideIds: null,
+      ruleEvaluationDate: null,
       isPresenting: false,
       currentSlideIndex: 0,
       isEditing: false,
@@ -140,7 +145,7 @@ export const useAppStore = create<AppState>()(
     },
 
     stopPresentation: () => {
-      set({ isPresenting: false, currentSlideIndex: 0, ruleFilteredSlideIds: null });
+      set({ isPresenting: false, currentSlideIndex: 0 });
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => {});
       }
@@ -265,6 +270,7 @@ export const selectCurrentTemplate = (state: AppState) => state.currentTemplate;
 export const selectCurrentVariables = (state: AppState) => state.currentVariables;
 export const selectAppSettings = (state: AppState) => state.appSettings;
 export const selectRuleFilteredSlideIds = (state: AppState) => state.ruleFilteredSlideIds;
+export const selectRuleEvaluationDate = (state: AppState) => state.ruleEvaluationDate;
 export const selectIsPresenting = (state: AppState) => state.isPresenting;
 export const selectCurrentSlideIndex = (state: AppState) => state.currentSlideIndex;
 export const selectIsLoading = (state: AppState) => state.isLoading;
