@@ -1,58 +1,81 @@
 import { Variable } from '../domain/entities/Variable';
 import { SlideBlock, SlideTitle } from '../domain/entities/Slide';
 
+type LangSlot = 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4';
+
 export class PlaceholderService {
   /**
-   * Replace all placeholders in text with variable values
+   * Replace all placeholders in text with variable values.
+   * When langSlot is provided, @VarName variables use the per-language value.
    */
-  replaceInText(text: string, variables: Variable[]): string {
+  replaceInText(text: string, variables: Variable[], langSlot?: LangSlot): string {
     let result = text;
 
     for (const variable of variables) {
       const pattern = new RegExp(this.escapeRegex(variable.name), 'g');
-      result = result.replace(pattern, variable.value);
+
+      let replacement: string;
+      if (langSlot && variable.name.startsWith('@')) {
+        // @VarName: use per-language value, fall back to single value
+        const langValue = this.getLangValue(variable, langSlot);
+        replacement = langValue || variable.value;
+      } else {
+        // {{VAR}}: always use the single value
+        replacement = variable.value;
+      }
+
+      result = result.replace(pattern, replacement);
     }
 
     return result;
   }
 
   /**
-   * Replace placeholders in a slide block
+   * Replace placeholders in a slide block (language-aware for @VarName)
    */
   replaceInBlock(block: SlideBlock, variables: Variable[]): SlideBlock {
     const result: SlideBlock = {};
 
-    if (block.Lang1) result.Lang1 = this.replaceInText(block.Lang1, variables);
-    if (block.Lang2) result.Lang2 = this.replaceInText(block.Lang2, variables);
-    if (block.Lang3) result.Lang3 = this.replaceInText(block.Lang3, variables);
-    if (block.Lang4) result.Lang4 = this.replaceInText(block.Lang4, variables);
+    if (block.Lang1) result.Lang1 = this.replaceInText(block.Lang1, variables, 'Lang1');
+    if (block.Lang2) result.Lang2 = this.replaceInText(block.Lang2, variables, 'Lang2');
+    if (block.Lang3) result.Lang3 = this.replaceInText(block.Lang3, variables, 'Lang3');
+    if (block.Lang4) result.Lang4 = this.replaceInText(block.Lang4, variables, 'Lang4');
 
     return result;
   }
 
   /**
-   * Replace placeholders in a slide title
+   * Replace placeholders in a slide title (language-aware for @VarName)
    */
   replaceInTitle(title: SlideTitle, variables: Variable[]): SlideTitle {
     const result: SlideTitle = {};
 
-    if (title.Lang1) result.Lang1 = this.replaceInText(title.Lang1, variables);
-    if (title.Lang2) result.Lang2 = this.replaceInText(title.Lang2, variables);
-    if (title.Lang3) result.Lang3 = this.replaceInText(title.Lang3, variables);
-    if (title.Lang4) result.Lang4 = this.replaceInText(title.Lang4, variables);
+    if (title.Lang1) result.Lang1 = this.replaceInText(title.Lang1, variables, 'Lang1');
+    if (title.Lang2) result.Lang2 = this.replaceInText(title.Lang2, variables, 'Lang2');
+    if (title.Lang3) result.Lang3 = this.replaceInText(title.Lang3, variables, 'Lang3');
+    if (title.Lang4) result.Lang4 = this.replaceInText(title.Lang4, variables, 'Lang4');
 
     return result;
   }
 
   /**
-   * Find all placeholders in text
+   * Find all placeholders in text (both {{VAR}} and @VarName formats)
    */
   findPlaceholders(text: string): string[] {
-    const pattern = /\{\{([A-Z_]+)\}\}/g;
     const matches: string[] = [];
     let match;
 
-    while ((match = pattern.exec(text)) !== null) {
+    // Legacy {{VAR}} pattern
+    const legacyPattern = /\{\{([A-Z_]+)\}\}/g;
+    while ((match = legacyPattern.exec(text)) !== null) {
+      if (!matches.includes(match[0])) {
+        matches.push(match[0]);
+      }
+    }
+
+    // New @VarName pattern
+    const atPattern = /@([A-Z_]+)/g;
+    while ((match = atPattern.exec(text)) !== null) {
       if (!matches.includes(match[0])) {
         matches.push(match[0]);
       }
@@ -93,6 +116,15 @@ export class PlaceholderService {
     }
 
     return Array.from(placeholders);
+  }
+
+  private getLangValue(variable: Variable, langSlot: LangSlot): string | undefined {
+    switch (langSlot) {
+      case 'Lang1': return variable.valueLang1;
+      case 'Lang2': return variable.valueLang2;
+      case 'Lang3': return variable.valueLang3;
+      case 'Lang4': return variable.valueLang4;
+    }
   }
 
   private escapeRegex(string: string): string {

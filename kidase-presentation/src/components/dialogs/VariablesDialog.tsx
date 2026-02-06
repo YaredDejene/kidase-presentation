@@ -28,9 +28,16 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
     setLocalVariables([...variables]);
   }, [variables, isOpen]);
 
-  const handleValueChange = (id: string, value: string) => {
+  const handleValueChange = (id: string, value: string, langSlot?: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4') => {
     setLocalVariables(prev =>
-      prev.map(v => (v.id === id ? { ...v, value } : v))
+      prev.map(v => {
+        if (v.id !== id) return v;
+        if (langSlot) {
+          const fieldMap = { Lang1: 'valueLang1', Lang2: 'valueLang2', Lang3: 'valueLang3', Lang4: 'valueLang4' } as const;
+          return { ...v, [fieldMap[langSlot]]: value };
+        }
+        return { ...v, value };
+      })
     );
   };
 
@@ -39,11 +46,19 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
 
     // Format the variable name
     let formattedName = newVarName.trim().toUpperCase();
-    if (!formattedName.startsWith('{{')) {
-      formattedName = `{{${formattedName}`;
-    }
-    if (!formattedName.endsWith('}}')) {
-      formattedName = `${formattedName}}}`;
+    const isAtFormat = formattedName.startsWith('@') || (!formattedName.startsWith('{{') && !formattedName.includes('{'));
+    if (isAtFormat) {
+      // @VarName format
+      formattedName = formattedName.replace(/^@/, '');
+      formattedName = `@${formattedName}`;
+    } else {
+      // Legacy {{VAR}} format
+      if (!formattedName.startsWith('{{')) {
+        formattedName = `{{${formattedName}`;
+      }
+      if (!formattedName.endsWith('}}')) {
+        formattedName = `${formattedName}}}`;
+      }
     }
 
     // Check if already exists
@@ -96,7 +111,13 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
     try {
       // Update all variables
       for (const variable of localVariables) {
-        await variableRepository.update(variable.id, { value: variable.value });
+        await variableRepository.update(variable.id, {
+          value: variable.value,
+          valueLang1: variable.valueLang1,
+          valueLang2: variable.valueLang2,
+          valueLang3: variable.valueLang3,
+          valueLang4: variable.valueLang4,
+        });
       }
       onVariablesChange(localVariables);
       onClose();
@@ -143,30 +164,58 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
         <div className="dialog-section">
           <h4>Placeholder Values</h4>
           <p className="dialog-hint">
-            Set values for placeholders used in your slides. Use format: {'{{VARIABLE_NAME}}'}
+            Set values for placeholders used in your slides. Use {'{{VARIABLE_NAME}}'} for single-value or @VARIABLE_NAME for per-language placeholders.
           </p>
 
           {localVariables.length > 0 ? (
             <div className="variables-list">
-              {localVariables.map(variable => (
-                <div key={variable.id} className="variable-row">
-                  <span className="variable-name">{variable.name}</span>
-                  <input
-                    type="text"
-                    value={variable.value}
-                    onChange={e => handleValueChange(variable.id, e.target.value)}
-                    placeholder="Enter value..."
-                    className="variable-input"
-                  />
-                  <button
-                    onClick={() => handleDeleteVariable(variable.id)}
-                    className="variable-delete"
-                    title="Delete variable"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+              {localVariables.map(variable => {
+                const isAtVar = variable.name.startsWith('@');
+                return (
+                  <div key={variable.id} className="variable-row" style={isAtVar ? { flexDirection: 'column', alignItems: 'stretch' } : undefined}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="variable-name">{variable.name}</span>
+                      <button
+                        onClick={() => handleDeleteVariable(variable.id)}
+                        className="variable-delete"
+                        title="Delete variable"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {isAtVar ? (
+                      <div className="placeholder-lang-inputs">
+                        {(['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const).map(slot => {
+                          const langName = presentation.languageMap[slot];
+                          if (!langName) return null;
+                          const fieldMap = { Lang1: 'valueLang1', Lang2: 'valueLang2', Lang3: 'valueLang3', Lang4: 'valueLang4' } as const;
+                          const fieldKey = fieldMap[slot];
+                          return (
+                            <div key={slot} className="placeholder-lang-row">
+                              <span className="placeholder-lang-label">{langName}</span>
+                              <input
+                                type="text"
+                                value={(variable[fieldKey] as string) || ''}
+                                onChange={e => handleValueChange(variable.id, e.target.value, slot)}
+                                className="variable-input"
+                                placeholder={`Value for ${langName}...`}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={variable.value}
+                        onChange={e => handleValueChange(variable.id, e.target.value)}
+                        placeholder="Enter value..."
+                        className="variable-input"
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="dialog-empty">No variables defined yet.</p>

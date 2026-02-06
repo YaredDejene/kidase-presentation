@@ -227,9 +227,16 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     });
   };
 
-  const handleVariableChange = (name: string, value: string) => {
+  const handleVariableChange = (name: string, value: string, langSlot?: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4') => {
     setLocalVariables(prev =>
-      prev.map(v => (v.name === name ? { ...v, value } : v))
+      prev.map(v => {
+        if (v.name !== name) return v;
+        if (langSlot) {
+          const fieldMap = { Lang1: 'valueLang1', Lang2: 'valueLang2', Lang3: 'valueLang3', Lang4: 'valueLang4' } as const;
+          return { ...v, [fieldMap[langSlot]]: value };
+        }
+        return { ...v, value };
+      })
     );
   };
 
@@ -279,11 +286,19 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
             presentationId: presentation.id,
             name: variable.name,
             value: variable.value,
+            valueLang1: variable.valueLang1,
+            valueLang2: variable.valueLang2,
+            valueLang3: variable.valueLang3,
+            valueLang4: variable.valueLang4,
           });
           savedVariables.push(created);
         } else {
           const updated = await variableRepository.update(variable.id, {
             value: variable.value,
+            valueLang1: variable.valueLang1,
+            valueLang2: variable.valueLang2,
+            valueLang3: variable.valueLang3,
+            valueLang4: variable.valueLang4,
           });
           savedVariables.push(updated);
         }
@@ -682,26 +697,52 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
 
             {localVariables.length > 0 ? (
               <div className="placeholders-list">
-                {localVariables.map(variable => (
-                  <div key={variable.name} className="placeholder-row">
-                    <div className="placeholder-name">
-                      {variable.name.replace(/[{}]/g, '')}
+                {localVariables.map(variable => {
+                  const isAtVar = variable.name.startsWith('@');
+                  return (
+                    <div key={variable.name} className="placeholder-row" style={isAtVar ? { flexDirection: 'column', alignItems: 'stretch' } : undefined}>
+                      <div className="placeholder-name">
+                        {variable.name.replace(/[{}@]/g, '')}
+                      </div>
+                      {isAtVar ? (
+                        <div className="placeholder-lang-inputs">
+                          {(['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const).map(slot => {
+                            const langName = presentation.languageMap[slot];
+                            if (!langName) return null;
+                            const fieldMap = { Lang1: 'valueLang1', Lang2: 'valueLang2', Lang3: 'valueLang3', Lang4: 'valueLang4' } as const;
+                            const fieldKey = fieldMap[slot];
+                            return (
+                              <div key={slot} className="placeholder-lang-row">
+                                <span className="placeholder-lang-label">{langName}</span>
+                                <input
+                                  type="text"
+                                  value={(variable[fieldKey] as string) || ''}
+                                  onChange={e => handleVariableChange(variable.name, e.target.value, slot)}
+                                  className="placeholder-input"
+                                  placeholder={`Value for ${langName}...`}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={variable.value}
+                          onChange={e => handleVariableChange(variable.name, e.target.value)}
+                          className="placeholder-input"
+                          placeholder="Enter value..."
+                        />
+                      )}
                     </div>
-                    <input
-                      type="text"
-                      value={variable.value}
-                      onChange={e => handleVariableChange(variable.name, e.target.value)}
-                      className="placeholder-input"
-                      placeholder="Enter value..."
-                    />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="tab-empty">
                 <p>No placeholders detected in your slides.</p>
                 <p className="tab-hint">
-                  Use {'{{PLACEHOLDER_NAME}}'} format in your slide text to create placeholders.
+                  Use {'{{PLACEHOLDER_NAME}}'} for single-value or @VARIABLE_NAME for per-language placeholders.
                 </p>
               </div>
             )}

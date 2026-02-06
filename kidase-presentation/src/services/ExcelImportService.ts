@@ -54,6 +54,14 @@ interface ImportedSlideRow {
   DisplayRule?: string;
 }
 
+interface ImportedVariableRow {
+  VariableName?: string;
+  Variable_Lang1?: string;
+  Variable_Lang2?: string;
+  Variable_Lang3?: string;
+  Variable_Lang4?: string;
+}
+
 export interface ImportedDisplayRule {
   slideIndex: number;
   ruleJson: string;
@@ -139,8 +147,24 @@ export class ExcelImportService {
     // Build slides
     const slides = this.parseSlides(rows);
 
-    // Extract variables from content
-    const variables = this.extractVariables(slides);
+    // Read variables sheet (optional)
+    const variablesSheet =
+      workbook.Sheets['Variables'] || workbook.Sheets['variables'];
+
+    let excelVariables: Omit<Variable, 'id'>[] = [];
+    if (variablesSheet) {
+      excelVariables = this.parseVariablesSheet(variablesSheet);
+    }
+
+    // Extract auto-detected variables from content
+    const detectedVariables = this.extractVariables(slides);
+
+    // Merge: Excel-defined variables take precedence, then add any auto-detected ones not in Excel
+    const excelVarNames = new Set(excelVariables.map(v => v.name));
+    const variables = [
+      ...excelVariables,
+      ...detectedVariables.filter(v => !excelVarNames.has(v.name)),
+    ];
 
     // Parse display rules
     const displayRules = this.parseDisplayRules(rows, warnings);
@@ -273,6 +297,33 @@ export class ExcelImportService {
     }));
   }
 
+  private parseVariablesSheet(sheet: XLSX.WorkSheet): Omit<Variable, 'id'>[] {
+    const rows = XLSX.utils.sheet_to_json<ImportedVariableRow>(sheet);
+    const variables: Omit<Variable, 'id'>[] = [];
+
+    for (const row of rows) {
+      let name = row.VariableName?.trim();
+      if (!name) continue;
+
+      // Ensure @-prefix for at-variables (not {{VAR}} format)
+      if (!name.startsWith('@') && !name.startsWith('{{')) {
+        name = `@${name}`;
+      }
+
+      variables.push({
+        presentationId: '', // Set after presentation creation
+        name,
+        value: row.Variable_Lang1 || '', // Default single value to Lang1
+        valueLang1: row.Variable_Lang1 || '',
+        valueLang2: row.Variable_Lang2 || '',
+        valueLang3: row.Variable_Lang3 || '',
+        valueLang4: row.Variable_Lang4 || '',
+      });
+    }
+
+    return variables;
+  }
+
   private parseDisplayRules(rows: ImportedSlideRow[], warnings: string[]): ImportedDisplayRule[] {
     const rules: ImportedDisplayRule[] = [];
 
@@ -335,6 +386,16 @@ export class ExcelImportService {
     ];
     const contentSheet = XLSX.utils.aoa_to_sheet(contentData);
     XLSX.utils.book_append_sheet(workbook, contentSheet, 'Content');
+
+    // Variables sheet
+    const variableHeaders = ['VariableName', 'Variable_Lang1', 'Variable_Lang2', 'Variable_Lang3', 'Variable_Lang4'];
+    const variableData = [
+      variableHeaders,
+      ['CHURCH_NAME', 'ደብረ ሰላም', 'ደብረ ሰላም', 'Debre Selam', ''],
+      ['PRIEST_NAME', 'Priest Geez', 'Priest Amharic', 'Priest Name', ''],
+    ];
+    const variablesSheet = XLSX.utils.aoa_to_sheet(variableData);
+    XLSX.utils.book_append_sheet(workbook, variablesSheet, 'Variables');
 
     return XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
   }

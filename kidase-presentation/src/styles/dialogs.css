@@ -563,6 +563,26 @@
   color: #555;
 }
 
+.placeholder-lang-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.placeholder-lang-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.placeholder-lang-label {
+  min-width: 80px;
+  font-size: 12px;
+  color: #888;
+  flex-shrink: 0;
+}
+
 .dialog-section {
   margin-bottom: 24px;
 }

@@ -113,6 +113,17 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "add_per_language_variable_values",
+            sql: r#"
+                ALTER TABLE variables ADD COLUMN value_lang1 TEXT NOT NULL DEFAULT '';
+                ALTER TABLE variables ADD COLUMN value_lang2 TEXT NOT NULL DEFAULT '';
+                ALTER TABLE variables ADD COLUMN value_lang3 TEXT NOT NULL DEFAULT '';
+                ALTER TABLE variables ADD COLUMN value_lang4 TEXT NOT NULL DEFAULT '';
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
