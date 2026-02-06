@@ -3,6 +3,8 @@
  * Represents a slide template with layout and styling information
  */
 
+import type { LangSlot } from './Presentation';
+
 export interface TemplateDefinition {
   layout: {
     columns: number;
@@ -16,7 +18,7 @@ export interface TemplateDefinition {
     alignment: 'left' | 'center' | 'right';
   };
   languages: {
-    slot: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4';
+    slot: LangSlot;
     fontSize: number;
     fontFamily: string;
     color: string;

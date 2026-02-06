@@ -25,6 +25,20 @@ export interface LanguageSettings {
   Lang4?: LanguageConfig;
 }
 
+/** The four language slot identifiers used across the app */
+export type LangSlot = 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4';
+
+/** Ordered array of all language slots */
+export const LANG_SLOTS: readonly LangSlot[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const;
+
+/** Maps LangSlot to the corresponding Variable value field name */
+export const LANG_VALUE_FIELD_MAP: Record<LangSlot, 'valueLang1' | 'valueLang2' | 'valueLang3' | 'valueLang4'> = {
+  Lang1: 'valueLang1',
+  Lang2: 'valueLang2',
+  Lang3: 'valueLang3',
+  Lang4: 'valueLang4',
+} as const;
+
 export interface Presentation {
   id: string;
   name: string;
@@ -39,9 +53,8 @@ export interface Presentation {
 // Helper to convert LanguageMap to LanguageSettings
 export function languageMapToSettings(map: LanguageMap): LanguageSettings {
   const settings: LanguageSettings = {};
-  const slots: ('Lang1' | 'Lang2' | 'Lang3' | 'Lang4')[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'];
 
-  slots.forEach((slot, index) => {
+  LANG_SLOTS.forEach((slot, index) => {
     if (map[slot]) {
       settings[slot] = {
         name: map[slot]!,
@@ -55,17 +68,15 @@ export function languageMapToSettings(map: LanguageMap): LanguageSettings {
 }
 
 // Helper to get enabled languages in order
-export function getOrderedLanguages(settings: LanguageSettings | undefined, map: LanguageMap): Array<{ slot: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4'; name: string }> {
+export function getOrderedLanguages(settings: LanguageSettings | undefined, map: LanguageMap): Array<{ slot: LangSlot; name: string }> {
   if (!settings) {
     // Fallback to languageMap for backward compatibility
-    const slots: ('Lang1' | 'Lang2' | 'Lang3' | 'Lang4')[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'];
-    return slots
+    return LANG_SLOTS
       .filter(slot => map[slot])
       .map(slot => ({ slot, name: map[slot]! }));
   }
 
-  const slots: ('Lang1' | 'Lang2' | 'Lang3' | 'Lang4')[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'];
-  return slots
+  return LANG_SLOTS
     .filter(slot => settings[slot]?.enabled)
     .map(slot => ({ slot, name: settings[slot]!.name, order: settings[slot]!.order }))
     .sort((a, b) => a.order - b.order)

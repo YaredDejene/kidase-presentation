@@ -20,6 +20,7 @@ import { excelImportService } from './services/ExcelImportService';
 import { pdfExportService } from './services/PdfExportService';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import './styles/global.css';
+import './styles/app.css';
 
 function App() {
   const {
@@ -205,68 +206,24 @@ function App() {
 
   if (isLoading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#0a0a0a',
-        color: '#fff',
-      }}>
+      <div className="app-loading">
         Loading...
       </div>
     );
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      backgroundColor: '#0a0a0a',
-      color: '#fff',
-    }}>
+    <div className="app-container">
       {/* Header */}
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '10px 20px',
-        borderBottom: '1px solid #333',
-        backgroundColor: '#1a1a1a',
-      }}>
+      <header className="app-header">
         {/* Left side: App title and global settings */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '18px', margin: 0 }}>
+        <div className="app-header-left">
+          <h1 className="app-header-title">
             Kidase Presentation
           </h1>
           <button
             onClick={() => setShowAppSettings(true)}
-            style={{
-              height: '32px',
-              width: '32px',
-              padding: '0',
-              backgroundColor: 'transparent',
-              border: '1px solid #444',
-              borderRadius: '4px',
-              color: '#888',
-              cursor: 'pointer',
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#333';
-              e.currentTarget.style.color = '#fff';
-              e.currentTarget.style.borderColor = '#555';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#888';
-              e.currentTarget.style.borderColor = '#444';
-            }}
+            className="app-settings-btn"
             title="Application Settings"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -277,21 +234,12 @@ function App() {
         </div>
 
         {/* Right side: Presentation actions */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="app-header-right">
           {/* Presentation selector */}
           <select
             value={currentPresentation?.id || ''}
             onChange={(e) => e.target.value && loadPresentation(e.target.value)}
-            style={{
-              height: '36px',
-              padding: '0 12px',
-              backgroundColor: '#333',
-              border: '1px solid #555',
-              borderRadius: '4px',
-              color: 'white',
-              minWidth: '200px',
-              fontSize: '14px',
-            }}
+            className="app-select"
           >
             <option value="">Select Presentation</option>
             {presentations.map(p => (
@@ -302,16 +250,7 @@ function App() {
           {/* Actions */}
           <button
             onClick={handleImportExcel}
-            style={{
-              height: '36px',
-              padding: '0 16px',
-              backgroundColor: '#2a4a2a',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
+            className="app-btn app-btn-import"
           >
             Import Excel
           </button>
@@ -319,16 +258,7 @@ function App() {
           <button
             onClick={handleExportPdf}
             disabled={!currentPresentation}
-            style={{
-              height: '36px',
-              padding: '0 16px',
-              backgroundColor: currentPresentation ? '#4a2a4a' : '#333',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: currentPresentation ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-            }}
+            className="app-btn app-btn-export"
           >
             Export PDF
           </button>
@@ -336,43 +266,17 @@ function App() {
           <button
             onClick={() => setShowPresentationSettings(true)}
             disabled={!currentPresentation}
-            style={{
-              height: '36px',
-              padding: '0 14px',
-              backgroundColor: currentPresentation ? '#2a3a4a' : '#333',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: currentPresentation ? 'pointer' : 'not-allowed',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            className="app-btn app-btn-settings"
             title="Presentation settings"
           >
-            <span style={{ fontSize: '16px' }}>⚙</span>
+            <span className="app-btn-settings-icon">⚙</span>
             Settings
           </button>
 
           <button
             onClick={startPresentation}
             disabled={!currentPresentation || currentSlides.length === 0}
-            style={{
-              height: '36px',
-              padding: '0 16px',
-              backgroundColor: currentPresentation && currentSlides.length > 0
-                ? '#4a4a2a'
-                : '#333',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: currentPresentation && currentSlides.length > 0
-                ? 'pointer'
-                : 'not-allowed',
-              fontWeight: 'bold',
-              fontSize: '14px',
-            }}
+            className="app-btn app-btn-present"
           >
             Present (F5)
           </button>
@@ -380,7 +284,7 @@ function App() {
       </header>
 
       {/* Main content */}
-      <main style={{ flex: 1, overflow: 'hidden' }}>
+      <main className="app-main">
         <SlideEditor />
       </main>
 

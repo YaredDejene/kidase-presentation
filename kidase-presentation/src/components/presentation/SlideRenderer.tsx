@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Slide, SlideBlock } from '../../domain/entities/Slide';
 import { Template, TemplateDefinition } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
-import { LanguageMap, LanguageSettings } from '../../domain/entities/Presentation';
+import { LanguageMap, LanguageSettings, LangSlot, LANG_SLOTS } from '../../domain/entities/Presentation';
 import { placeholderService } from '../../services/PlaceholderService';
 
 interface SlideRendererProps {
@@ -26,11 +26,9 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
 
   // Get enabled languages in the correct order
   const enabledLanguages = useMemo(() => {
-    const slots: ('Lang1' | 'Lang2' | 'Lang3' | 'Lang4')[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'];
-
     if (languageSettings) {
       // Use languageSettings for order and enabled status
-      return slots
+      return LANG_SLOTS
         .filter(slot => languageSettings[slot]?.enabled)
         .map(slot => ({
           ...def.languages.find(l => l.slot === slot)!,
@@ -111,7 +109,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
   }, [slide, enabledLanguages, variables]);
 
   const renderLanguageContent = (
-    langSlot: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4',
+    langSlot: LangSlot,
     langDef: TemplateDefinition['languages'][0]
   ) => {
     const block = slide.blocksJson[0] || {};

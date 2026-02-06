@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Variable, COMMON_VARIABLES } from '../../domain/entities/Variable';
-import { Presentation } from '../../domain/entities/Presentation';
+import { Presentation, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '../../domain/entities/Presentation';
 import { variableRepository } from '../../repositories';
 import '../../styles/dialogs.css';
 
@@ -28,13 +28,12 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
     setLocalVariables([...variables]);
   }, [variables, isOpen]);
 
-  const handleValueChange = (id: string, value: string, langSlot?: 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4') => {
+  const handleValueChange = (id: string, value: string, langSlot?: LangSlot) => {
     setLocalVariables(prev =>
       prev.map(v => {
         if (v.id !== id) return v;
         if (langSlot) {
-          const fieldMap = { Lang1: 'valueLang1', Lang2: 'valueLang2', Lang3: 'valueLang3', Lang4: 'valueLang4' } as const;
-          return { ...v, [fieldMap[langSlot]]: value };
+          return { ...v, [LANG_VALUE_FIELD_MAP[langSlot]]: value };
         }
         return { ...v, value };
       })
@@ -185,11 +184,10 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
                     </div>
                     {isAtVar ? (
                       <div className="placeholder-lang-inputs">
-                        {(['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const).map(slot => {
+                        {LANG_SLOTS.map(slot => {
                           const langName = presentation.languageMap[slot];
                           if (!langName) return null;
-                          const fieldMap = { Lang1: 'valueLang1', Lang2: 'valueLang2', Lang3: 'valueLang3', Lang4: 'valueLang4' } as const;
-                          const fieldKey = fieldMap[slot];
+                          const fieldKey = LANG_VALUE_FIELD_MAP[slot];
                           return (
                             <div key={slot} className="placeholder-lang-row">
                               <span className="placeholder-lang-label">{langName}</span>

@@ -1,7 +1,6 @@
 import { Variable } from '../domain/entities/Variable';
 import { SlideBlock, SlideTitle } from '../domain/entities/Slide';
-
-type LangSlot = 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4';
+import type { LangSlot } from '../domain/entities/Presentation';
 
 export class PlaceholderService {
   /**
