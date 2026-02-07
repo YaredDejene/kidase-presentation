@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAppStore } from './store/appStore';
 import { SlideEditor } from './components/editor/SlideEditor';
 import { PresentationView } from './components/presentation/PresentationView';
@@ -19,6 +19,8 @@ import { createRuleDefinition } from './domain/entities/RuleDefinition';
 import { excelImportService } from './services/ExcelImportService';
 import { pdfExportService } from './services/PdfExportService';
 import { open, save } from '@tauri-apps/plugin-dialog';
+import { toast } from './store/toastStore';
+import { ToastContainer } from './components/common/Toast';
 import './styles/global.css';
 import './styles/app.css';
 
@@ -96,7 +98,7 @@ function App() {
     loadData();
   }, []);
 
-  const loadPresentation = async (id: string) => {
+  const loadPresentation = useCallback(async (id: string) => {
     const presentation = await presentationRepository.getById(id);
     if (!presentation) return;
 
@@ -110,7 +112,7 @@ function App() {
     setCurrentVariables(variables);
 
     await presentationRepository.setActive(id);
-  };
+  }, [setCurrentPresentation, setCurrentSlides, setCurrentTemplate, setCurrentVariables]);
 
   const handleImportExcel = async () => {
     const filePath = await open({
@@ -166,13 +168,32 @@ function App() {
       await loadPresentation(presentation.id);
     } catch (error) {
       console.error('Import failed:', error);
-      alert('Failed to import Excel file: ' + (error as Error).message);
+      toast.error('Failed to import Excel file: ' + (error as Error).message);
     }
   };
 
-  const handleVariablesChange = (updatedVariables: Variable[]) => {
+  const handleVariablesChange = useCallback((updatedVariables: Variable[]) => {
     setCurrentVariables(updatedVariables);
-  };
+  }, [setCurrentVariables]);
+
+  const handleSettingsClose = useCallback(async () => {
+    setShowPresentationSettings(false);
+    // Reload template to get any changes made in the dialog
+    if (currentPresentation) {
+      const updatedTemplate = await templateRepository.getById(currentPresentation.templateId);
+      if (updatedTemplate) setCurrentTemplate(updatedTemplate);
+    }
+  }, [currentPresentation, setCurrentTemplate]);
+
+  const handleTemplateChange = useCallback(async (templateId: string) => {
+    const newTemplate = await templateRepository.getById(templateId);
+    if (newTemplate) setCurrentTemplate(newTemplate);
+  }, [setCurrentTemplate]);
+
+  const handleDelete = useCallback(async () => {
+    useAppStore.getState().clearPresentationData();
+    setPresentations(await presentationRepository.getAll());
+  }, []);
 
   const handleExportPdf = async () => {
     if (!currentPresentation || !currentTemplate) return;
@@ -197,10 +218,10 @@ function App() {
       const arrayBuffer = await blob.arrayBuffer();
       await writeFile(filePath, new Uint8Array(arrayBuffer));
 
-      alert('PDF exported successfully!');
+      toast.success('PDF exported successfully!');
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Failed to export PDF: ' + (error as Error).message);
+      toast.error('Failed to export PDF: ' + (error as Error).message);
     }
   };
 
@@ -295,29 +316,16 @@ function App() {
       {currentPresentation && currentTemplate && (
         <PresentationSettingsDialog
           isOpen={showPresentationSettings}
-          onClose={async () => {
-            setShowPresentationSettings(false);
-            // Reload template to get any changes made in the dialog
-            if (currentPresentation) {
-              const updatedTemplate = await templateRepository.getById(currentPresentation.templateId);
-              if (updatedTemplate) setCurrentTemplate(updatedTemplate);
-            }
-          }}
+          onClose={handleSettingsClose}
           presentation={currentPresentation}
           variables={currentVariables}
           slides={currentSlides}
           template={currentTemplate}
           templates={templates}
-          onPresentationChange={(p) => setCurrentPresentation(p)}
+          onPresentationChange={setCurrentPresentation}
           onVariablesChange={handleVariablesChange}
-          onTemplateChange={async (templateId) => {
-            const newTemplate = await templateRepository.getById(templateId);
-            if (newTemplate) setCurrentTemplate(newTemplate);
-          }}
-          onDelete={async () => {
-            useAppStore.getState().clearPresentationData();
-            setPresentations(await presentationRepository.getAll());
-          }}
+          onTemplateChange={handleTemplateChange}
+          onDelete={handleDelete}
         />
       )}
 
@@ -326,6 +334,8 @@ function App() {
         isOpen={showAppSettings}
         onClose={() => setShowAppSettings(false)}
       />
+
+      <ToastContainer />
     </div>
   );
 }

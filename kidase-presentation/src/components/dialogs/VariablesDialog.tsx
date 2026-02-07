@@ -3,6 +3,7 @@ import { Modal } from '../common/Modal';
 import { Variable, COMMON_VARIABLES } from '../../domain/entities/Variable';
 import { Presentation, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '../../domain/entities/Presentation';
 import { variableRepository } from '../../repositories';
+import { toast } from '../../store/toastStore';
 import '../../styles/dialogs.css';
 
 interface VariablesDialogProps {
@@ -62,7 +63,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
 
     // Check if already exists
     if (localVariables.some(v => v.name === formattedName)) {
-      alert('Variable already exists');
+      toast.error('Variable already exists');
       return;
     }
 
@@ -122,7 +123,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to save variables:', error);
-      alert('Failed to save variables');
+      toast.error('Failed to save variables');
     }
     setIsSaving(false);
   };

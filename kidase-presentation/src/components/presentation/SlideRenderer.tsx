@@ -14,7 +14,7 @@ interface SlideRendererProps {
   scale?: number;
 }
 
-export const SlideRenderer: React.FC<SlideRendererProps> = ({
+export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
   slide,
   template,
   variables,
@@ -277,4 +277,4 @@ export const SlideRenderer: React.FC<SlideRendererProps> = ({
       {renderFooter()}
     </div>
   );
-};
+});

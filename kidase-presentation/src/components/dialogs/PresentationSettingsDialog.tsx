@@ -8,6 +8,7 @@ import { variableRepository, presentationRepository, templateRepository } from '
 import { presentationService } from '../../services/PresentationService';
 import { placeholderService } from '../../services/PlaceholderService';
 import { useAppStore } from '../../store/appStore';
+import { toast } from '../../store/toastStore';
 import '../../styles/dialogs.css';
 
 type TabId = 'general' | 'languages' | 'template' | 'placeholders' | 'danger';
@@ -311,7 +312,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
       onClose();
     } catch (error) {
       console.error('Failed to save settings:', error);
-      alert('Failed to save settings');
+      toast.error('Failed to save settings');
     }
     setIsSaving(false);
   };
@@ -330,7 +331,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
       onClose();
     } catch (error) {
       console.error('Failed to delete presentation:', error);
-      alert('Failed to delete presentation');
+      toast.error('Failed to delete presentation');
     }
     setIsDeleting(false);
   };
