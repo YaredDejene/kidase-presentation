@@ -32,6 +32,7 @@ function App() {
     currentTemplate,
     currentVariables,
     isPresenting,
+    ruleFilteredSlideIds,
     setCurrentPresentation,
     setCurrentSlides,
     setCurrentTemplate,
@@ -231,12 +232,25 @@ function App() {
 
     if (!filePath) return;
 
+    // Filter slides: skip disabled and rule-hidden slides
+    let exportSlides = currentSlides.filter(s => !s.isDisabled);
+    if (ruleFilteredSlideIds !== null) {
+      exportSlides = exportSlides.filter(s => ruleFilteredSlideIds.includes(s.id));
+    }
+
+    const progress = toast.progress(`Exporting PDF (0/${exportSlides.length})...`);
+
     try {
       const blob = await pdfExportService.exportToPdf(
-        currentSlides,
+        exportSlides,
         currentTemplate,
         currentVariables,
-        currentPresentation.languageMap
+        currentPresentation.languageMap,
+        {},
+        (current, total) => {
+          const pct = Math.round((current / total) * 100);
+          progress.update(pct, `Exporting slide ${current}/${total}...`);
+        }
       );
 
       // Convert blob to array buffer and write to file
@@ -244,10 +258,10 @@ function App() {
       const arrayBuffer = await blob.arrayBuffer();
       await writeFile(filePath, new Uint8Array(arrayBuffer));
 
-      toast.success('PDF exported successfully!');
+      progress.done('PDF exported successfully!');
     } catch (error) {
       console.error('Export failed:', error);
-      toast.error('Failed to export PDF: ' + (error as Error).message);
+      progress.fail('Failed to export PDF: ' + (error as Error).message);
     }
   };
 

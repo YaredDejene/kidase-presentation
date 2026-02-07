@@ -12,10 +12,22 @@ export const ToastContainer: React.FC = () => {
     <div className="toast-container">
       {toasts.map((t) => (
         <div key={t.id} className={`toast toast-${t.type}`}>
-          <span className="toast-message">{t.message}</span>
-          <button className="toast-close" onClick={() => removeToast(t.id)}>
-            ×
-          </button>
+          <div className="toast-body">
+            <span className="toast-message">{t.message}</span>
+            {t.type === 'progress' && t.progress !== undefined && (
+              <div className="toast-progress-track">
+                <div
+                  className="toast-progress-bar"
+                  style={{ width: `${t.progress}%` }}
+                />
+              </div>
+            )}
+          </div>
+          {t.type !== 'progress' && (
+            <button className="toast-close" onClick={() => removeToast(t.id)}>
+              ×
+            </button>
+          )}
         </div>
       ))}
     </div>
