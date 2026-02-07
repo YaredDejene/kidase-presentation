@@ -4,6 +4,7 @@ import { SlideRepository } from './sqlite/SlideRepository';
 import { VariableRepository } from './sqlite/VariableRepository';
 import { AppSettingsRepository } from './sqlite/AppSettingsRepository';
 import { RuleRepository } from './sqlite/RuleRepository';
+import { GitsaweRepository } from './sqlite/GitsaweRepository';
 
 // Export interfaces
 export type { ITemplateRepository } from '../domain/interfaces/ITemplateRepository';
@@ -11,6 +12,7 @@ export type { IPresentationRepository } from '../domain/interfaces/IPresentation
 export type { ISlideRepository } from '../domain/interfaces/ISlideRepository';
 export type { IVariableRepository } from '../domain/interfaces/IVariableRepository';
 export type { IRuleRepository } from '../domain/interfaces/IRuleRepository';
+export type { IGitsaweRepository } from '../domain/interfaces/IGitsaweRepository';
 
 // Singleton instances
 export const templateRepository = new TemplateRepository();
@@ -19,6 +21,7 @@ export const slideRepository = new SlideRepository();
 export const variableRepository = new VariableRepository();
 export const appSettingsRepository = new AppSettingsRepository();
 export const ruleRepository = new RuleRepository();
+export const gitsaweRepository = new GitsaweRepository();
 
 // Export classes for testing/mocking
-export { TemplateRepository, PresentationRepository, SlideRepository, VariableRepository, AppSettingsRepository, RuleRepository };
+export { TemplateRepository, PresentationRepository, SlideRepository, VariableRepository, AppSettingsRepository, RuleRepository, GitsaweRepository };

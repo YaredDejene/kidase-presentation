@@ -5,6 +5,7 @@ export interface IRuleRepository {
   getByScope(scope: RuleScope, scopeId?: string): Promise<RuleDefinition[]>;
   getByPresentationId(presentationId: string): Promise<RuleDefinition[]>;
   getBySlideId(slideId: string): Promise<RuleDefinition[]>;
+  getByGitsaweId(gitsaweId: string): Promise<RuleDefinition[]>;
   getEnabled(): Promise<RuleDefinition[]>;
   create(rule: Omit<RuleDefinition, 'id' | 'createdAt'>): Promise<RuleDefinition>;
   update(id: string, rule: Partial<Omit<RuleDefinition, 'id' | 'createdAt'>>): Promise<RuleDefinition>;
@@ -12,4 +13,5 @@ export interface IRuleRepository {
   delete(id: string): Promise<void>;
   deleteByPresentationId(presentationId: string): Promise<void>;
   deleteBySlideId(slideId: string): Promise<void>;
+  deleteByGitsaweId(gitsaweId: string): Promise<void>;
 }

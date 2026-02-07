@@ -124,6 +124,42 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 7,
+            description: "create_gitsawes_table",
+            sql: r#"
+                CREATE TABLE IF NOT EXISTS gitsawes (
+                    id TEXT PRIMARY KEY,
+                    line_id TEXT NOT NULL UNIQUE,
+                    message_st_paul TEXT,
+                    message_apostle TEXT,
+                    message_book_of_acts TEXT,
+                    misbak TEXT,
+                    wengel TEXT,
+                    kidase_type TEXT,
+                    evangelist TEXT,
+                    message_apostle_evangelist TEXT,
+                    gitsawe_type TEXT,
+                    priority INTEGER NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_gitsawes_priority
+                    ON gitsawes(priority);
+
+                CREATE INDEX IF NOT EXISTS idx_gitsawes_line_id
+                    ON gitsawes(line_id);
+
+                CREATE INDEX IF NOT EXISTS idx_gitsawes_gitsawe_type
+                    ON gitsawes(gitsawe_type);
+
+                ALTER TABLE rule_definitions ADD COLUMN gitsawe_id TEXT;
+
+                CREATE INDEX IF NOT EXISTS idx_rules_gitsawe
+                    ON rule_definitions(gitsawe_id);
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

@@ -1,4 +1,4 @@
-export type RuleScope = 'presentation' | 'slide' | 'global';
+export type RuleScope = 'presentation' | 'slide' | 'gitsawe' | 'global';
 
 export interface RuleDefinition {
   id: string;
@@ -6,6 +6,7 @@ export interface RuleDefinition {
   scope: RuleScope;
   presentationId?: string;
   slideId?: string;
+  gitsaweId?: string;
   ruleJson: string; // JSON-serialized RuleEntry
   isEnabled: boolean;
   createdAt: string;
@@ -18,6 +19,7 @@ export function createRuleDefinition(
   options?: {
     presentationId?: string;
     slideId?: string;
+    gitsaweId?: string;
     isEnabled?: boolean;
   },
 ): Omit<RuleDefinition, 'id' | 'createdAt'> {
@@ -26,6 +28,7 @@ export function createRuleDefinition(
     scope,
     presentationId: options?.presentationId,
     slideId: options?.slideId,
+    gitsaweId: options?.gitsaweId,
     ruleJson,
     isEnabled: options?.isEnabled ?? true,
   };

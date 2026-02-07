@@ -9,6 +9,7 @@ interface RuleRow {
   scope: string;
   presentation_id: string | null;
   slide_id: string | null;
+  gitsawe_id: string | null;
   rule_json: string;
   is_enabled: number;
   created_at: string;
@@ -22,6 +23,7 @@ export class RuleRepository implements IRuleRepository {
       scope: row.scope as RuleScope,
       presentationId: row.presentation_id ?? undefined,
       slideId: row.slide_id ?? undefined,
+      gitsaweId: row.gitsawe_id ?? undefined,
       ruleJson: row.rule_json,
       isEnabled: row.is_enabled === 1,
       createdAt: row.created_at,
@@ -56,6 +58,14 @@ export class RuleRepository implements IRuleRepository {
       return rows.map(r => this.mapRowToEntity(r));
     }
 
+    if (scope === 'gitsawe' && scopeId) {
+      const rows = await db.select<RuleRow[]>(
+        'SELECT * FROM rule_definitions WHERE scope = ? AND gitsawe_id = ? ORDER BY created_at',
+        [scope, scopeId]
+      );
+      return rows.map(r => this.mapRowToEntity(r));
+    }
+
     const rows = await db.select<RuleRow[]>(
       'SELECT * FROM rule_definitions WHERE scope = ? ORDER BY created_at',
       [scope]
@@ -81,6 +91,15 @@ export class RuleRepository implements IRuleRepository {
     return rows.map(r => this.mapRowToEntity(r));
   }
 
+  async getByGitsaweId(gitsaweId: string): Promise<RuleDefinition[]> {
+    const db = await getDatabase();
+    const rows = await db.select<RuleRow[]>(
+      'SELECT * FROM rule_definitions WHERE gitsawe_id = ? ORDER BY created_at',
+      [gitsaweId]
+    );
+    return rows.map(r => this.mapRowToEntity(r));
+  }
+
   async getEnabled(): Promise<RuleDefinition[]> {
     const db = await getDatabase();
     const rows = await db.select<RuleRow[]>(
@@ -97,14 +116,15 @@ export class RuleRepository implements IRuleRepository {
 
     await db.execute(
       `INSERT INTO rule_definitions
-       (id, name, scope, presentation_id, slide_id, rule_json, is_enabled, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, name, scope, presentation_id, slide_id, gitsawe_id, rule_json, is_enabled, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         rule.name,
         rule.scope,
         rule.presentationId ?? null,
         rule.slideId ?? null,
+        rule.gitsaweId ?? null,
         rule.ruleJson,
         rule.isEnabled ? 1 : 0,
         createdAt,
@@ -123,7 +143,7 @@ export class RuleRepository implements IRuleRepository {
 
     await db.execute(
       `UPDATE rule_definitions
-       SET name = ?, scope = ?, presentation_id = ?, slide_id = ?,
+       SET name = ?, scope = ?, presentation_id = ?, slide_id = ?, gitsawe_id = ?,
            rule_json = ?, is_enabled = ?
        WHERE id = ?`,
       [
@@ -131,6 +151,7 @@ export class RuleRepository implements IRuleRepository {
         updated.scope,
         updated.presentationId ?? null,
         updated.slideId ?? null,
+        updated.gitsaweId ?? null,
         updated.ruleJson,
         updated.isEnabled ? 1 : 0,
         id,
@@ -159,5 +180,10 @@ export class RuleRepository implements IRuleRepository {
   async deleteBySlideId(slideId: string): Promise<void> {
     const db = await getDatabase();
     await db.execute('DELETE FROM rule_definitions WHERE slide_id = ?', [slideId]);
+  }
+
+  async deleteByGitsaweId(gitsaweId: string): Promise<void> {
+    const db = await getDatabase();
+    await db.execute('DELETE FROM rule_definitions WHERE gitsawe_id = ?', [gitsaweId]);
   }
 }
