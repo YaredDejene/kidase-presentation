@@ -11,6 +11,7 @@ import {
   variableRepository,
   appSettingsRepository,
   ruleRepository,
+  gitsaweRepository,
 } from './repositories';
 import { Template, createDefaultTemplate } from './domain/entities/Template';
 import { Presentation } from './domain/entities/Presentation';
@@ -161,6 +162,31 @@ function App() {
           }
         );
         await ruleRepository.create(ruleDef);
+      }
+
+      // Import Gitsawe records (reference data — clear and replace)
+      if (result.gitsawes.length > 0) {
+        const existingGitsawes = await gitsaweRepository.getAll();
+        for (const existing of existingGitsawes) {
+          await ruleRepository.deleteByGitsaweId(existing.id);
+          await gitsaweRepository.delete(existing.id);
+        }
+
+        for (const imported of result.gitsawes) {
+          const created = await gitsaweRepository.create(imported.gitsawe);
+          if (imported.selectionRule) {
+            const gitsaweRuleDef = createRuleDefinition(
+              imported.selectionRule.name,
+              'gitsawe',
+              imported.selectionRule.ruleJson,
+              {
+                gitsaweId: created.id,
+                isEnabled: true,
+              }
+            );
+            await ruleRepository.create(gitsaweRuleDef);
+          }
+        }
       }
 
       // Refresh and load the new presentation

@@ -3,6 +3,7 @@ import { readFile } from '@tauri-apps/plugin-fs';
 import { Presentation, LanguageMap } from '../domain/entities/Presentation';
 import { Slide, SlideBlock, SlideTitle, SlideFooter } from '../domain/entities/Slide';
 import { Variable } from '../domain/entities/Variable';
+import { Gitsawe } from '../domain/entities/Gitsawe';
 import { placeholderService } from './PlaceholderService';
 
 interface ImportMetadata {
@@ -54,6 +55,21 @@ interface ImportedSlideRow {
   DisplayRule?: string;
 }
 
+interface ImportedGitsaweRow {
+  LineId?: string;
+  Message_StPaul?: string;
+  Message_Apostle?: string;
+  Message_BookOfActs?: string;
+  Misbak?: string;
+  Wengel?: string;
+  KidaseType?: string;
+  Evangelist?: string;
+  Message_Apostle_Evangelist?: string;
+  GitsaweType?: string;
+  Priority?: number;
+  SelectionRule?: string;
+}
+
 interface ImportedVariableRow {
   VariableName?: string;
   Variable_Lang1?: string;
@@ -68,11 +84,17 @@ export interface ImportedDisplayRule {
   name: string;
 }
 
+export interface ImportedGitsawe {
+  gitsawe: Omit<Gitsawe, 'id' | 'createdAt'>;
+  selectionRule?: { ruleJson: string; name: string };
+}
+
 export interface ImportResult {
   presentation: Omit<Presentation, 'id' | 'createdAt'>;
   slides: Omit<Slide, 'id'>[];
   variables: Omit<Variable, 'id'>[];
   displayRules: ImportedDisplayRule[];
+  gitsawes: ImportedGitsawe[];
   warnings: string[];
 }
 
@@ -169,7 +191,20 @@ export class ExcelImportService {
     // Parse display rules
     const displayRules = this.parseDisplayRules(rows, warnings);
 
-    return { presentation, slides, variables, displayRules, warnings };
+    // Read Gitsawe sheet (optional)
+    console.log('[Import] Sheet names:', workbook.SheetNames);
+    const gitsaweSheet =
+      workbook.Sheets['Gitsawe'] || workbook.Sheets['gitsawe'];
+
+    let gitsawes: ImportedGitsawe[] = [];
+    if (gitsaweSheet) {
+      gitsawes = this.parseGitsaweSheet(gitsaweSheet, warnings);
+      console.log('[Import] Parsed Gitsawe records:', gitsawes.length);
+    } else {
+      console.log('[Import] No Gitsawe sheet found');
+    }
+
+    return { presentation, slides, variables, displayRules, gitsawes, warnings };
   }
 
   private parseMetadata(sheet: XLSX.WorkSheet): ImportMetadata {
@@ -322,6 +357,56 @@ export class ExcelImportService {
     }
 
     return variables;
+  }
+
+  private parseGitsaweSheet(sheet: XLSX.WorkSheet, warnings: string[]): ImportedGitsawe[] {
+    const rows = XLSX.utils.sheet_to_json<ImportedGitsaweRow>(sheet);
+    const results: ImportedGitsawe[] = [];
+
+    rows.forEach((row, index) => {
+      const lineId = row.LineId?.trim();
+      if (!lineId) return;
+
+      const gitsawe: Omit<Gitsawe, 'id' | 'createdAt'> = {
+        lineId,
+        messageStPaul: row.Message_StPaul?.trim() || undefined,
+        messageApostle: row.Message_Apostle?.trim() || undefined,
+        messageBookOfActs: row.Message_BookOfActs?.trim() || undefined,
+        misbak: row.Misbak?.trim() || undefined,
+        wengel: row.Wengel?.trim() || undefined,
+        kidaseType: row.KidaseType?.trim() || undefined,
+        evangelist: row.Evangelist?.trim() || undefined,
+        messageApostleEvangelist: row.Message_Apostle_Evangelist?.trim() || undefined,
+        gitsaweType: row.GitsaweType?.trim() || undefined,
+        priority: row.Priority ?? 3,
+      };
+
+      let selectionRule: ImportedGitsawe['selectionRule'];
+      const rawRule = row.SelectionRule?.trim();
+      if (rawRule) {
+        try {
+          const whenClause = JSON.parse(rawRule);
+          const ruleEntry = {
+            id: `selection-rule-${lineId}`,
+            when: whenClause,
+            then: { selected: true },
+            otherwise: { selected: false },
+          };
+          selectionRule = {
+            ruleJson: JSON.stringify(ruleEntry),
+            name: `SelectionRule: ${lineId}`,
+          };
+        } catch (err) {
+          warnings.push(
+            `Gitsawe row ${index + 2}: Invalid SelectionRule JSON, skipping rule. Error: ${(err as Error).message}`
+          );
+        }
+      }
+
+      results.push({ gitsawe, selectionRule });
+    });
+
+    return results;
   }
 
   private parseDisplayRules(rows: ImportedSlideRow[], warnings: string[]): ImportedDisplayRule[] {

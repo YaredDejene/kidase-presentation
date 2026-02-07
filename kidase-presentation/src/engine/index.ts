@@ -9,6 +9,8 @@ export { RuleValidator } from './validator';
 export { RuleEvaluator } from './evaluator';
 export { ExpressionEvaluator } from './expressions';
 export { ASTCache } from './cache';
+export { buildContext } from './contextBuilder';
+export type { BuildContextArgs } from './contextBuilder';
 
 // Error classes
 export {

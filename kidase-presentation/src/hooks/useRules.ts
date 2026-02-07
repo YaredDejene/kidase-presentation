@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '../store/appStore';
-import { ruleRepository } from '../repositories';
-import { ruleEngine, RuleEngine } from '../engine';
+import { ruleRepository, gitsaweRepository } from '../repositories';
+import { ruleEngine, buildContext } from '../engine';
 import type { RuleDefinition } from '../domain/entities/RuleDefinition';
 import type { RuleEntry, EvaluationResult } from '../engine/types';
 
@@ -97,7 +97,7 @@ export function useRules() {
   }, []);
 
   // Evaluate all enabled rules and update filtered slide IDs in store
-  const evaluateRules = useCallback((): EvaluationResult[] => {
+  const evaluateRules = useCallback(async (): Promise<EvaluationResult[]> => {
     const enabledRules = rules.filter(r => r.isEnabled);
 
     if (enabledRules.length === 0) {
@@ -110,12 +110,23 @@ export function useRules() {
       ? new Date(ruleEvaluationDate + 'T12:00:00')
       : undefined;
 
-    const context = RuleEngine.buildContext({
+    // Pre-fetch Gitsawe records and their selection rules
+    const allGitsawes = await gitsaweRepository.getAll();
+    const gitsaweRules = (await ruleRepository.getEnabled()).filter(r => r.scope === 'gitsawe');
+
+    const context = buildContext({
       presentation: currentPresentation,
       variables: currentVariables,
       appSettings,
+      gitsawes: allGitsawes,
+      gitsaweRules,
       overrideDate,
     });
+
+    console.log('[Context] meta:', context.meta);
+    if (context.meta.gitsawe) {
+      console.log('[Gitsawe] Selected:', context.meta.gitsawe);
+    }
 
     const results: EvaluationResult[] = [];
     const hiddenSlideIds = new Set<string>();
@@ -130,11 +141,13 @@ export function useRules() {
             // Rule is linked to a specific slide
             const targetSlide = currentSlides.find(s => s.id === ruleDef.slideId);
             if (targetSlide) {
-              const slideContext = RuleEngine.buildContext({
+              const slideContext = buildContext({
                 presentation: currentPresentation,
                 slide: targetSlide,
                 variables: currentVariables,
                 appSettings,
+                gitsawes: allGitsawes,
+                gitsaweRules,
                 overrideDate,
               });
               const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
@@ -147,11 +160,13 @@ export function useRules() {
           } else {
             // Rule applies to all slides
             for (const slide of currentSlides) {
-              const slideContext = RuleEngine.buildContext({
+              const slideContext = buildContext({
                 presentation: currentPresentation,
                 slide,
                 variables: currentVariables,
                 appSettings,
+                gitsawes: allGitsawes,
+                gitsaweRules,
                 overrideDate,
               });
               const result = ruleEngine.evaluateRule(ruleEntry, slideContext);

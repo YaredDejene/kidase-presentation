@@ -13,17 +13,6 @@ import { RuleValidator } from "./validator";
 import { RuleEvaluator } from "./evaluator";
 import { ExpressionEvaluator } from "./expressions";
 import { ASTCache } from "./cache";
-import type { Presentation } from "../domain/entities/Presentation";
-import type { Slide } from "../domain/entities/Slide";
-import type { Variable } from "../domain/entities/Variable";
-import type { AppSettings } from "../domain/entities/AppSettings";
-
-import {
-  getHolidaysForYear,
-  HolidayTags,
-  toEC,
-  toGC,
-} from "kenat";
 
 export class RuleEngine {
   private operators: OperatorRegistry;
@@ -120,93 +109,4 @@ export class RuleEngine {
     return this.resolver.resolve(path, context);
   }
 
-  // ── Static Context Builder ────────────────────────────────────────────
-
-  static buildContext(args: {
-    presentation?: Presentation | null;
-    slide?: Slide | null;
-    variables?: Variable[];
-    appSettings?: AppSettings | null;
-    overrideDate?: Date;
-    extra?: Record<string, unknown>;
-  }): RuleContext {
-    const vars: Record<string, string> = {};
-    if (args.variables) {
-      for (const v of args.variables) {
-        // Store by clean name (without braces) and raw name
-        vars[v.name] = v.value;
-        const clean = v.name.replace(/^\{\{|\}\}$/g, "");
-        if (clean !== v.name) {
-          vars[clean] = v.value;
-        }
-      }
-    }
-
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const pad = (n: number) => n.toString().padStart(2, "0");
-
-    // Gregorian date info
-    const now = args.overrideDate ?? new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-
-    // Ethiopian date info
-    const ethDate = toEC(year, month, day);
-    const holidaysInEth = getHolidaysForYear(ethDate.year, { filter: [HolidayTags.CHRISTIAN] });
-
-    // Convert holidays to GC date strings for easier use in rules
-    const holidaysObj = holidaysInEth.reduce((acc, h) => {
-      const gcDate = toGC(h.ethiopian.year, h.ethiopian.month, h.ethiopian.day);
-      const gcDateStr = `${gcDate.year}-${pad(gcDate.month)}-${pad(gcDate.day)}`; // "YYYY-MM-DD"
-      acc[h.key] = gcDateStr;
-      return acc;
-    }, {});
-
-
-    return {
-      presentation: args.presentation ? toRecord(args.presentation) : {},
-      slide: args.slide ? toRecord(args.slide) : {},
-      vars,
-      settings: args.appSettings ? toRecord(args.appSettings) : {},
-      meta: {
-        now: now.toISOString(),
-        date: `${year}-${pad(month)}-${pad(day)}`,
-        year: year,
-        month: month,
-        monthName: monthNames[now.getMonth()],
-        day: day,
-        dayOfWeek: dayNames[now.getDay()],
-        ethDate: `${ethDate.year}-${pad(ethDate.month)}-${pad(ethDate.day)}`,
-        ethYear: ethDate.year,
-        ethMonth: ethDate.month,
-        ethDay: ethDate.day,
-        holidays: holidaysObj,
-        ...args.extra,
-      },
-    };
-  }
-}
-
-/** Shallow-convert a typed entity to Record<string, unknown> */
-function toRecord(obj: object): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    result[key] = value;
-  }
-  return result;
 }
