@@ -32,6 +32,7 @@ export interface Slide {
   footerJson?: SlideFooter;
   notes?: string;
   isDisabled: boolean;
+  isDynamic: boolean;
 }
 
 export function createEmptySlide(presentationId: string, order: number): Omit<Slide, 'id'> {
@@ -40,6 +41,7 @@ export function createEmptySlide(presentationId: string, order: number): Omit<Sl
     slideOrder: order,
     blocksJson: [{}],
     isDisabled: false,
+    isDynamic: false,
   };
 }
 

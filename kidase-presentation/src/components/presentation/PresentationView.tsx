@@ -11,6 +11,7 @@ export const PresentationView: React.FC = () => {
     currentSlideIndex,
     isPresenting,
     appSettings,
+    ruleContextMeta,
     nextSlide,
     previousSlide,
     stopPresentation,
@@ -114,6 +115,7 @@ export const PresentationView: React.FC = () => {
         variables={currentVariables}
         languageMap={currentPresentation.languageMap}
         languageSettings={currentPresentation.languageSettings}
+        meta={ruleContextMeta}
       />
 
       {/* Slide counter */}

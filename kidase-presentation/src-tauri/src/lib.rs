@@ -160,6 +160,38 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 8,
+            description: "add_is_dynamic_to_slides",
+            sql: r#"
+                ALTER TABLE slides ADD COLUMN is_dynamic INTEGER NOT NULL DEFAULT 0;
+            "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 9,
+            description: "create_verses_table",
+            sql: r#"
+                CREATE TABLE IF NOT EXISTS verses (
+                    id TEXT PRIMARY KEY,
+                    segment_id TEXT NOT NULL,
+                    verse_order INTEGER NOT NULL,
+                    title_lang1 TEXT,
+                    title_lang2 TEXT,
+                    title_lang3 TEXT,
+                    title_lang4 TEXT,
+                    text_lang1 TEXT,
+                    text_lang2 TEXT,
+                    text_lang3 TEXT,
+                    text_lang4 TEXT,
+                    created_at TEXT NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_verses_segment_id
+                    ON verses(segment_id);
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

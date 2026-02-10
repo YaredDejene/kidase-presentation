@@ -13,6 +13,7 @@ interface SlideRow {
   footer_json: string | null;
   notes: string | null;
   is_disabled: number;
+  is_dynamic: number;
 }
 
 export class SlideRepository implements ISlideRepository {
@@ -27,6 +28,7 @@ export class SlideRepository implements ISlideRepository {
       footerJson: row.footer_json ? JSON.parse(row.footer_json) : undefined,
       notes: row.notes ?? undefined,
       isDisabled: row.is_disabled === 1,
+      isDynamic: row.is_dynamic === 1,
     };
   }
 
@@ -72,8 +74,8 @@ export class SlideRepository implements ISlideRepository {
 
     await db.execute(
       `INSERT INTO slides
-       (id, presentation_id, slide_order, line_id, title_json, blocks_json, footer_json, notes, is_disabled)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, presentation_id, slide_order, line_id, title_json, blocks_json, footer_json, notes, is_disabled, is_dynamic)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         slide.presentationId,
@@ -84,6 +86,7 @@ export class SlideRepository implements ISlideRepository {
         slide.footerJson ? JSON.stringify(slide.footerJson) : null,
         slide.notes ?? null,
         slide.isDisabled ? 1 : 0,
+        slide.isDynamic ? 1 : 0,
       ]
     );
 
@@ -111,7 +114,7 @@ export class SlideRepository implements ISlideRepository {
     await db.execute(
       `UPDATE slides
        SET slide_order = ?, line_id = ?, title_json = ?, blocks_json = ?,
-           footer_json = ?, notes = ?, is_disabled = ?
+           footer_json = ?, notes = ?, is_disabled = ?, is_dynamic = ?
        WHERE id = ?`,
       [
         updated.slideOrder,
@@ -121,6 +124,7 @@ export class SlideRepository implements ISlideRepository {
         updated.footerJson ? JSON.stringify(updated.footerJson) : null,
         updated.notes ?? null,
         updated.isDisabled ? 1 : 0,
+        updated.isDynamic ? 1 : 0,
         id,
       ]
     );

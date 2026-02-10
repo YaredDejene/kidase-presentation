@@ -34,6 +34,7 @@ export function useSlides() {
         lineId: data.lineId,
         notes: data.notes,
         isDisabled: data.isDisabled || false,
+        isDynamic: data.isDynamic || false,
       });
 
       addSlide(newSlide);

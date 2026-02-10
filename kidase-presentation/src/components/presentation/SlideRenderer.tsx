@@ -12,6 +12,7 @@ interface SlideRendererProps {
   languageMap: LanguageMap;
   languageSettings?: LanguageSettings;
   scale?: number;
+  meta?: Record<string, unknown> | null;
 }
 
 export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
@@ -21,6 +22,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
   languageMap,
   languageSettings,
   scale = 1,
+  meta,
 }) => {
   const def = template.definitionJson;
 
@@ -41,8 +43,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
     return def.languages.filter(lang => languageMap[lang.slot] !== undefined);
   }, [def.languages, languageMap, languageSettings]);
 
+  const metaContext = meta ?? undefined;
+
   const getProcessedBlock = (block: SlideBlock): SlideBlock => {
-    return placeholderService.replaceInBlock(block, variables);
+    return placeholderService.replaceInBlock(block, variables, metaContext);
   };
 
   // Calculate dynamic font scale based on total content length
@@ -64,7 +68,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
 
     // Also count title if present
     if (slide.titleJson) {
-      const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables);
+      const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables, metaContext);
       const titleText = processedTitle.Lang1 || processedTitle.Lang2 ||
                        processedTitle.Lang3 || processedTitle.Lang4;
       if (titleText) {
@@ -141,7 +145,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
   const renderTitle = () => {
     if (!slide.titleJson || !def.title.show) return null;
 
-    const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables);
+    const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables, metaContext);
 
     // Get all title parts
     const titleLang1 = processedTitle.Lang1;
@@ -180,7 +184,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
 
     // Process footer title and text
     const processedFooterTitle = footerTitle
-      ? placeholderService.replaceInTitle(footerTitle, variables)
+      ? placeholderService.replaceInTitle(footerTitle, variables, metaContext)
       : null;
     const processedFooterText = footerText
       ? getProcessedBlock(footerText)

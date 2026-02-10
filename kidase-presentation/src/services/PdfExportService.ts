@@ -30,7 +30,8 @@ export class PdfExportService {
     variables: Variable[],
     languageMap: LanguageMap,
     options: PdfExportOptions = {},
-    onProgress?: (current: number, total: number) => void
+    onProgress?: (current: number, total: number) => void,
+    meta?: Record<string, unknown> | null
   ): Promise<Blob> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
@@ -51,7 +52,7 @@ export class PdfExportService {
       onProgress?.(i + 1, slides.length);
 
       // Create a temporary container for rendering
-      const container = this.createSlideContainer(slide, template, variables, languageMap, opts);
+      const container = this.createSlideContainer(slide, template, variables, languageMap, opts, meta ?? undefined);
       document.body.appendChild(container);
 
       try {
@@ -108,10 +109,11 @@ export class PdfExportService {
   private calculateFontScale(
     slide: Slide,
     enabledLanguages: TemplateDefinition['languages'],
-    variables: Variable[]
+    variables: Variable[],
+    meta?: Record<string, unknown>
   ): number {
     const block = slide.blocksJson[0] || {};
-    const processedBlock = placeholderService.replaceInBlock(block, variables);
+    const processedBlock = placeholderService.replaceInBlock(block, variables, meta);
 
     let totalChars = 0;
 
@@ -121,7 +123,7 @@ export class PdfExportService {
     }
 
     if (slide.titleJson) {
-      const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables);
+      const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables, meta);
       const titleText = processedTitle.Lang1 || processedTitle.Lang2 ||
                        processedTitle.Lang3 || processedTitle.Lang4;
       if (titleText) totalChars += titleText.length;
@@ -158,11 +160,12 @@ export class PdfExportService {
     template: Template,
     variables: Variable[],
     languageMap: LanguageMap,
-    opts: Required<PdfExportOptions>
+    opts: Required<PdfExportOptions>,
+    meta?: Record<string, unknown>
   ): HTMLDivElement {
     const def = template.definitionJson;
     const enabledLanguages = this.getEnabledLanguages(def, languageMap);
-    const fontScale = this.calculateFontScale(slide, enabledLanguages, variables);
+    const fontScale = this.calculateFontScale(slide, enabledLanguages, variables, meta);
     // Scale all measurements from design resolution to container resolution
     const viewportScale = opts.width / DESIGN_WIDTH;
     const s = (px: number) => px * viewportScale;
@@ -186,7 +189,7 @@ export class PdfExportService {
 
     // Render title if present
     if (slide.titleJson && def.title.show) {
-      const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables);
+      const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables, meta);
       const titleText = processedTitle.Lang1 || processedTitle.Lang2 ||
                        processedTitle.Lang3 || processedTitle.Lang4;
 
@@ -214,7 +217,7 @@ export class PdfExportService {
       gap: `${s(def.layout.gap)}px`,
     });
 
-    const processedBlock = placeholderService.replaceInBlock(slide.blocksJson[0] || {}, variables);
+    const processedBlock = placeholderService.replaceInBlock(slide.blocksJson[0] || {}, variables, meta);
 
     for (const langDef of enabledLanguages) {
       const text = processedBlock[langDef.slot as keyof typeof processedBlock];
@@ -241,7 +244,7 @@ export class PdfExportService {
     // Render footer if present
     if (slide.footerJson) {
       const footerEl = this.createFooterElement(
-        slide, enabledLanguages, variables, s(def.title.fontSize)
+        slide, enabledLanguages, variables, s(def.title.fontSize), meta
       );
       if (footerEl) container.appendChild(footerEl);
     }
@@ -253,17 +256,18 @@ export class PdfExportService {
     slide: Slide,
     enabledLanguages: TemplateDefinition['languages'],
     variables: Variable[],
-    titleFontSize: number
+    titleFontSize: number,
+    meta?: Record<string, unknown>
   ): HTMLDivElement | null {
     if (!slide.footerJson) return null;
 
     const { title: footerTitle, text: footerText } = slide.footerJson;
 
     const processedFooterTitle = footerTitle
-      ? placeholderService.replaceInTitle(footerTitle, variables)
+      ? placeholderService.replaceInTitle(footerTitle, variables, meta)
       : null;
     const processedFooterText = footerText
-      ? placeholderService.replaceInBlock(footerText, variables)
+      ? placeholderService.replaceInBlock(footerText, variables, meta)
       : null;
 
     if (!processedFooterTitle && !processedFooterText) return null;

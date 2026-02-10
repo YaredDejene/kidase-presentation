@@ -27,6 +27,7 @@ interface AppState {
   // Rule engine state
   ruleFilteredSlideIds: string[] | null; // null = no filtering, array = only these IDs visible
   ruleEvaluationDate: string | null; // null = use today, ISO string = override date for rule evaluation
+  ruleContextMeta: Record<string, unknown> | null; // meta context from last rule evaluation
 
   // Loading state
   isLoading: boolean;
@@ -40,6 +41,7 @@ interface AppState {
   setAppSettings: (settings: AppSettings) => void;
   setRuleFilteredSlideIds: (ids: string[] | null) => void;
   setRuleEvaluationDate: (date: string | null) => void;
+  setRuleContextMeta: (meta: Record<string, unknown> | null) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -93,6 +95,7 @@ export const useAppStore = create<AppState>()(
     appSettings: defaultAppSettings,
     ruleFilteredSlideIds: null,
     ruleEvaluationDate: null,
+    ruleContextMeta: null,
     isPresenting: false,
     currentSlideIndex: 0,
     isEditing: false,
@@ -108,6 +111,7 @@ export const useAppStore = create<AppState>()(
     setAppSettings: (settings) => set({ appSettings: settings }),
     setRuleFilteredSlideIds: (ids) => set({ ruleFilteredSlideIds: ids }),
     setRuleEvaluationDate: (date) => set({ ruleEvaluationDate: date }),
+    setRuleContextMeta: (meta) => set({ ruleContextMeta: meta }),
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
@@ -127,6 +131,7 @@ export const useAppStore = create<AppState>()(
       currentVariables: [],
       ruleFilteredSlideIds: null,
       ruleEvaluationDate: null,
+      ruleContextMeta: null,
       isPresenting: false,
       currentSlideIndex: 0,
       isEditing: false,
@@ -271,6 +276,7 @@ export const selectCurrentVariables = (state: AppState) => state.currentVariable
 export const selectAppSettings = (state: AppState) => state.appSettings;
 export const selectRuleFilteredSlideIds = (state: AppState) => state.ruleFilteredSlideIds;
 export const selectRuleEvaluationDate = (state: AppState) => state.ruleEvaluationDate;
+export const selectRuleContextMeta = (state: AppState) => state.ruleContextMeta;
 export const selectIsPresenting = (state: AppState) => state.isPresenting;
 export const selectCurrentSlideIndex = (state: AppState) => state.currentSlideIndex;
 export const selectIsLoading = (state: AppState) => state.isLoading;

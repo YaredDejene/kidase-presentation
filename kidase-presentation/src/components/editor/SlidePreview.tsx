@@ -12,6 +12,7 @@ interface SlidePreviewProps {
   languageMap: LanguageMap;
   languageSettings?: LanguageSettings;
   isRuleHidden?: boolean;
+  meta?: Record<string, unknown> | null;
 }
 
 export const SlidePreview: React.FC<SlidePreviewProps> = ({
@@ -21,6 +22,7 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
   languageMap,
   languageSettings,
   isRuleHidden,
+  meta,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.2);
@@ -64,6 +66,7 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
           languageMap={languageMap}
           languageSettings={languageSettings}
           scale={scale}
+          meta={meta}
         />
       </div>
 

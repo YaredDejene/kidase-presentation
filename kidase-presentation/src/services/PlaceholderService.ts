@@ -6,9 +6,18 @@ export class PlaceholderService {
   /**
    * Replace all placeholders in text with variable values.
    * When langSlot is provided, @VarName variables use the per-language value.
+   * When meta is provided, @meta.X.Y placeholders are resolved from the meta context.
    */
-  replaceInText(text: string, variables: Variable[], langSlot?: LangSlot): string {
+  replaceInText(text: string, variables: Variable[], langSlot?: LangSlot, meta?: Record<string, unknown>): string {
     let result = text;
+
+    // Resolve @meta.X.Y placeholders first (longer paths before shorter to avoid partial matches)
+    if (meta) {
+      result = result.replace(/@meta\.([\w.]+)/g, (_match, path: string) => {
+        const value = this.resolveMetaPath(meta, path);
+        return value !== undefined ? String(value) : _match;
+      });
+    }
 
     for (const variable of variables) {
       const pattern = new RegExp(this.escapeRegex(variable.name), 'g');
@@ -32,13 +41,13 @@ export class PlaceholderService {
   /**
    * Replace placeholders in a slide block (language-aware for @VarName)
    */
-  replaceInBlock(block: SlideBlock, variables: Variable[]): SlideBlock {
+  replaceInBlock(block: SlideBlock, variables: Variable[], meta?: Record<string, unknown>): SlideBlock {
     const result: SlideBlock = {};
 
-    if (block.Lang1) result.Lang1 = this.replaceInText(block.Lang1, variables, 'Lang1');
-    if (block.Lang2) result.Lang2 = this.replaceInText(block.Lang2, variables, 'Lang2');
-    if (block.Lang3) result.Lang3 = this.replaceInText(block.Lang3, variables, 'Lang3');
-    if (block.Lang4) result.Lang4 = this.replaceInText(block.Lang4, variables, 'Lang4');
+    if (block.Lang1) result.Lang1 = this.replaceInText(block.Lang1, variables, 'Lang1', meta);
+    if (block.Lang2) result.Lang2 = this.replaceInText(block.Lang2, variables, 'Lang2', meta);
+    if (block.Lang3) result.Lang3 = this.replaceInText(block.Lang3, variables, 'Lang3', meta);
+    if (block.Lang4) result.Lang4 = this.replaceInText(block.Lang4, variables, 'Lang4', meta);
 
     return result;
   }
@@ -46,13 +55,13 @@ export class PlaceholderService {
   /**
    * Replace placeholders in a slide title (language-aware for @VarName)
    */
-  replaceInTitle(title: SlideTitle, variables: Variable[]): SlideTitle {
+  replaceInTitle(title: SlideTitle, variables: Variable[], meta?: Record<string, unknown>): SlideTitle {
     const result: SlideTitle = {};
 
-    if (title.Lang1) result.Lang1 = this.replaceInText(title.Lang1, variables, 'Lang1');
-    if (title.Lang2) result.Lang2 = this.replaceInText(title.Lang2, variables, 'Lang2');
-    if (title.Lang3) result.Lang3 = this.replaceInText(title.Lang3, variables, 'Lang3');
-    if (title.Lang4) result.Lang4 = this.replaceInText(title.Lang4, variables, 'Lang4');
+    if (title.Lang1) result.Lang1 = this.replaceInText(title.Lang1, variables, 'Lang1', meta);
+    if (title.Lang2) result.Lang2 = this.replaceInText(title.Lang2, variables, 'Lang2', meta);
+    if (title.Lang3) result.Lang3 = this.replaceInText(title.Lang3, variables, 'Lang3', meta);
+    if (title.Lang4) result.Lang4 = this.replaceInText(title.Lang4, variables, 'Lang4', meta);
 
     return result;
   }
@@ -124,6 +133,38 @@ export class PlaceholderService {
       case 'Lang3': return variable.valueLang3;
       case 'Lang4': return variable.valueLang4;
     }
+  }
+
+  /**
+   * Resolve a dot-separated path from the meta context.
+   * Supports both camelCase and snake_case keys (auto-converts snake_case to camelCase).
+   */
+  private resolveMetaPath(meta: Record<string, unknown>, path: string): unknown {
+    const segments = path.split('.');
+    let current: unknown = meta;
+
+    for (const segment of segments) {
+      if (current === null || current === undefined || typeof current !== 'object') {
+        return undefined;
+      }
+
+      const obj = current as Record<string, unknown>;
+
+      // Try exact key first
+      if (segment in obj) {
+        current = obj[segment];
+      } else {
+        // Try converting snake_case to camelCase
+        const camelKey = segment.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+        if (camelKey in obj) {
+          current = obj[camelKey];
+        } else {
+          return undefined;
+        }
+      }
+    }
+
+    return current;
   }
 
   private escapeRegex(string: string): string {

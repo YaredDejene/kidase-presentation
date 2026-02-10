@@ -4,6 +4,7 @@ import { Presentation, LanguageMap } from '../domain/entities/Presentation';
 import { Slide, SlideBlock, SlideTitle, SlideFooter } from '../domain/entities/Slide';
 import { Variable } from '../domain/entities/Variable';
 import { Gitsawe } from '../domain/entities/Gitsawe';
+import { Verse } from '../domain/entities/Verse';
 import { placeholderService } from './PlaceholderService';
 
 interface ImportMetadata {
@@ -51,8 +52,13 @@ interface ImportedSlideRow {
   FooterText_Lang4?: string;
   // Notes
   Notes?: string;
+  // Layout override
+  LayoutOverride?: string;
   // Display rule (JSON when clause for conditional visibility)
   DisplayRule?: string;
+  // Dynamic slide flag
+  IsDymanic?: string;
+  IsDynamic?: string;
 }
 
 interface ImportedGitsaweRow {
@@ -68,6 +74,19 @@ interface ImportedGitsaweRow {
   GitsaweType?: string;
   Priority?: number;
   SelectionRule?: string;
+}
+
+interface ImportedVerseRow {
+  LineId?: string;
+  SegmentId?: string;
+  Title_Lang1?: string;
+  Title_Lang2?: string;
+  Title_Lang3?: string;
+  Title_Lang4?: string;
+  Text_Lang1?: string;
+  Text_Lang2?: string;
+  Text_Lang3?: string;
+  Text_Lang4?: string;
 }
 
 interface ImportedVariableRow {
@@ -95,6 +114,7 @@ export interface ImportResult {
   variables: Omit<Variable, 'id'>[];
   displayRules: ImportedDisplayRule[];
   gitsawes: ImportedGitsawe[];
+  verses: Omit<Verse, 'id' | 'createdAt'>[];
   warnings: string[];
 }
 
@@ -204,7 +224,19 @@ export class ExcelImportService {
       console.log('[Import] No Gitsawe sheet found');
     }
 
-    return { presentation, slides, variables, displayRules, gitsawes, warnings };
+    // Read Verses sheet (optional)
+    const versesSheet =
+      workbook.Sheets['Verses'] || workbook.Sheets['verses'];
+
+    let verses: Omit<Verse, 'id' | 'createdAt'>[] = [];
+    if (versesSheet) {
+      verses = this.parseVersesSheet(versesSheet);
+      console.log('[Import] Parsed Verse records:', verses.length);
+    } else {
+      console.log('[Import] No Verses sheet found');
+    }
+
+    return { presentation, slides, variables, displayRules, gitsawes, verses, warnings };
   }
 
   private parseMetadata(sheet: XLSX.WorkSheet): ImportMetadata {
@@ -298,6 +330,11 @@ export class ExcelImportService {
         }
       }
 
+      const isDynamicRaw = row.IsDymanic || row.IsDynamic;
+      const isDynamic = isDynamicRaw
+        ? ['yes', 'true', '1'].includes(isDynamicRaw.trim().toLowerCase())
+        : false;
+
       return {
         presentationId: '', // Will be set after presentation is created
         slideOrder: index + 1,
@@ -307,6 +344,7 @@ export class ExcelImportService {
         footerJson,
         notes: row.Notes,
         isDisabled: false,
+        isDynamic,
       };
     });
   }
@@ -405,6 +443,35 @@ export class ExcelImportService {
 
       results.push({ gitsawe, selectionRule });
     });
+
+    return results;
+  }
+
+  private parseVersesSheet(sheet: XLSX.WorkSheet): Omit<Verse, 'id' | 'createdAt'>[] {
+    const rows = XLSX.utils.sheet_to_json<ImportedVerseRow>(sheet);
+    const results: Omit<Verse, 'id' | 'createdAt'>[] = [];
+
+    let orderCounter = 0;
+
+    for (const row of rows) {
+      const segmentId = row.SegmentId?.trim();
+      if (!segmentId) continue;
+
+      orderCounter++;
+
+      results.push({
+        segmentId,
+        verseOrder: orderCounter,
+        titleLang1: row.Title_Lang1?.trim() || undefined,
+        titleLang2: row.Title_Lang2?.trim() || undefined,
+        titleLang3: row.Title_Lang3?.trim() || undefined,
+        titleLang4: row.Title_Lang4?.trim() || undefined,
+        textLang1: row.Text_Lang1?.trim() || undefined,
+        textLang2: row.Text_Lang2?.trim() || undefined,
+        textLang3: row.Text_Lang3?.trim() || undefined,
+        textLang4: row.Text_Lang4?.trim() || undefined,
+      });
+    }
 
     return results;
   }

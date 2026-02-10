@@ -12,6 +12,7 @@ import {
   appSettingsRepository,
   ruleRepository,
   gitsaweRepository,
+  verseRepository,
 } from './repositories';
 import { Template, createDefaultTemplate } from './domain/entities/Template';
 import { Presentation } from './domain/entities/Presentation';
@@ -33,6 +34,7 @@ function App() {
     currentVariables,
     isPresenting,
     ruleFilteredSlideIds,
+    ruleContextMeta,
     setCurrentPresentation,
     setCurrentSlides,
     setCurrentTemplate,
@@ -190,6 +192,16 @@ function App() {
         }
       }
 
+      // Import Verse records (reference data — clear and replace)
+      if (result.verses.length > 0) {
+        const existingVerses = await verseRepository.getAll();
+        for (const existing of existingVerses) {
+          await verseRepository.delete(existing.id);
+        }
+
+        await verseRepository.createMany(result.verses);
+      }
+
       // Refresh and load the new presentation
       setPresentations(await presentationRepository.getAll());
       await loadPresentation(presentation.id);
@@ -250,7 +262,8 @@ function App() {
         (current, total) => {
           const pct = Math.round((current / total) * 100);
           progress.update(pct, `Exporting slide ${current}/${total}...`);
-        }
+        },
+        ruleContextMeta
       );
 
       // Convert blob to array buffer and write to file

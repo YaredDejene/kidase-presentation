@@ -13,6 +13,7 @@ export function useRules() {
     appSettings,
     ruleEvaluationDate,
     setRuleFilteredSlideIds,
+    setRuleContextMeta,
   } = useAppStore();
 
   const [rules, setRules] = useState<RuleDefinition[]>([]);
@@ -128,6 +129,9 @@ export function useRules() {
       console.log('[Gitsawe] Selected:', context.meta.gitsawe);
     }
 
+    // Store meta in app store for placeholder resolution
+    setRuleContextMeta(context.meta);
+
     const results: EvaluationResult[] = [];
     const hiddenSlideIds = new Set<string>();
 
@@ -197,7 +201,7 @@ export function useRules() {
     }
 
     return results;
-  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, setRuleFilteredSlideIds]);
+  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, setRuleFilteredSlideIds, setRuleContextMeta]);
 
   // Validate a rule JSON string
   const validateRule = useCallback((ruleJson: string) => {

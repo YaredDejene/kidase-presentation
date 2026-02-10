@@ -12,6 +12,7 @@ export const SlideEditor: React.FC = () => {
     currentPresentation,
     currentVariables,
     ruleFilteredSlideIds,
+    ruleContextMeta,
   } = useAppStore();
 
   const {
@@ -185,6 +186,7 @@ export const SlideEditor: React.FC = () => {
             languageMap={currentPresentation.languageMap}
             languageSettings={currentPresentation.languageSettings}
             isRuleHidden={ruleHiddenIds.has(selectedSlide.id)}
+            meta={ruleContextMeta}
           />
         ) : (
           <div className="editor-preview-empty">
