@@ -39,7 +39,11 @@ export const SlideEditor: React.FC = () => {
   const ruleHiddenIds = useMemo(() => {
     if (ruleFilteredSlideIds === null) return new Set<string>();
     const visibleSet = new Set(ruleFilteredSlideIds);
-    return new Set(slides.filter(s => !visibleSet.has(s.id)).map(s => s.id));
+    return new Set(slides.filter(s => {
+      // For expanded verse slides (id contains __verse_), check the parent slide ID
+      const originalId = s.id.includes('__verse_') ? s.id.split('__verse_')[0] : s.id;
+      return !visibleSet.has(originalId);
+    }).map(s => s.id));
   }, [ruleFilteredSlideIds, slides]);
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);

@@ -15,10 +15,12 @@ export function useSlides() {
     toggleSlideDisabled,
     selectSlide,
     setCurrentSlides,
+    getExpandedSlides,
   } = useAppStore();
 
-  const selectedSlide = currentSlides.find(s => s.id === selectedSlideId) || null;
-  const enabledSlides = currentSlides.filter(s => !s.isDisabled);
+  const expandedSlides = getExpandedSlides();
+  const selectedSlide = expandedSlides.find(s => s.id === selectedSlideId) || null;
+  const enabledSlides = expandedSlides.filter(s => !s.isDisabled);
 
   const createSlide = useCallback(async (
     data: Partial<Omit<Slide, 'id' | 'presentationId' | 'slideOrder'>>
@@ -127,7 +129,7 @@ export function useSlides() {
 
   return {
     // State
-    slides: currentSlides,
+    slides: expandedSlides,
     enabledSlides,
     selectedSlide,
     selectedSlideId,

@@ -40,6 +40,7 @@ function App() {
     setCurrentTemplate,
     setCurrentVariables,
     setAppSettings,
+    setVerses,
     startPresentation,
   } = useAppStore();
 
@@ -83,6 +84,10 @@ function App() {
           loadedTemplates = [...loadedTemplates, defaultTemplate];
         }
         setTemplates(loadedTemplates);
+
+        // Load reference data (verses)
+        const loadedVerses = await verseRepository.getAll();
+        setVerses(loadedVerses);
 
         // Load all presentations
         const loadedPresentations = await presentationRepository.getAll();
@@ -201,6 +206,9 @@ function App() {
 
         await verseRepository.createMany(result.verses);
       }
+
+      // Refresh verses in store after import
+      setVerses(await verseRepository.getAll());
 
       // Refresh and load the new presentation
       setPresentations(await presentationRepository.getAll());

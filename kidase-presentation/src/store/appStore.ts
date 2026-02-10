@@ -5,6 +5,8 @@ import { Slide } from '../domain/entities/Slide';
 import { Template } from '../domain/entities/Template';
 import { Variable } from '../domain/entities/Variable';
 import { AppSettings, defaultAppSettings } from '../domain/entities/AppSettings';
+import { Verse } from '../domain/entities/Verse';
+import { placeholderService } from '../services/PlaceholderService';
 
 interface AppState {
   // Current presentation data
@@ -12,6 +14,9 @@ interface AppState {
   currentSlides: Slide[];
   currentTemplate: Template | null;
   currentVariables: Variable[];
+
+  // Reference data
+  verses: Verse[];
 
   // App settings
   appSettings: AppSettings;
@@ -38,6 +43,7 @@ interface AppState {
   setCurrentSlides: (slides: Slide[]) => void;
   setCurrentTemplate: (template: Template | null) => void;
   setCurrentVariables: (variables: Variable[]) => void;
+  setVerses: (verses: Verse[]) => void;
   setAppSettings: (settings: AppSettings) => void;
   setRuleFilteredSlideIds: (ids: string[] | null) => void;
   setRuleEvaluationDate: (date: string | null) => void;
@@ -79,7 +85,9 @@ interface AppState {
   removeVariable: (id: string) => void;
 
   // Computed getters
+  expandDynamicSlides: (slides: Slide[]) => Slide[];
   getEnabledSlides: () => Slide[];
+  getExpandedSlides: () => Slide[];
   getCurrentSlide: () => Slide | null;
   getSlideCount: () => number;
   getEnabledSlideCount: () => number;
@@ -92,6 +100,7 @@ export const useAppStore = create<AppState>()(
     currentSlides: [],
     currentTemplate: null,
     currentVariables: [],
+    verses: [],
     appSettings: defaultAppSettings,
     ruleFilteredSlideIds: null,
     ruleEvaluationDate: null,
@@ -108,6 +117,7 @@ export const useAppStore = create<AppState>()(
     setCurrentSlides: (slides) => set({ currentSlides: slides }),
     setCurrentTemplate: (template) => set({ currentTemplate: template }),
     setCurrentVariables: (variables) => set({ currentVariables: variables }),
+    setVerses: (verses) => set({ verses }),
     setAppSettings: (settings) => set({ appSettings: settings }),
     setRuleFilteredSlideIds: (ids) => set({ ruleFilteredSlideIds: ids }),
     setRuleEvaluationDate: (date) => set({ ruleEvaluationDate: date }),
@@ -246,13 +256,67 @@ export const useAppStore = create<AppState>()(
     },
 
     // Computed getters
+    expandDynamicSlides: (slides: Slide[]) => {
+      const { verses, ruleContextMeta } = get();
+      if (verses.length === 0) return slides;
+
+      const expanded: Slide[] = [];
+      for (const slide of slides) {
+        if (slide.isDynamic && slide.lineId) {
+          // Resolve @meta.X.Y placeholder to get the actual segmentId
+          let segmentId = slide.lineId;
+          if (segmentId.startsWith('@meta.') && ruleContextMeta) {
+            segmentId = placeholderService.resolveMetaPlaceholder(segmentId, ruleContextMeta) ?? segmentId;
+          }
+
+          const matchingVerses = verses
+            .filter(v => v.segmentId === segmentId)
+            .sort((a, b) => a.verseOrder - b.verseOrder);
+
+          for (const verse of matchingVerses) {
+            expanded.push({
+              ...slide,
+              id: `${slide.id}__verse_${verse.id}`,
+              titleJson: (verse.titleLang1 || verse.titleLang2 || verse.titleLang3 || verse.titleLang4)
+                ? {
+                    Lang1: verse.titleLang1,
+                    Lang2: verse.titleLang2,
+                    Lang3: verse.titleLang3,
+                    Lang4: verse.titleLang4,
+                  }
+                : slide.titleJson,
+              blocksJson: [{
+                Lang1: verse.textLang1,
+                Lang2: verse.textLang2,
+                Lang3: verse.textLang3,
+                Lang4: verse.textLang4,
+              }],
+            });
+          }
+
+          // If no verses matched, keep the original slide
+          if (matchingVerses.length === 0) {
+            expanded.push(slide);
+          }
+        } else {
+          expanded.push(slide);
+        }
+      }
+      return expanded;
+    },
+
     getEnabledSlides: () => {
       const { currentSlides, ruleFilteredSlideIds, isPresenting } = get();
       let slides = currentSlides.filter(s => !s.isDisabled);
       if (isPresenting && ruleFilteredSlideIds !== null) {
         slides = slides.filter(s => ruleFilteredSlideIds.includes(s.id));
       }
-      return slides;
+      return get().expandDynamicSlides(slides);
+    },
+
+    getExpandedSlides: () => {
+      const { currentSlides } = get();
+      return get().expandDynamicSlides(currentSlides);
     },
 
     getCurrentSlide: () => {

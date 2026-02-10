@@ -136,6 +136,17 @@ export class PlaceholderService {
   }
 
   /**
+   * Resolve a @meta.X.Y placeholder string against the meta context.
+   * Returns the resolved string value, or undefined if not found.
+   */
+  resolveMetaPlaceholder(placeholder: string, meta: Record<string, unknown>): string | undefined {
+    if (!placeholder.startsWith('@meta.')) return undefined;
+    const path = placeholder.slice(6); // strip "@meta."
+    const value = this.resolveMetaPath(meta, path);
+    return value !== undefined ? String(value) : undefined;
+  }
+
+  /**
    * Resolve a dot-separated path from the meta context.
    * Supports both camelCase and snake_case keys (auto-converts snake_case to camelCase).
    */
