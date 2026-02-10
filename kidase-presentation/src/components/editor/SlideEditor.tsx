@@ -142,6 +142,7 @@ export const SlideEditor: React.FC = () => {
             <tbody>
               {slides.map((slide, index) => {
                 const isRuleHidden = ruleHiddenIds.has(slide.id);
+                const isVerse = slide.id.includes('__verse_');
                 return (
                   <SlideRow
                     key={slide.id}
@@ -149,6 +150,7 @@ export const SlideEditor: React.FC = () => {
                     index={index}
                     isSelected={slide.id === selectedSlideId}
                     isRuleHidden={isRuleHidden}
+                    isVerseSlide={isVerse}
                     languageMap={currentPresentation.languageMap}
                     onSelect={() => {
                       if (!isRuleHidden) selectSlide(slide.id);

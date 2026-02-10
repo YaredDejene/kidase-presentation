@@ -265,8 +265,17 @@ export const useAppStore = create<AppState>()(
         if (slide.isDynamic && slide.lineId) {
           // Resolve @meta.X.Y placeholder to get the actual segmentId
           let segmentId = slide.lineId;
-          if (segmentId.startsWith('@meta.') && ruleContextMeta) {
-            segmentId = placeholderService.resolveMetaPlaceholder(segmentId, ruleContextMeta) ?? segmentId;
+          if (segmentId.startsWith('@meta.')) {
+            if (!ruleContextMeta) {
+              console.warn(`[Dynamic Slide] Cannot resolve "${segmentId}" — rule context meta not available yet`);
+            } else {
+              const resolved = placeholderService.resolveMetaPlaceholder(segmentId, ruleContextMeta);
+              if (resolved === undefined) {
+                console.warn(`[Dynamic Slide] Failed to resolve "${segmentId}" from meta context`);
+              } else {
+                segmentId = resolved;
+              }
+            }
           }
 
           const matchingVerses = verses
@@ -294,8 +303,9 @@ export const useAppStore = create<AppState>()(
             });
           }
 
-          // If no verses matched, keep the original slide
+          // If no verses matched, keep the original slide as fallback
           if (matchingVerses.length === 0) {
+            console.warn(`[Dynamic Slide] No verses found for segmentId="${segmentId}" (lineId="${slide.lineId}")`);
             expanded.push(slide);
           }
         } else {

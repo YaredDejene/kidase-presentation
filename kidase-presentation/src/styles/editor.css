@@ -145,6 +145,21 @@
   background-color: #2a4a2a;
 }
 
+.slide-row-verse {
+  border-left: 3px solid #6a5acd;
+  cursor: default;
+}
+
+.slide-row-verse .slide-content-preview {
+  color: #a0a0d0;
+}
+
+.slide-order-badge-verse {
+  background-color: #3a2a6a;
+  color: #9a8acd;
+  font-size: 14px;
+}
+
 .slide-row td {
   padding: 12px 15px;
   vertical-align: middle;

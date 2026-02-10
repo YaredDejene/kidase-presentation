@@ -7,6 +7,7 @@ interface SlideRowProps {
   index: number;
   isSelected: boolean;
   isRuleHidden?: boolean;
+  isVerseSlide?: boolean;
   languageMap: LanguageMap;
   onSelect: () => void;
   onToggleDisable: () => void;
@@ -22,6 +23,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
   index,
   isSelected,
   isRuleHidden,
+  isVerseSlide,
   languageMap: _languageMap,
   onSelect,
   onToggleDisable,
@@ -80,10 +82,10 @@ export const SlideRow: React.FC<SlideRowProps> = ({
 
   return (
     <tr
-      draggable
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
+      draggable={!isVerseSlide}
+      onDragStart={isVerseSlide ? undefined : onDragStart}
+      onDragOver={isVerseSlide ? undefined : onDragOver}
+      onDragEnd={isVerseSlide ? undefined : onDragEnd}
       onClick={onSelect}
       className={`
         slide-row
@@ -91,10 +93,13 @@ export const SlideRow: React.FC<SlideRowProps> = ({
         ${slide.isDisabled ? 'slide-row-disabled' : ''}
         ${isRuleHidden ? 'slide-row-rule-hidden' : ''}
         ${isDragging ? 'slide-row-dragging' : ''}
+        ${isVerseSlide ? 'slide-row-verse' : ''}
       `}
     >
       <td className="col-order">
-        <span className="slide-order-badge">{index + 1}</span>
+        <span className={`slide-order-badge ${isVerseSlide ? 'slide-order-badge-verse' : ''}`}>
+          {index + 1}
+        </span>
       </td>
 
       <td className="col-content">
@@ -114,30 +119,32 @@ export const SlideRow: React.FC<SlideRowProps> = ({
       </td>
 
       <td className="col-actions">
-        <div className="slide-actions-menu" ref={menuRef}>
-          <button
-            onClick={handleMenuClick}
-            className="slide-menu-btn"
-            title="Actions"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <circle cx="8" cy="3" r="1.5" />
-              <circle cx="8" cy="8" r="1.5" />
-              <circle cx="8" cy="13" r="1.5" />
-            </svg>
-          </button>
+        {isVerseSlide ? null : (
+          <div className="slide-actions-menu" ref={menuRef}>
+            <button
+              onClick={handleMenuClick}
+              className="slide-menu-btn"
+              title="Actions"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="8" cy="3" r="1.5" />
+                <circle cx="8" cy="8" r="1.5" />
+                <circle cx="8" cy="13" r="1.5" />
+              </svg>
+            </button>
 
-          {showMenu && (
-            <div className="slide-dropdown-menu">
-              <button onClick={handleToggle} className="slide-dropdown-item">
-                {slide.isDisabled ? 'Enable Slide' : 'Disable Slide'}
-              </button>
-              <button onClick={handleDelete} className="slide-dropdown-item slide-dropdown-item-danger">
-                Delete Slide
-              </button>
-            </div>
-          )}
-        </div>
+            {showMenu && (
+              <div className="slide-dropdown-menu">
+                <button onClick={handleToggle} className="slide-dropdown-item">
+                  {slide.isDisabled ? 'Enable Slide' : 'Disable Slide'}
+                </button>
+                <button onClick={handleDelete} className="slide-dropdown-item slide-dropdown-item-danger">
+                  Delete Slide
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </td>
     </tr>
   );

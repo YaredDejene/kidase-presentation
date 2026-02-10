@@ -1,13 +1,25 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAppStore } from '../store/appStore';
 import { slideRepository } from '../repositories';
 import { Slide, SlideBlock, SlideTitle } from '../domain/entities/Slide';
+
+/** Check if a slide ID is a synthetic verse expansion */
+function isVerseSlide(id: string): boolean {
+  return id.includes('__verse_');
+}
+
+/** Extract the parent slide ID from a synthetic verse slide ID */
+function getParentSlideId(id: string): string {
+  return id.split('__verse_')[0];
+}
 
 export function useSlides() {
   const {
     currentSlides,
     currentPresentation,
     selectedSlideId,
+    verses,
+    ruleContextMeta,
     updateSlide,
     addSlide,
     removeSlide,
@@ -18,7 +30,11 @@ export function useSlides() {
     getExpandedSlides,
   } = useAppStore();
 
-  const expandedSlides = getExpandedSlides();
+  const expandedSlides = useMemo(
+    () => getExpandedSlides(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentSlides, verses, ruleContextMeta]
+  );
   const selectedSlide = expandedSlides.find(s => s.id === selectedSlideId) || null;
   const enabledSlides = expandedSlides.filter(s => !s.isDisabled);
 
@@ -66,13 +82,16 @@ export function useSlides() {
   }, [updateSlide]);
 
   const deleteSlide = useCallback(async (id: string): Promise<boolean> => {
+    // Verse slides can't be deleted individually — delete the parent dynamic slide
+    const baseId = isVerseSlide(id) ? getParentSlideId(id) : id;
+
     try {
-      await slideRepository.delete(id);
-      removeSlide(id);
+      await slideRepository.delete(baseId);
+      removeSlide(baseId);
 
       // Update order in database
       const remainingSlides = currentSlides
-        .filter(s => s.id !== id)
+        .filter(s => s.id !== baseId)
         .map((s, i) => ({ id: s.id, slideOrder: i + 1 }));
 
       if (remainingSlides.length > 0) {
@@ -87,8 +106,20 @@ export function useSlides() {
   }, [currentSlides, removeSlide]);
 
   const moveSlide = useCallback(async (fromIndex: number, toIndex: number): Promise<boolean> => {
+    // Indices come from the expanded slides list; map to base currentSlides indices
+    const fromSlide = expandedSlides[fromIndex];
+    const toSlide = expandedSlides[toIndex];
+    if (!fromSlide || !toSlide) return false;
+
+    // Don't allow moving verse slides
+    if (isVerseSlide(fromSlide.id) || isVerseSlide(toSlide.id)) return false;
+
+    const baseFromIndex = currentSlides.findIndex(s => s.id === fromSlide.id);
+    const baseToIndex = currentSlides.findIndex(s => s.id === toSlide.id);
+    if (baseFromIndex === -1 || baseToIndex === -1) return false;
+
     try {
-      reorderSlides(fromIndex, toIndex);
+      reorderSlides(baseFromIndex, baseToIndex);
 
       // Get updated slides and persist order
       const updatedSlides = useAppStore.getState().currentSlides;
@@ -103,12 +134,15 @@ export function useSlides() {
       console.error('Failed to move slide:', err);
       return false;
     }
-  }, [reorderSlides]);
+  }, [reorderSlides, expandedSlides, currentSlides]);
 
   const toggleDisabled = useCallback(async (id: string): Promise<boolean> => {
+    // Verse slides — toggle the parent dynamic slide
+    const baseId = isVerseSlide(id) ? getParentSlideId(id) : id;
+
     try {
-      await slideRepository.toggleDisabled(id);
-      toggleSlideDisabled(id);
+      await slideRepository.toggleDisabled(baseId);
+      toggleSlideDisabled(baseId);
       return true;
     } catch (err) {
       console.error('Failed to toggle slide:', err);
