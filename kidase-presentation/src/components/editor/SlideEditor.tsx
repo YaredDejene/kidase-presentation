@@ -220,7 +220,46 @@ export const SlideEditor: React.FC = () => {
             )}
           </div>
         )}
+
+        {ruleContextMeta?.gitsawe != null && (
+          <GitsaweContext gitsawe={ruleContextMeta.gitsawe as Record<string, unknown>} />
+        )}
       </div>
     </div>
   );
 };
+
+const gitsaweLabels: Record<string, string> = {
+  lineId: 'Line ID',
+  kidaseType: 'Kidase Type',
+  gitsaweType: 'Gitsawe Type',
+  messageStPaul: 'St. Paul',
+  messageApostle: 'Apostle',
+  messageBookOfActs: 'Book of Acts',
+  messageApostleEvangelist: 'Apostle Evangelist',
+  misbak: 'Misbak',
+  wengel: 'Wengel',
+  evangelist: 'Evangelist',
+};
+
+function GitsaweContext({ gitsawe }: { gitsawe: Record<string, unknown> }) {
+  const entries = Object.entries(gitsaweLabels)
+    .map(([key, label]) => ({ label, value: gitsawe[key] }))
+    .filter((e): e is { label: string; value: string | number } => e.value != null && e.value !== '');
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="editor-slide-details editor-context-section">
+      <div className="editor-context-header">Current Gitsawe</div>
+      <div className="editor-context-grid">
+        {entries.map(({ label, value }) => (
+          <div className="editor-detail-row" key={label}>
+            <span className="editor-detail-label">{label}:</span>
+            <span>{String(value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

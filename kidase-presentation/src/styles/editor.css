@@ -385,6 +385,32 @@
   font-style: italic;
 }
 
+.editor-context-section {
+  margin-top: 10px;
+}
+
+.editor-context-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #333;
+}
+
+.editor-context-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  max-width: 600px;
+  gap: 4px 20px;
+}
+
+.editor-context-grid .editor-detail-row {
+  margin-bottom: 4px;
+}
+
 /* Template Selector */
 
 .template-selector {
