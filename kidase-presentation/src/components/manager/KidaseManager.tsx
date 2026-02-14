@@ -14,6 +14,7 @@ import { useAppStore } from '../../store/appStore';
 import { toast } from '../../store/toastStore';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Template } from '../../domain/entities/Template';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import '../../styles/manager.css';
 
 interface PresentationRow {
@@ -26,6 +27,7 @@ export const KidaseManager: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   const {
     currentPresentation,
@@ -81,9 +83,10 @@ export const KidaseManager: React.FC = () => {
     }
   }, [setCurrentPresentation, setCurrentSlides, setCurrentTemplate, setCurrentVariables, setCurrentView]);
 
-  const handleDelete = useCallback(async (id: string, name: string) => {
-    const confirmed = window.confirm(`Delete "${name}" and all its slides?`);
-    if (!confirmed) return;
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!confirmDelete) return;
+    const { id, name } = confirmDelete;
+    setConfirmDelete(null);
 
     setDeletingId(id);
     try {
@@ -100,7 +103,7 @@ export const KidaseManager: React.FC = () => {
       toast.error('Failed to delete presentation');
     }
     setDeletingId(null);
-  }, [currentPresentation, clearPresentationData, loadPresentations]);
+  }, [confirmDelete, currentPresentation, clearPresentationData, loadPresentations]);
 
   const handleImportExcel = useCallback(async () => {
     const filePath = await open({
@@ -239,10 +242,17 @@ export const KidaseManager: React.FC = () => {
                       disabled={deletingId === p.id}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(p.id, p.name);
+                        setConfirmDelete({ id: p.id, name: p.name });
                       }}
                     >
-                      {deletingId === p.id ? '...' : '×'}
+                      {deletingId === p.id ? '...' : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          <line x1="10" y1="11" x2="10" y2="17"/>
+                          <line x1="14" y1="11" x2="14" y2="17"/>
+                        </svg>
+                      )}
                     </button>
                   </td>
                 </tr>
@@ -251,6 +261,14 @@ export const KidaseManager: React.FC = () => {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Delete Presentation"
+        message={confirmDelete ? `Delete "${confirmDelete.name}" and all its slides? This cannot be undone.` : ''}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 };

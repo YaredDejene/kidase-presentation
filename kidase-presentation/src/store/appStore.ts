@@ -35,7 +35,7 @@ interface AppState {
   ruleContextMeta: Record<string, unknown> | null; // meta context from last rule evaluation
 
   // Navigation state
-  currentView: 'manager' | 'editor';
+  currentView: 'manager' | 'editor' | 'gitsawe' | 'verses' | 'templates';
 
   // Loading state
   isLoading: boolean;
@@ -51,7 +51,7 @@ interface AppState {
   setRuleFilteredSlideIds: (ids: string[] | null) => void;
   setRuleEvaluationDate: (date: string | null) => void;
   setRuleContextMeta: (meta: Record<string, unknown> | null) => void;
-  setCurrentView: (view: 'manager' | 'editor') => void;
+  setCurrentView: (view: 'manager' | 'editor' | 'gitsawe' | 'verses' | 'templates') => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 

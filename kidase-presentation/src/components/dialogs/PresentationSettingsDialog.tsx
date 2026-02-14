@@ -2,16 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Variable } from '../../domain/entities/Variable';
 import { Presentation, LanguageMap, LanguageSettings, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '../../domain/entities/Presentation';
-import { Template, TemplateDefinition } from '../../domain/entities/Template';
+import { Template } from '../../domain/entities/Template';
 import { Slide } from '../../domain/entities/Slide';
-import { variableRepository, presentationRepository, templateRepository } from '../../repositories';
-import { presentationService } from '../../services/PresentationService';
+import { variableRepository, presentationRepository } from '../../repositories';
 import { placeholderService } from '../../services/PlaceholderService';
 import { useAppStore } from '../../store/appStore';
 import { toast } from '../../store/toastStore';
 import '../../styles/dialogs.css';
 
-type TabId = 'general' | 'languages' | 'template' | 'placeholders' | 'danger';
+type TabId = 'general' | 'languages' | 'placeholders';
 
 interface PresentationSettingsDialogProps {
   isOpen: boolean;
@@ -24,7 +23,6 @@ interface PresentationSettingsDialogProps {
   onPresentationChange: (presentation: Presentation) => void;
   onVariablesChange: (variables: Variable[]) => void;
   onTemplateChange: (templateId: string) => void;
-  onDelete?: () => void;
 }
 
 interface LanguageConfig {
@@ -33,17 +31,6 @@ interface LanguageConfig {
   enabled: boolean;
   order: number;
 }
-
-const FONT_FAMILIES = [
-  'Nyala, serif',
-  'Arial, sans-serif',
-  'Times New Roman, serif',
-  'Georgia, serif',
-  'Verdana, sans-serif',
-  'Helvetica, sans-serif',
-];
-
-const ALIGNMENTS = ['left', 'center', 'right'] as const;
 
 export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProps> = ({
   isOpen,
@@ -56,7 +43,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   onPresentationChange,
   onVariablesChange,
   onTemplateChange,
-  onDelete,
 }) => {
   const { ruleEvaluationDate, setRuleEvaluationDate } = useAppStore();
 
@@ -71,9 +57,8 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   const [languages, setLanguages] = useState<LanguageConfig[]>([]);
   const [originalNames, setOriginalNames] = useState<Record<string, string>>({});
 
-  // Template tab state
+  // Template selector state
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [templateDef, setTemplateDef] = useState<TemplateDefinition | null>(null);
 
   // Placeholders tab state
   const [localVariables, setLocalVariables] = useState<Variable[]>([]);
@@ -118,7 +103,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
 
       // Template
       setSelectedTemplateId(presentation.templateId);
-      setTemplateDef(JSON.parse(JSON.stringify(template.definitionJson)));
 
       // Placeholders - detect from slides
       const detected = new Set<string>();
@@ -200,33 +184,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     setOriginalNames(prev => ({ ...prev, [slot]: newName }));
   };
 
-  // Template editing handlers
-  const updateTemplateField = (path: string[], value: any) => {
-    if (!templateDef) return;
-
-    setTemplateDef(prev => {
-      if (!prev) return prev;
-      const newDef = JSON.parse(JSON.stringify(prev));
-      let obj: any = newDef;
-      for (let i = 0; i < path.length - 1; i++) {
-        obj = obj[path[i]];
-      }
-      obj[path[path.length - 1]] = value;
-      return newDef;
-    });
-  };
-
-  const updateLanguageStyle = (langIndex: number, field: string, value: any) => {
-    if (!templateDef) return;
-
-    setTemplateDef(prev => {
-      if (!prev) return prev;
-      const newDef = JSON.parse(JSON.stringify(prev));
-      newDef.languages[langIndex][field] = value;
-      return newDef;
-    });
-  };
-
   const handleVariableChange = (name: string, value: string, langSlot?: LangSlot) => {
     setLocalVariables(prev =>
       prev.map(v => {
@@ -270,13 +227,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
       });
       onPresentationChange(updatedPresentation);
 
-      // Update template if style settings were modified (not language order)
-      if (templateDef && selectedTemplateId === template.id) {
-        await templateRepository.update(template.id, {
-          definitionJson: templateDef,
-        });
-      }
-
       // Update/create variables
       const savedVariables: Variable[] = [];
       for (const variable of localVariables) {
@@ -317,31 +267,10 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     setIsSaving(false);
   };
 
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${presentation.name}"? This will permanently remove the presentation and all its slides, variables, and rules.`)) {
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      await presentationService.deletePresentation(presentation.id);
-      onDelete?.();
-      onClose();
-    } catch (error) {
-      console.error('Failed to delete presentation:', error);
-      toast.error('Failed to delete presentation');
-    }
-    setIsDeleting(false);
-  };
-
   const tabs: { id: TabId; label: string }[] = [
     { id: 'general', label: 'General' },
     { id: 'languages', label: 'Languages' },
-    { id: 'template', label: 'Template' },
     { id: 'placeholders', label: 'Placeholders' },
-    { id: 'danger', label: 'Danger Zone' },
   ];
 
   const sortedLanguages = [...languages].sort((a, b) => a.order - b.order);
@@ -412,6 +341,19 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
               <p style={{ margin: '6px 0 0', color: '#888', fontSize: '12px' }}>
                 Set the presentation date. Display rules will evaluate against this date. Leave empty to use today's date.
               </p>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Template</label>
+              <select
+                value={selectedTemplateId}
+                onChange={e => setSelectedTemplateId(e.target.value)}
+                className="form-select"
+              >
+                {templates.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">
@@ -490,203 +432,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
           </div>
         )}
 
-        {/* Template Tab */}
-        {activeTab === 'template' && templateDef && (
-          <div className="tab-content">
-            <div className="form-group">
-              <label className="form-label">Select Template</label>
-              <select
-                value={selectedTemplateId}
-                onChange={e => {
-                  setSelectedTemplateId(e.target.value);
-                  const newTemplate = templates.find(t => t.id === e.target.value);
-                  if (newTemplate) {
-                    setTemplateDef(JSON.parse(JSON.stringify(newTemplate.definitionJson)));
-                  }
-                }}
-                className="form-select"
-              >
-                {templates.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Background */}
-            <div className="template-section">
-              <div className="template-section-header">Background</div>
-              <div className="template-row">
-                <span className="template-row-label">Color</span>
-                <input
-                  type="color"
-                  value={templateDef.background.color}
-                  onChange={e => updateTemplateField(['background', 'color'], e.target.value)}
-                  className="template-color-input"
-                />
-                <span style={{ color: '#888', fontSize: '13px' }}>{templateDef.background.color}</span>
-              </div>
-            </div>
-
-            {/* Title Settings */}
-            <div className="template-section">
-              <div className="template-section-header">Title</div>
-              <div className="template-lang-grid">
-                <div className="template-field">
-                  <label className="template-field-label">Font Size</label>
-                  <input
-                    type="number"
-                    value={templateDef.title.fontSize}
-                    onChange={e => updateTemplateField(['title', 'fontSize'], parseInt(e.target.value))}
-                    className="template-field-input"
-                  />
-                </div>
-                <div className="template-field">
-                  <label className="template-field-label">Color</label>
-                  <input
-                    type="color"
-                    value={templateDef.title.color}
-                    onChange={e => updateTemplateField(['title', 'color'], e.target.value)}
-                    className="template-color-input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Language Styles */}
-            <div className="template-section">
-              <div className="template-section-header">Language Styles</div>
-              {templateDef.languages.map((lang, index) => {
-                // Get the user-friendly name from languages state
-                const langConfig = languages.find(l => l.slot === lang.slot);
-                const displayName = langConfig?.name || lang.slot;
-                return (
-                <div key={lang.slot} className="template-lang-editor">
-                  <div className="template-lang-header">
-                    <span
-                      className="template-lang-color"
-                      style={{ backgroundColor: lang.color }}
-                    />
-                    <span className="template-lang-title">{displayName}</span>
-                  </div>
-                  <div className="template-lang-grid">
-                    <div className="template-field">
-                      <label className="template-field-label">Font Size</label>
-                      <input
-                        type="number"
-                        value={lang.fontSize}
-                        onChange={e => updateLanguageStyle(index, 'fontSize', parseInt(e.target.value))}
-                        className="template-field-input"
-                      />
-                    </div>
-                    <div className="template-field">
-                      <label className="template-field-label">Color</label>
-                      <input
-                        type="color"
-                        value={lang.color}
-                        onChange={e => updateLanguageStyle(index, 'color', e.target.value)}
-                        className="template-color-input"
-                      />
-                    </div>
-                    <div className="template-field">
-                      <label className="template-field-label">Font Family</label>
-                      <select
-                        value={lang.fontFamily}
-                        onChange={e => updateLanguageStyle(index, 'fontFamily', e.target.value)}
-                        className="template-field-input"
-                      >
-                        {FONT_FAMILIES.map(font => (
-                          <option key={font} value={font}>{font.split(',')[0]}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="template-field">
-                      <label className="template-field-label">Alignment</label>
-                      <select
-                        value={lang.alignment}
-                        onChange={e => updateLanguageStyle(index, 'alignment', e.target.value)}
-                        className="template-field-input"
-                      >
-                        {ALIGNMENTS.map(align => (
-                          <option key={align} value={align}>{align}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="template-field">
-                      <label className="template-field-label">Line Height</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={lang.lineHeight}
-                        onChange={e => updateLanguageStyle(index, 'lineHeight', parseFloat(e.target.value))}
-                        className="template-field-input"
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-              })}
-            </div>
-
-            {/* Margins */}
-            <div className="template-section">
-              <div className="template-section-header">Margins</div>
-              <div className="template-lang-grid">
-                <div className="template-field">
-                  <label className="template-field-label">Top</label>
-                  <input
-                    type="number"
-                    value={templateDef.margins.top}
-                    onChange={e => updateTemplateField(['margins', 'top'], parseInt(e.target.value))}
-                    className="template-field-input"
-                  />
-                </div>
-                <div className="template-field">
-                  <label className="template-field-label">Right</label>
-                  <input
-                    type="number"
-                    value={templateDef.margins.right}
-                    onChange={e => updateTemplateField(['margins', 'right'], parseInt(e.target.value))}
-                    className="template-field-input"
-                  />
-                </div>
-                <div className="template-field">
-                  <label className="template-field-label">Bottom</label>
-                  <input
-                    type="number"
-                    value={templateDef.margins.bottom}
-                    onChange={e => updateTemplateField(['margins', 'bottom'], parseInt(e.target.value))}
-                    className="template-field-input"
-                  />
-                </div>
-                <div className="template-field">
-                  <label className="template-field-label">Left</label>
-                  <input
-                    type="number"
-                    value={templateDef.margins.left}
-                    onChange={e => updateTemplateField(['margins', 'left'], parseInt(e.target.value))}
-                    className="template-field-input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Layout */}
-            <div className="template-section">
-              <div className="template-section-header">Layout</div>
-              <div className="template-row">
-                <span className="template-row-label">Gap between languages</span>
-                <input
-                  type="number"
-                  value={templateDef.layout.gap}
-                  onChange={e => updateTemplateField(['layout', 'gap'], parseInt(e.target.value))}
-                  className="template-number-input"
-                />
-                <span style={{ color: '#888', fontSize: '13px' }}>px</span>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Placeholders Tab */}
         {activeTab === 'placeholders' && (
           <div className="tab-content">
@@ -744,43 +489,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                 </p>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Danger Zone Tab */}
-        {activeTab === 'danger' && (
-          <div className="tab-content">
-            <div style={{
-              border: '1px solid #c53030',
-              borderRadius: '8px',
-              padding: '20px',
-              backgroundColor: 'rgba(197, 48, 48, 0.08)',
-            }}>
-              <h3 style={{ margin: '0 0 8px 0', color: '#fc8181', fontSize: '16px' }}>
-                Delete Presentation
-              </h3>
-              <p style={{ margin: '0 0 16px 0', color: '#aaa', fontSize: '14px' }}>
-                Permanently delete <strong style={{ color: '#fff' }}>{presentation.name}</strong> and
-                all its slides ({slides.length}), variables ({variables.length}), and display rules.
-                This action cannot be undone.
-              </p>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                style={{
-                  padding: '8px 20px',
-                  backgroundColor: '#c53030',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: 'white',
-                  cursor: isDeleting ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                }}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete This Presentation'}
-              </button>
-            </div>
           </div>
         )}
 

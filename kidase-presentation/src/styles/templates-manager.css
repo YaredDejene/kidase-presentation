@@ -1,0 +1,167 @@
+/* Templates Manager Page */
+
+.templates-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #888;
+}
+
+.templates-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px;
+}
+
+/* Toolbar */
+.templates-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.templates-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.templates-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.templates-count {
+  color: #888;
+  font-size: 14px;
+}
+
+.templates-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.templates-btn-create {
+  background-color: #2a4a2a;
+}
+
+.templates-btn-create:hover {
+  background-color: #3a5a3a;
+}
+
+/* Empty state */
+.templates-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #666;
+  font-size: 15px;
+  gap: 4px;
+}
+
+.templates-empty p {
+  margin: 0;
+}
+
+/* Table */
+.templates-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.templates-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.templates-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.templates-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
+  color: #888;
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.templates-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #222;
+  white-space: nowrap;
+}
+
+.templates-row {
+  transition: background-color 0.15s;
+}
+
+.templates-row:hover {
+  background-color: #1a1a2a;
+}
+
+.templates-row-clickable {
+  cursor: pointer;
+}
+
+.templates-cell-name {
+  font-weight: 500;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.templates-cell-langs {
+  color: #aaa;
+}
+
+.templates-cell-date {
+  color: #888;
+}
+
+.templates-cell-actions {
+  width: 40px;
+  text-align: center;
+}
+
+.templates-btn-delete {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #888;
+  cursor: pointer;
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.templates-btn-delete:hover {
+  background-color: #4a2a2a;
+  color: #ff6b6b;
+}
+
+.templates-btn-delete:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

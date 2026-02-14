@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAppStore } from './store/appStore';
 import { SlideEditor } from './components/editor/SlideEditor';
 import { KidaseManager } from './components/manager/KidaseManager';
+import { GitsaweManager } from './components/manager/GitsaweManager';
+import { VersesManager } from './components/manager/VersesManager';
+import { TemplatesManager } from './components/manager/TemplatesManager';
 import { PresentationView } from './components/presentation/PresentationView';
 import { PresentationSettingsDialog } from './components/dialogs/PresentationSettingsDialog';
 import { SettingsDialog } from './components/dialogs/SettingsDialog';
@@ -106,11 +109,6 @@ function App() {
     if (newTemplate) setCurrentTemplate(newTemplate);
   }, [setCurrentTemplate]);
 
-  const handleDelete = useCallback(async () => {
-    useAppStore.getState().clearPresentationData();
-    setCurrentView('manager');
-  }, [setCurrentView]);
-
   const handleExportPdf = async () => {
     if (!currentPresentation || !currentTemplate) return;
 
@@ -163,8 +161,6 @@ function App() {
     );
   }
 
-  const isEditorView = currentView === 'editor';
-
   return (
     <div className="app-container">
       {/* Header */}
@@ -188,23 +184,41 @@ function App() {
           {/* Navigation tabs */}
           <nav className="app-nav-tabs">
             <button
-              className={`app-nav-tab ${!isEditorView ? 'app-nav-tab--active' : ''}`}
+              className={`app-nav-tab ${currentView === 'manager' ? 'app-nav-tab--active' : ''}`}
               onClick={() => setCurrentView('manager')}
             >
               Kidase
             </button>
             <button
-              className={`app-nav-tab ${isEditorView ? 'app-nav-tab--active' : ''}`}
+              className={`app-nav-tab ${currentView === 'editor' ? 'app-nav-tab--active' : ''}`}
               onClick={() => setCurrentView('editor')}
               disabled={!currentPresentation}
             >
               Editor
             </button>
+            <button
+              className={`app-nav-tab ${currentView === 'gitsawe' ? 'app-nav-tab--active' : ''}`}
+              onClick={() => setCurrentView('gitsawe')}
+            >
+              Gitsawe
+            </button>
+            <button
+              className={`app-nav-tab ${currentView === 'verses' ? 'app-nav-tab--active' : ''}`}
+              onClick={() => setCurrentView('verses')}
+            >
+              Verses
+            </button>
+            <button
+              className={`app-nav-tab ${currentView === 'templates' ? 'app-nav-tab--active' : ''}`}
+              onClick={() => setCurrentView('templates')}
+            >
+              Templates
+            </button>
           </nav>
         </div>
 
         {/* Right side: Editor-specific actions (only visible in editor view) */}
-        {isEditorView && (
+        {currentView === 'editor' && (
           <div className="app-header-right">
             <button
               onClick={handleExportPdf}
@@ -237,7 +251,11 @@ function App() {
 
       {/* Main content */}
       <main className="app-main">
-        {isEditorView ? <SlideEditor /> : <KidaseManager />}
+        {currentView === 'editor' && <SlideEditor />}
+        {currentView === 'manager' && <KidaseManager />}
+        {currentView === 'gitsawe' && <GitsaweManager />}
+        {currentView === 'verses' && <VersesManager />}
+        {currentView === 'templates' && <TemplatesManager />}
       </main>
 
       {/* Presentation overlay */}
@@ -256,7 +274,6 @@ function App() {
           onPresentationChange={setCurrentPresentation}
           onVariablesChange={handleVariablesChange}
           onTemplateChange={handleTemplateChange}
-          onDelete={handleDelete}
         />
       )}
 
