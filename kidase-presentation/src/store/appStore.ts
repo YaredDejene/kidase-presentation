@@ -34,6 +34,9 @@ interface AppState {
   ruleEvaluationDate: string | null; // null = use today, ISO string = override date for rule evaluation
   ruleContextMeta: Record<string, unknown> | null; // meta context from last rule evaluation
 
+  // Navigation state
+  currentView: 'manager' | 'editor';
+
   // Loading state
   isLoading: boolean;
   error: string | null;
@@ -48,6 +51,7 @@ interface AppState {
   setRuleFilteredSlideIds: (ids: string[] | null) => void;
   setRuleEvaluationDate: (date: string | null) => void;
   setRuleContextMeta: (meta: Record<string, unknown> | null) => void;
+  setCurrentView: (view: 'manager' | 'editor') => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -109,6 +113,7 @@ export const useAppStore = create<AppState>()(
     currentSlideIndex: 0,
     isEditing: false,
     selectedSlideId: null,
+    currentView: 'manager',
     isLoading: false,
     error: null,
 
@@ -122,6 +127,7 @@ export const useAppStore = create<AppState>()(
     setRuleFilteredSlideIds: (ids) => set({ ruleFilteredSlideIds: ids }),
     setRuleEvaluationDate: (date) => set({ ruleEvaluationDate: date }),
     setRuleContextMeta: (meta) => set({ ruleContextMeta: meta }),
+    setCurrentView: (view) => set({ currentView: view }),
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
@@ -353,5 +359,6 @@ export const selectRuleEvaluationDate = (state: AppState) => state.ruleEvaluatio
 export const selectRuleContextMeta = (state: AppState) => state.ruleContextMeta;
 export const selectIsPresenting = (state: AppState) => state.isPresenting;
 export const selectCurrentSlideIndex = (state: AppState) => state.currentSlideIndex;
+export const selectCurrentView = (state: AppState) => state.currentView;
 export const selectIsLoading = (state: AppState) => state.isLoading;
 export const selectError = (state: AppState) => state.error;
