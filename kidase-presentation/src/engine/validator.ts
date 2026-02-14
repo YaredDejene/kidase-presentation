@@ -61,6 +61,12 @@ export class RuleValidator {
       return;
     }
 
+    // Check for $nthDayAfter
+    if ('$nthDayAfter' in when) {
+      this.validateNthDayAfter(when.$nthDayAfter as Record<string, unknown>, `${path}.$nthDayAfter`, issues);
+      return;
+    }
+
     const entries = Object.entries(when);
     if (entries.length === 0) {
       issues.push({ path, message: 'When clause cannot be empty', severity: 'error' });
@@ -160,6 +166,35 @@ export class RuleValidator {
     const hasOp = Object.keys(diff).some(k => COMPARISON_OPERATORS.has(k));
     if (!hasOp) {
       issues.push({ path, message: '$diff must contain a comparison operator (e.g. $lte: 7)', severity: 'error' });
+    }
+  }
+
+  private validateNthDayAfter(clause: Record<string, unknown>, path: string, issues: ValidationIssue[]): void {
+    if (!clause.from) {
+      issues.push({ path: `${path}.from`, message: '$nthDayAfter requires a "from" value', severity: 'error' });
+    }
+
+    const validDays = new Set(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+    const day = clause.day;
+    if (day === undefined || day === null) {
+      issues.push({ path: `${path}.day`, message: '$nthDayAfter requires a "day" value (Sun-Sat or 0-6)', severity: 'error' });
+    } else if (typeof day === 'string' && !validDays.has(day)) {
+      issues.push({ path: `${path}.day`, message: `Invalid day name: "${day}". Use Sun, Mon, Tue, Wed, Thu, Fri, or Sat`, severity: 'error' });
+    } else if (typeof day === 'number' && (day < 0 || day > 6 || !Number.isInteger(day))) {
+      issues.push({ path: `${path}.day`, message: 'Numeric day must be an integer 0 (Sun) through 6 (Sat)', severity: 'error' });
+    }
+
+    const nth = clause.nth;
+    if (nth === undefined || nth === null) {
+      issues.push({ path: `${path}.nth`, message: '$nthDayAfter requires an "nth" value (positive integer)', severity: 'error' });
+    } else if (typeof nth !== 'number' || nth < 1 || !Number.isInteger(nth)) {
+      issues.push({ path: `${path}.nth`, message: '"nth" must be a positive integer (1, 2, 3, ...)', severity: 'error' });
+    }
+
+    // Must have at least one comparison operator
+    const hasOp = Object.keys(clause).some(k => COMPARISON_OPERATORS.has(k));
+    if (!hasOp) {
+      issues.push({ path, message: '$nthDayAfter must contain a comparison operator (e.g. $eq: "2026-04-12")', severity: 'error' });
     }
   }
 

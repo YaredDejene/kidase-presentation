@@ -1,5 +1,5 @@
 import {
-  ASTNode, ComparisonNode, LogicalNode, DiffNode,
+  ASTNode, ComparisonNode, LogicalNode, DiffNode, NthDayAfterNode,
   NormalizedRule, RuleContext, EvaluationResult, RuleOutcome,
 } from './types';
 import { EvaluationError } from './errors';
@@ -50,6 +50,8 @@ export class RuleEvaluator {
         return this.evalLogical(node, context);
       case 'diff':
         return this.evalDiff(node, context);
+      case 'nthDayAfter':
+        return this.evalNthDayAfter(node, context);
     }
   }
 
@@ -71,6 +73,20 @@ export class RuleEvaluator {
       case '$not':
         return !this.evalNode(node.children[0], context);
     }
+  }
+
+  private evalNthDayAfter(node: NthDayAfterNode, context: RuleContext): boolean {
+    const fromRaw = this.resolver.resolveValue(node.from, context);
+    const fromDate = toDate(fromRaw);
+    if (!fromDate) return false;
+
+    const computedDate = computeNthDayAfter(fromDate, node.dayOfWeek, node.nth);
+    const computedStr = formatDateYMD(computedDate);
+
+    const ruleVal = this.resolver.resolveValue(node.value, context);
+    const compareFn = this.operators.get(node.operator);
+
+    return compareFn(computedStr, ruleVal);
   }
 
   private evalDiff(node: DiffNode, context: RuleContext): boolean {
@@ -98,6 +114,27 @@ function toDate(val: unknown): Date | null {
   }
   if (typeof val === 'number') return new Date(val);
   return null;
+}
+
+function computeNthDayAfter(from: Date, dayOfWeek: number, nth: number): Date {
+  const d = new Date(from.getTime());
+  d.setDate(d.getDate() + 1); // start from day after `from`
+  let count = 0;
+  while (count < nth) {
+    if (d.getDay() === dayOfWeek) {
+      count++;
+      if (count === nth) return d;
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return d; // unreachable if nth >= 1, but satisfies TS
+}
+
+function formatDateYMD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function calcDiff(from: Date, to: Date, unit: 'days' | 'weeks' | 'months' | 'years'): number {

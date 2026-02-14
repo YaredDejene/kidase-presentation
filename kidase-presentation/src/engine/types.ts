@@ -40,6 +40,19 @@ export interface DiffClause {
   };
 }
 
+/** Day-of-week name strings */
+export type DayOfWeekName = 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
+
+/** Nth day-after operator: { "$nthDayAfter": { from, day, nth, $op: val } } */
+export interface NthDayAfterClause {
+  $nthDayAfter: {
+    from: DSLValue;
+    day: DayOfWeekName | number;
+    nth: number;
+    [op: string]: DSLValue | string | number;
+  };
+}
+
 /** Outcome object – what happens when rule matches or doesn't */
 export interface RuleOutcome {
   visible?: boolean;
@@ -51,7 +64,7 @@ export interface RuleOutcome {
 /** A complete rule entry as stored in the DSL */
 export interface RuleEntry {
   id: string;
-  when: WhenClause | DiffClause;
+  when: WhenClause | DiffClause | NthDayAfterClause;
   then: RuleOutcome;
   otherwise?: RuleOutcome;
 }
@@ -80,7 +93,8 @@ export interface DSLExpression {
 export type ASTNode =
   | ComparisonNode
   | LogicalNode
-  | DiffNode;
+  | DiffNode
+  | NthDayAfterNode;
 
 export interface ComparisonNode {
   type: 'comparison';
@@ -100,6 +114,15 @@ export interface DiffNode {
   from: ResolvedValue;
   to: ResolvedValue;
   unit: 'days' | 'weeks' | 'months' | 'years';
+  operator: ComparisonOperator;
+  value: ResolvedValue;
+}
+
+export interface NthDayAfterNode {
+  type: 'nthDayAfter';
+  from: ResolvedValue;
+  dayOfWeek: number;  // 0=Sun, 1=Mon, ..., 6=Sat
+  nth: number;
   operator: ComparisonOperator;
   value: ResolvedValue;
 }

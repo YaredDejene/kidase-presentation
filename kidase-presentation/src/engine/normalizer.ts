@@ -1,8 +1,8 @@
 import {
-  ASTNode, ComparisonNode, LogicalNode, DiffNode,
+  ASTNode, ComparisonNode, LogicalNode, DiffNode, NthDayAfterNode,
   ResolvedValue, NormalizedRule,
   RuleEntry, WhenClause, ConditionEntry, FieldCondition,
-  ComparisonOperator, DSLValue, DSLExpression,
+  ComparisonOperator, DSLValue, DSLExpression, DayOfWeekName,
 } from './types';
 import { NormalizationError } from './errors';
 
@@ -32,6 +32,11 @@ export class RuleNormalizer {
     // Check for $diff at top level
     if ('$diff' in when) {
       return this.normalizeDiff(when.$diff as Record<string, unknown>);
+    }
+
+    // Check for $nthDayAfter at top level
+    if ('$nthDayAfter' in when) {
+      return this.normalizeNthDayAfter(when.$nthDayAfter as Record<string, unknown>);
     }
 
     const entries = Object.entries(when);
@@ -141,6 +146,57 @@ export class RuleNormalizer {
     };
   }
 
+  private normalizeNthDayAfter(clause: Record<string, unknown>): NthDayAfterNode {
+    const from = clause.from as DSLValue;
+    const day = clause.day as DayOfWeekName | number;
+    const nth = clause.nth as number;
+
+    if (!from) {
+      throw new NormalizationError('$nthDayAfter requires a "from" value');
+    }
+    if (day === undefined || day === null) {
+      throw new NormalizationError('$nthDayAfter requires a "day" value');
+    }
+    if (!nth || nth < 1) {
+      throw new NormalizationError('$nthDayAfter requires "nth" as a positive integer');
+    }
+
+    const dayOfWeek = typeof day === 'number' ? day : parseDayOfWeek(day);
+
+    // Find the comparison operator (key that's not from/day/nth)
+    let operator: ComparisonOperator | undefined;
+    let value: DSLValue | undefined;
+
+    for (const [key, val] of Object.entries(clause)) {
+      if (key !== 'from' && key !== 'day' && key !== 'nth') {
+        if (COMPARISON_OPERATORS.has(key)) {
+          operator = key as ComparisonOperator;
+          value = val as DSLValue;
+        }
+      }
+    }
+
+    if (!operator || value === undefined) {
+      throw new NormalizationError('$nthDayAfter requires a comparison operator (e.g. $eq: "2026-04-12")');
+    }
+
+    let resolvedVal: ResolvedValue;
+    if (Array.isArray(value)) {
+      resolvedVal = { kind: 'array', items: (value as DSLValue[]).map(v => this.toResolvedValue(v)) };
+    } else {
+      resolvedVal = this.toResolvedValue(value);
+    }
+
+    return {
+      type: 'nthDayAfter',
+      from: this.toResolvedValue(from),
+      dayOfWeek,
+      nth,
+      operator,
+      value: resolvedVal,
+    };
+  }
+
   toResolvedValue(val: DSLValue): ResolvedValue {
     if (val === null || val === undefined) {
       return { kind: 'literal', value: null };
@@ -179,4 +235,16 @@ export class RuleNormalizer {
       }
     }
   }
+}
+
+const DAY_NAME_MAP: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+};
+
+function parseDayOfWeek(name: DayOfWeekName): number {
+  const val = DAY_NAME_MAP[name];
+  if (val === undefined) {
+    throw new NormalizationError(`Invalid day name: "${name}". Use Sun, Mon, Tue, Wed, Thu, Fri, or Sat`);
+  }
+  return val;
 }
