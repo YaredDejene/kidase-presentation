@@ -35,7 +35,7 @@ interface AppState {
   ruleContextMeta: Record<string, unknown> | null; // meta context from last rule evaluation
 
   // Navigation state
-  currentView: 'manager' | 'editor' | 'gitsawe' | 'verses' | 'templates';
+  currentView: 'presentation' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
 
   // Loading state
   isLoading: boolean;
@@ -51,7 +51,7 @@ interface AppState {
   setRuleFilteredSlideIds: (ids: string[] | null) => void;
   setRuleEvaluationDate: (date: string | null) => void;
   setRuleContextMeta: (meta: Record<string, unknown> | null) => void;
-  setCurrentView: (view: 'manager' | 'editor' | 'gitsawe' | 'verses' | 'templates') => void;
+  setCurrentView: (view: 'presentation' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings') => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -113,7 +113,7 @@ export const useAppStore = create<AppState>()(
     currentSlideIndex: 0,
     isEditing: false,
     selectedSlideId: null,
-    currentView: 'manager',
+    currentView: 'presentation',
     isLoading: false,
     error: null,
 
@@ -322,9 +322,9 @@ export const useAppStore = create<AppState>()(
     },
 
     getEnabledSlides: () => {
-      const { currentSlides, ruleFilteredSlideIds, isPresenting } = get();
+      const { currentSlides, ruleFilteredSlideIds } = get();
       let slides = currentSlides.filter(s => !s.isDisabled);
-      if (isPresenting && ruleFilteredSlideIds !== null) {
+      if (ruleFilteredSlideIds !== null) {
         slides = slides.filter(s => ruleFilteredSlideIds.includes(s.id));
       }
       return get().expandDynamicSlides(slides);

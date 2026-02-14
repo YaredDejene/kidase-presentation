@@ -1,0 +1,59 @@
+/* Settings Page */
+
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+
+.settings-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ddd;
+  margin: 0 0 24px 0;
+}
+
+.settings-section {
+  margin-bottom: 28px;
+}
+
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #222;
+}
+
+.settings-page .setting-row {
+  padding: 12px 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.settings-page .setting-row:last-child {
+  border-bottom: none;
+}
+
+.settings-save-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px solid #222;
+}
+
+.settings-save-bar .btn-save {
+  height: 36px;
+  padding: 0 20px;
+}
+
+.settings-saved-msg {
+  color: #6a6;
+  font-size: 13px;
+}

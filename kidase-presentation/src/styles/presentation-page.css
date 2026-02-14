@@ -1,0 +1,278 @@
+/* Presentation Page (Read-Only) */
+
+.pres-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.pres-page-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  gap: 8px;
+}
+
+.pres-page-empty-icon {
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.pres-page-empty h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: #888;
+}
+
+.pres-page-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Toolbar */
+.pres-page-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #222;
+  flex-shrink: 0;
+}
+
+.pres-page-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pres-page-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ddd;
+}
+
+.pres-page-count {
+  font-size: 13px;
+  color: #666;
+}
+
+.pres-page-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pres-page-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pres-page-btn-export {
+  background-color: #4a2a4a;
+}
+
+.pres-page-btn-export:hover {
+  background-color: #5a3a5a;
+}
+
+.pres-page-btn-settings {
+  background-color: #2a3a4a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pres-page-btn-settings:hover {
+  background-color: #3a4a5a;
+}
+
+.pres-page-btn-present {
+  background-color: #4a4a2a;
+  font-weight: 600;
+}
+
+.pres-page-btn-present:hover {
+  background-color: #5a5a3a;
+}
+
+.pres-page-btn-present:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Main content */
+.pres-page-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Slide list */
+.pres-page-list {
+  flex: 0 0 40%;
+  min-width: 280px;
+  border-right: 1px solid #222;
+  display: flex;
+  flex-direction: column;
+}
+
+.pres-page-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.pres-page-slide-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #1a1a1a;
+  transition: background-color 0.1s;
+}
+
+.pres-page-slide-row:hover {
+  background-color: #1a1a2a;
+}
+
+.pres-page-slide-row--selected {
+  background-color: #1e1e3a;
+}
+
+.pres-page-slide-row--selected:hover {
+  background-color: #1e1e3a;
+}
+
+.pres-page-slide-row--verse {
+  border-left: 3px solid #4a6a4a;
+}
+
+.pres-page-slide-num {
+  color: #555;
+  font-size: 12px;
+  min-width: 24px;
+  text-align: right;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.pres-page-slide-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pres-page-slide-title {
+  font-size: 12px;
+  color: #FFD700;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pres-page-slide-preview {
+  font-size: 13px;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pres-page-no-slides {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #555;
+  font-size: 14px;
+  padding: 40px;
+}
+
+/* Resize handle */
+.pres-page-resize-handle {
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background-color 0.15s;
+  flex-shrink: 0;
+}
+
+.pres-page-resize-handle:hover {
+  background-color: #3a3a5a;
+}
+
+/* Preview panel */
+.pres-page-preview {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pres-page-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #555;
+  font-size: 14px;
+}
+
+.pres-page-slide-info {
+  font-size: 13px;
+  color: #888;
+  display: flex;
+  gap: 6px;
+}
+
+.pres-page-info-label {
+  color: #666;
+}
+
+/* Gitsawe context */
+.pres-page-gitsawe {
+  background-color: #1a1a1a;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #222;
+}
+
+.pres-page-gitsawe-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.pres-page-gitsawe-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pres-page-gitsawe-row {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.pres-page-gitsawe-label {
+  color: #666;
+  min-width: 120px;
+  flex-shrink: 0;
+}

@@ -76,7 +76,7 @@ export const KidaseManager: React.FC = () => {
       setCurrentTemplate(loaded.template);
       setCurrentVariables(loaded.variables);
       await presentationRepository.setActive(id);
-      setCurrentView('editor');
+      setCurrentView('presentation');
     } catch (error) {
       console.error('Failed to open presentation:', error);
       toast.error('Failed to open presentation');
