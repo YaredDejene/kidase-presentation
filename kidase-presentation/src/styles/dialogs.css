@@ -157,6 +157,69 @@
   color: #555;
 }
 
+.form-hint {
+  margin: 6px 0 0;
+  color: #666;
+  font-size: 12px;
+}
+
+/* Date Picker */
+.date-picker-row {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+}
+
+.date-picker-input {
+  flex: 1;
+  padding: 10px 14px;
+  background-color: #252525;
+  border: 1px solid #333;
+  border-radius: 6px 0 0 6px;
+  border-right: none;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  height: 42px;
+  box-sizing: border-box;
+}
+
+.date-picker-input:focus {
+  outline: none;
+  border-color: #4a4a8a;
+}
+
+.date-picker-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+.date-picker-today {
+  padding: 0 16px;
+  background-color: #333;
+  border: 1px solid #333;
+  border-radius: 0 6px 6px 0;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  height: 42px;
+  box-sizing: border-box;
+  transition: all 0.15s;
+}
+
+.date-picker-today:hover {
+  background-color: #444;
+  color: #fff;
+}
+
+.date-picker-today.active {
+  background-color: #3a4a3a;
+  border-color: #4a6a4a;
+  color: #8aba8a;
+}
+
 /* Stats Grid */
 .stats-grid {
   display: flex;

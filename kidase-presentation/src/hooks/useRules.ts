@@ -12,6 +12,7 @@ export function useRules() {
     currentVariables,
     appSettings,
     ruleEvaluationDate,
+    isMehella,
     setRuleFilteredSlideIds,
     setRuleContextMeta,
   } = useAppStore();
@@ -122,6 +123,7 @@ export function useRules() {
       gitsawes: allGitsawes,
       gitsaweRules,
       overrideDate,
+      extra: { isMehella },
     });
 
     console.log('[Context] meta:', context.meta);
@@ -153,6 +155,7 @@ export function useRules() {
                 gitsawes: allGitsawes,
                 gitsaweRules,
                 overrideDate,
+                extra: { isMehella },
               });
               const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
               results.push(result);
@@ -172,6 +175,7 @@ export function useRules() {
                 gitsawes: allGitsawes,
                 gitsaweRules,
                 overrideDate,
+                extra: { isMehella },
               });
               const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
               results.push(result);
@@ -201,7 +205,7 @@ export function useRules() {
     }
 
     return results;
-  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, setRuleFilteredSlideIds, setRuleContextMeta]);
+  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, isMehella, setRuleFilteredSlideIds, setRuleContextMeta]);
 
   // Validate a rule JSON string
   const validateRule = useCallback((ruleJson: string) => {

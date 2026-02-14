@@ -32,6 +32,7 @@ interface AppState {
   // Rule engine state
   ruleFilteredSlideIds: string[] | null; // null = no filtering, array = only these IDs visible
   ruleEvaluationDate: string | null; // null = use today, ISO string = override date for rule evaluation
+  isMehella: boolean; // runtime flag added to rule context meta
   ruleContextMeta: Record<string, unknown> | null; // meta context from last rule evaluation
 
   // Navigation state
@@ -50,6 +51,7 @@ interface AppState {
   setAppSettings: (settings: AppSettings) => void;
   setRuleFilteredSlideIds: (ids: string[] | null) => void;
   setRuleEvaluationDate: (date: string | null) => void;
+  setIsMehella: (value: boolean) => void;
   setRuleContextMeta: (meta: Record<string, unknown> | null) => void;
   setCurrentView: (view: 'presentation' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings') => void;
   setLoading: (isLoading: boolean) => void;
@@ -108,6 +110,7 @@ export const useAppStore = create<AppState>()(
     appSettings: defaultAppSettings,
     ruleFilteredSlideIds: null,
     ruleEvaluationDate: null,
+    isMehella: false,
     ruleContextMeta: null,
     isPresenting: false,
     currentSlideIndex: 0,
@@ -126,6 +129,7 @@ export const useAppStore = create<AppState>()(
     setAppSettings: (settings) => set({ appSettings: settings }),
     setRuleFilteredSlideIds: (ids) => set({ ruleFilteredSlideIds: ids }),
     setRuleEvaluationDate: (date) => set({ ruleEvaluationDate: date }),
+    setIsMehella: (value) => set({ isMehella: value }),
     setRuleContextMeta: (meta) => set({ ruleContextMeta: meta }),
     setCurrentView: (view) => set({ currentView: view }),
     setLoading: (isLoading) => set({ isLoading }),
@@ -147,6 +151,7 @@ export const useAppStore = create<AppState>()(
       currentVariables: [],
       ruleFilteredSlideIds: null,
       ruleEvaluationDate: null,
+      isMehella: false,
       ruleContextMeta: null,
       isPresenting: false,
       currentSlideIndex: 0,

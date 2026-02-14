@@ -268,12 +268,24 @@ export const PresentationPage: React.FC = () => {
                 languageSettings={currentPresentation.languageSettings}
                 meta={ruleContextMeta}
               />
-              {selectedSlide.lineId && (
-                <div className="pres-page-slide-info">
-                  <span className="pres-page-info-label">Line ID:</span>
-                  <span>{selectedSlide.lineId}</span>
+              <div className="pres-page-slide-details">
+                <div className="pres-page-detail-row">
+                  <span className="pres-page-detail-label">Order:</span>
+                  <span>{selectedSlide.slideOrder}</span>
                 </div>
-              )}
+                {selectedSlide.lineId && (
+                  <div className="pres-page-detail-row">
+                    <span className="pres-page-detail-label">Line ID:</span>
+                    <span>{selectedSlide.lineId}</span>
+                  </div>
+                )}
+                {selectedSlide.notes && (
+                  <div className="pres-page-detail-row">
+                    <span className="pres-page-detail-label">Notes:</span>
+                    <span className="pres-page-detail-notes">{selectedSlide.notes}</span>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <div className="pres-page-preview-empty">

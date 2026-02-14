@@ -8,6 +8,7 @@ import { variableRepository, presentationRepository } from '../../repositories';
 import { placeholderService } from '../../services/PlaceholderService';
 import { useAppStore } from '../../store/appStore';
 import { toast } from '../../store/toastStore';
+import { DatePicker } from '../common/DatePicker';
 import '../../styles/dialogs.css';
 
 type TabId = 'general' | 'languages' | 'placeholders';
@@ -44,14 +45,10 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   onVariablesChange,
   onTemplateChange,
 }) => {
-  const { ruleEvaluationDate, setRuleEvaluationDate } = useAppStore();
+  const { ruleEvaluationDate, setRuleEvaluationDate, isMehella, setIsMehella } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [isSaving, setIsSaving] = useState(false);
-
-  // General tab state
-  const [name, setName] = useState('');
-  const [type, setType] = useState('');
 
   // Languages tab state
   const [languages, setLanguages] = useState<LanguageConfig[]>([]);
@@ -67,10 +64,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   // Initialize state when dialog opens
   useEffect(() => {
     if (isOpen) {
-      // General
-      setName(presentation.name);
-      setType(presentation.type);
-
       const settings = presentation.languageSettings;
 
       // Build language configs from languageSettings or fall back to languageMap
@@ -219,8 +212,6 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
 
       // Update presentation with both languageMap and languageSettings
       const updatedPresentation = await presentationRepository.update(presentation.id, {
-        name,
-        type,
         languageMap,
         languageSettings,
         templateId: selectedTemplateId,
@@ -294,52 +285,13 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
         {activeTab === 'general' && (
           <div className="tab-content">
             <div className="form-group">
-              <label className="form-label">Presentation Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="form-input"
-                placeholder="Enter presentation name..."
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Type</label>
-              <select
-                value={type}
-                onChange={e => setType(e.target.value)}
-                className="form-select"
-              >
-                <option value="Kidase">Kidase (Divine Liturgy)</option>
-                <option value="Mahlet">Mahlet</option>
-                <option value="Seatat">Seatat (Hours)</option>
-                <option value="Wazema">Wazema</option>
-                <option value="Custom">Custom</option>
-              </select>
-            </div>
-
-            <div className="form-group">
               <label className="form-label">Presentation Date</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  type="date"
-                  value={ruleEvaluationDate || ''}
-                  onChange={e => setRuleEvaluationDate(e.target.value || null)}
-                  className="form-input"
-                  style={{ flex: 1 }}
-                />
-                <button
-                  onClick={() => setRuleEvaluationDate(null)}
-                  className="btn-cancel"
-                  style={{ padding: '6px 12px', fontSize: '13px' }}
-                  title="Reset to today"
-                >
-                  Today
-                </button>
-              </div>
-              <p style={{ margin: '6px 0 0', color: '#888', fontSize: '12px' }}>
-                Set the presentation date. Display rules will evaluate against this date. Leave empty to use today's date.
+              <DatePicker
+                value={ruleEvaluationDate}
+                onChange={setRuleEvaluationDate}
+              />
+              <p className="form-hint">
+                Display rules evaluate against this date. Leave empty for today.
               </p>
             </div>
 
@@ -354,6 +306,21 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="form-group">
+              <div className="setting-row">
+                <div className="setting-label">
+                  <span>Mehella (ምህላ)</span>
+                  <span className="setting-hint">Supplication / rogation prayer mode</span>
+                </div>
+                <button
+                  className={`toggle-switch ${isMehella ? 'active' : ''}`}
+                  onClick={() => setIsMehella(!isMehella)}
+                >
+                  <span className="toggle-knob" />
+                </button>
+              </div>
             </div>
 
             <div className="form-group">

@@ -231,15 +231,33 @@
   font-size: 14px;
 }
 
-.pres-page-slide-info {
-  font-size: 13px;
-  color: #888;
-  display: flex;
-  gap: 6px;
+/* Slide details */
+.pres-page-slide-details {
+  background-color: #1a1a1a;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #222;
 }
 
-.pres-page-info-label {
+.pres-page-detail-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.pres-page-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.pres-page-detail-label {
   color: #666;
+  min-width: 60px;
+}
+
+.pres-page-detail-notes {
+  color: #888;
+  font-style: italic;
 }
 
 /* Gitsawe context */
@@ -260,15 +278,16 @@
 }
 
 .pres-page-gitsawe-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 4px 20px;
 }
 
 .pres-page-gitsawe-row {
   display: flex;
   gap: 8px;
   font-size: 13px;
+  margin-bottom: 4px;
 }
 
 .pres-page-gitsawe-label {
