@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from './i18n';
 import { useNavigationStore } from './store/navigationStore';
 import { usePresentationModeStore } from './store/presentationModeStore';
 import { usePresentationDataStore } from './store/presentationDataStore';
@@ -17,6 +19,7 @@ import './styles/global.css';
 import './styles/app.css';
 
 function App() {
+  const { t } = useTranslation();
   const { currentView, setCurrentView } = useNavigationStore();
   const isPresenting = usePresentationModeStore(s => s.isPresenting);
   const { setAppSettings, setAllTemplates, setVerses, loadPresentationData } = usePresentationDataStore();
@@ -31,6 +34,7 @@ function App() {
         setAllTemplates(templates);
         setVerses(verses);
         if (presentation) loadPresentationData(presentation);
+        if (settings.locale) await i18n.changeLanguage(settings.locale);
       } catch (error) {
         console.error('Failed to initialize app:', error);
       }
@@ -44,7 +48,7 @@ function App() {
   if (isLoading) {
     return (
       <div className="app-loading">
-        Loading...
+        {t('loading')}
       </div>
     );
   }

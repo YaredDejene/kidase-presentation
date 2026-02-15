@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Slide } from '../../domain/entities/Slide';
 import { LanguageMap } from '../../domain/entities/Presentation';
 
@@ -33,6 +34,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
   onDragEnd,
   isDragging,
 }) => {
+  const { t } = useTranslation('editor');
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +102,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
 
       <td className="col-content">
         <div className="slide-badges">
-          {isDynamic && <span className="slide-badge slide-badge-dynamic">Dynamic</span>}
+          {isDynamic && <span className="slide-badge slide-badge-dynamic">{t('dynamic')}</span>}
           {hasTemplateOverride && <span className="slide-badge slide-badge-override">T</span>}
         </div>
         {titleText && (
@@ -109,7 +111,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
           </div>
         )}
         <div className="slide-content-preview">
-          {truncatedText || <em className="slide-empty-text">Empty slide</em>}
+          {truncatedText || <em className="slide-empty-text">{t('emptySlide')}</em>}
         </div>
         {slide.notes && (
           <div className="slide-notes-preview">
@@ -123,7 +125,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
           <button
             onClick={handleMenuClick}
             className="slide-menu-btn"
-            title="Actions"
+            title={t('common:actions')}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <circle cx="8" cy="3" r="1.5" />
@@ -135,10 +137,10 @@ export const SlideRow: React.FC<SlideRowProps> = ({
           {showMenu && (
             <div className="slide-dropdown-menu">
               <button onClick={handleToggle} className="slide-dropdown-item">
-                {slide.isDisabled ? 'Enable Slide' : 'Disable Slide'}
+                {slide.isDisabled ? t('enableSlide') : t('disableSlide')}
               </button>
               <button onClick={handleDelete} className="slide-dropdown-item slide-dropdown-item-danger">
-                Delete Slide
+                {t('deleteSlide')}
               </button>
             </div>
           )}

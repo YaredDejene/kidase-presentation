@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Template } from '../../domain/entities/Template';
 import { useTemplates } from '../../hooks/useTemplates';
 import { presentationService } from '../../services/PresentationService';
@@ -9,6 +10,7 @@ import { TemplateEditorDialog } from '../dialogs/TemplateEditorDialog';
 import '../../styles/templates-manager.css';
 
 export const TemplatesManager: React.FC = () => {
+  const { t } = useTranslation('manager');
   const { templates, isLoading, createTemplate, deleteTemplate, updateTemplate } = useTemplates();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
@@ -18,11 +20,11 @@ export const TemplatesManager: React.FC = () => {
     const count = templates.length;
     const created = await createTemplate(`Template ${count + 1}`);
     if (created) {
-      toast.success('Template created');
+      toast.success(t('templateCreated'));
     } else {
-      toast.error('Failed to create template');
+      toast.error(t('failedToCreateTemplate'));
     }
-  }, [templates.length, createTemplate]);
+  }, [templates.length, createTemplate, t]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!confirmDelete) return;
@@ -30,28 +32,28 @@ export const TemplatesManager: React.FC = () => {
     setConfirmDelete(null);
 
     if (templates.length <= 1) {
-      toast.error('Cannot delete the last template.');
+      toast.error(t('cannotDeleteLastTemplate'));
       return;
     }
 
     const { canDelete, usedByCount } = await presentationService.canDeleteTemplate(id);
     if (!canDelete) {
-      toast.error(`Cannot delete: template is used by ${usedByCount} presentation(s).`);
+      toast.error(t('cannotDeleteInUse', { count: usedByCount }));
       return;
     }
 
     setDeletingId(id);
     const success = await deleteTemplate(id);
     if (success) {
-      toast.success(`"${name}" deleted`);
+      toast.success(t('deletedName', { name }));
     } else {
-      toast.error('Failed to delete template');
+      toast.error(t('failedToDeleteTemplate'));
     }
     setDeletingId(null);
-  }, [confirmDelete, templates.length, deleteTemplate]);
+  }, [confirmDelete, templates.length, deleteTemplate, t]);
 
   if (isLoading) {
-    return <div className="templates-loading">Loading...</div>;
+    return <div className="templates-loading">{t('common:loading')}</div>;
   }
 
   return (
@@ -59,14 +61,14 @@ export const TemplatesManager: React.FC = () => {
       {/* Toolbar */}
       <div className="templates-toolbar">
         <div className="templates-toolbar-left">
-          <span className="templates-title">Templates</span>
+          <span className="templates-title">{t('templates')}</span>
           <span className="templates-count">
-            {templates.length} {templates.length === 1 ? 'template' : 'templates'}
+            {t('templateCount', { count: templates.length })}
           </span>
         </div>
         <div className="templates-toolbar-right">
           <button onClick={handleCreate} className="templates-btn templates-btn-create">
-            Create Template
+            {t('createTemplate')}
           </button>
         </div>
       </div>
@@ -74,41 +76,41 @@ export const TemplatesManager: React.FC = () => {
       {/* Content */}
       {templates.length === 0 ? (
         <div className="templates-empty">
-          <p>No templates.</p>
-          <p>Create one to get started.</p>
+          <p>{t('noTemplates')}</p>
+          <p>{t('createToStart')}</p>
         </div>
       ) : (
         <div className="templates-table-wrapper">
           <table className="templates-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Max Languages</th>
-                <th>Created</th>
+                <th>{t('name')}</th>
+                <th>{t('maxLanguages')}</th>
+                <th>{t('created')}</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {templates.map((t) => (
+              {templates.map((tmpl) => (
                 <tr
-                  key={t.id}
+                  key={tmpl.id}
                   className="templates-row templates-row-clickable"
-                  onClick={() => setEditingTemplate(t)}
+                  onClick={() => setEditingTemplate(tmpl)}
                 >
-                  <td className="templates-cell-name">{t.name}</td>
-                  <td className="templates-cell-langs">{t.maxLangCount}</td>
-                  <td className="templates-cell-date">{formatDate(t.createdAt)}</td>
+                  <td className="templates-cell-name">{tmpl.name}</td>
+                  <td className="templates-cell-langs">{tmpl.maxLangCount}</td>
+                  <td className="templates-cell-date">{formatDate(tmpl.createdAt)}</td>
                   <td className="templates-cell-actions">
                     <button
                       className="templates-btn-delete"
-                      title="Delete"
-                      disabled={deletingId === t.id}
+                      title={t('common:delete')}
+                      disabled={deletingId === tmpl.id}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setConfirmDelete({ id: t.id, name: t.name });
+                        setConfirmDelete({ id: tmpl.id, name: tmpl.name });
                       }}
                     >
-                      {deletingId === t.id ? '...' : (
+                      {deletingId === tmpl.id ? '...' : (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6"/>
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -127,8 +129,8 @@ export const TemplatesManager: React.FC = () => {
 
       <ConfirmDialog
         isOpen={!!confirmDelete}
-        title="Delete Template"
-        message={confirmDelete ? `Delete "${confirmDelete.name}"? This cannot be undone.` : ''}
+        title={t('deleteTemplate')}
+        message={confirmDelete ? t('deleteTemplateConfirm', { name: confirmDelete.name }) : ''}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDelete(null)}
       />

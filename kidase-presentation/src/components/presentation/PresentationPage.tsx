@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../store/appStore';
 import { useRules } from '../../hooks/useRules';
 import { useTemplates } from '../../hooks/useTemplates';
@@ -16,6 +17,7 @@ import { toast } from '../../store/toastStore';
 import '../../styles/presentation-page.css';
 
 export const PresentationPage: React.FC = () => {
+  const { t } = useTranslation('presentation');
   const {
     currentPresentation,
     currentTemplate,
@@ -111,7 +113,7 @@ export const PresentationPage: React.FC = () => {
     if (!filePath) return;
 
     const exportSlides = displaySlides;
-    const progress = toast.progress(`Exporting PDF (0/${exportSlides.length})...`);
+    const progress = toast.progress(t('exportingPdf', { total: exportSlides.length }));
 
     // Build per-slide maps for templates, variables, and language maps
     const store = useAppStore.getState();
@@ -135,7 +137,7 @@ export const PresentationPage: React.FC = () => {
         {},
         (current, total) => {
           const pct = Math.round((current / total) * 100);
-          progress.update(pct, `Exporting slide ${current}/${total}...`);
+          progress.update(pct, t('exportingSlide', { current, total }));
         },
         ruleContextMeta,
         templateMap.size > 0 ? templateMap : undefined,
@@ -146,10 +148,10 @@ export const PresentationPage: React.FC = () => {
       const { writeFile } = await import('@tauri-apps/plugin-fs');
       const arrayBuffer = await blob.arrayBuffer();
       await writeFile(filePath, new Uint8Array(arrayBuffer));
-      progress.done('PDF exported successfully!');
+      progress.done(t('pdfExportedSuccess'));
     } catch (error) {
       console.error('Export failed:', error);
-      progress.fail('Failed to export PDF: ' + (error as Error).message);
+      progress.fail(t('failedToExportPdf', { message: (error as Error).message }));
     }
   };
 
@@ -163,8 +165,8 @@ export const PresentationPage: React.FC = () => {
             <line x1="12" y1="17" x2="12" y2="21" />
           </svg>
         </div>
-        <h2>No Presentation Loaded</h2>
-        <p>Select a Kidase from the Kidases page to get started.</p>
+        <h2>{t('noPresentationLoaded')}</h2>
+        <p>{t('selectKidaseToStart')}</p>
       </div>
     );
   }
@@ -178,13 +180,13 @@ export const PresentationPage: React.FC = () => {
             {currentPresentation.name}
             {secondaryPresentation && ` + ${secondaryPresentation.name}`}
           </span>
-          <span className="pres-page-count">{displaySlides.length} slides</span>
+          <span className="pres-page-count">{displaySlides.length} {t('slides')}</span>
         </div>
         <div className="pres-page-toolbar-right">
           <button
             onClick={() => setShowSettings(true)}
             className="btn-icon"
-            title="Presentation settings"
+            title={t('presentationSettings')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -195,14 +197,14 @@ export const PresentationPage: React.FC = () => {
             onClick={handleExportPdf}
             className="pres-page-btn pres-page-btn-export"
           >
-            Export PDF
+            {t('exportPdf')}
           </button>
           <button
             onClick={startPresentation}
             disabled={displaySlides.length === 0}
             className="pres-page-btn pres-page-btn-present"
           >
-            Present (F5)
+            {t('presentF5')}
           </button>
         </div>
       </div>
@@ -236,7 +238,7 @@ export const PresentationPage: React.FC = () => {
 
             {displaySlides.length === 0 && (
               <div className="pres-page-no-slides">
-                <p>No slides to display.</p>
+                <p>{t('noSlidesToDisplay')}</p>
               </div>
             )}
           </div>
@@ -262,18 +264,18 @@ export const PresentationPage: React.FC = () => {
               />
               <div className="pres-page-slide-details">
                 <div className="pres-page-detail-row">
-                  <span className="pres-page-detail-label">Order:</span>
+                  <span className="pres-page-detail-label">{t('order')}:</span>
                   <span>{selectedSlide.slideOrder}</span>
                 </div>
                 {selectedSlide.lineId && (
                   <div className="pres-page-detail-row">
-                    <span className="pres-page-detail-label">Line ID:</span>
+                    <span className="pres-page-detail-label">{t('lineId')}:</span>
                     <span>{selectedSlide.lineId}</span>
                   </div>
                 )}
                 {selectedSlide.notes && (
                   <div className="pres-page-detail-row">
-                    <span className="pres-page-detail-label">Notes:</span>
+                    <span className="pres-page-detail-label">{t('notes')}:</span>
                     <span className="pres-page-detail-notes">{selectedSlide.notes}</span>
                   </div>
                 )}
@@ -281,7 +283,7 @@ export const PresentationPage: React.FC = () => {
             </>
           ) : (
             <div className="pres-page-preview-empty">
-              <p>Select a slide to preview</p>
+              <p>{t('selectSlideToPreview')}</p>
             </div>
           )}
 
@@ -317,29 +319,31 @@ export const PresentationPage: React.FC = () => {
   );
 };
 
-const gitsaweLabels: Record<string, string> = {
-  lineId: 'Line ID',
-  kidaseType: 'Kidase Type',
-  gitsaweType: 'Gitsawe Type',
-  messageStPaul: 'St. Paul',
-  messageApostle: 'Apostle',
-  messageBookOfActs: 'Book of Acts',
-  messageApostleEvangelist: 'Apostle Evangelist',
-  misbak: 'Misbak',
-  wengel: 'Wengel',
-  evangelist: 'Evangelist',
+const gitsaweLabelKeys: Record<string, string> = {
+  lineId: 'gitsaweLineId',
+  kidaseType: 'gitsaweKidaseType',
+  gitsaweType: 'gitsaweGitsaweType',
+  messageStPaul: 'gitsaweStPaul',
+  messageApostle: 'gitsaweApostle',
+  messageBookOfActs: 'gitsaweBookOfActs',
+  messageApostleEvangelist: 'gitsaweApostleEvangelist',
+  misbak: 'gitsaweMisbak',
+  wengel: 'gitsaweWengel',
+  evangelist: 'gitsaweEvangelist',
 };
 
 function GitsaweInfoPanel({ gitsawe }: { gitsawe: Record<string, unknown> }) {
-  const entries = Object.entries(gitsaweLabels)
-    .map(([key, label]) => ({ label, value: gitsawe[key] }))
+  const { t } = useTranslation('presentation');
+
+  const entries = Object.entries(gitsaweLabelKeys)
+    .map(([key, labelKey]) => ({ label: t(labelKey), value: gitsawe[key] }))
     .filter((e): e is { label: string; value: string | number } => e.value != null && e.value !== '');
 
   if (entries.length === 0) return null;
 
   return (
     <div className="pres-page-gitsawe">
-      <div className="pres-page-gitsawe-header">Current Gitsawe</div>
+      <div className="pres-page-gitsawe-header">{t('currentGitsawe')}</div>
       <div className="pres-page-gitsawe-grid">
         {entries.map(({ label, value }) => (
           <div className="pres-page-gitsawe-row" key={label}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../common/Modal';
 import { TemplatePreview } from '../common/TemplatePreview';
 import { Template, TemplateDefinition } from '../../domain/entities/Template';
@@ -29,6 +30,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
   template,
   onSave,
 }) => {
+  const { t } = useTranslation('dialogs');
   const [name, setName] = useState('');
   const [templateDef, setTemplateDef] = useState<TemplateDefinition | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -75,7 +77,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to save template:', error);
-      toast.error('Failed to save template');
+      toast.error(t('failedToSaveTemplate'));
     }
     setIsSaving(false);
   };
@@ -83,7 +85,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
   if (!templateDef) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Template">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('editTemplate')}>
       <div className="dialog-content">
         {/* Live Preview */}
         <div className="template-preview-wrapper">
@@ -92,21 +94,21 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
 
         {/* Name */}
         <div className="form-group">
-          <label className="form-label">Template Name</label>
+          <label className="form-label">{t('templateName')}</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             className="form-input"
-            placeholder="Enter template name..."
+            placeholder={t('enterTemplateName')}
           />
         </div>
 
         {/* Background */}
         <div className="template-section">
-          <div className="template-section-header">Background</div>
+          <div className="template-section-header">{t('background')}</div>
           <div className="template-row">
-            <span className="template-row-label">Color</span>
+            <span className="template-row-label">{t('color')}</span>
             <input
               type="color"
               value={templateDef.background.color}
@@ -119,10 +121,10 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
 
         {/* Title Settings */}
         <div className="template-section">
-          <div className="template-section-header">Title</div>
+          <div className="template-section-header">{t('title')}</div>
           <div className="template-lang-grid">
             <div className="template-field">
-              <label className="template-field-label">Font Size</label>
+              <label className="template-field-label">{t('fontSize')}</label>
               <input
                 type="number"
                 value={templateDef.title.fontSize}
@@ -131,7 +133,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
               />
             </div>
             <div className="template-field">
-              <label className="template-field-label">Color</label>
+              <label className="template-field-label">{t('color')}</label>
               <input
                 type="color"
                 value={templateDef.title.color}
@@ -144,7 +146,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
 
         {/* Language Styles */}
         <div className="template-section">
-          <div className="template-section-header">Language Styles</div>
+          <div className="template-section-header">{t('languageStyles')}</div>
           {templateDef.languages.map((lang, index) => (
             <div key={lang.slot} className="template-lang-editor">
               <div className="template-lang-header">
@@ -156,7 +158,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
               </div>
               <div className="template-lang-grid">
                 <div className="template-field">
-                  <label className="template-field-label">Font Size</label>
+                  <label className="template-field-label">{t('fontSize')}</label>
                   <input
                     type="number"
                     value={lang.fontSize}
@@ -165,7 +167,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                   />
                 </div>
                 <div className="template-field">
-                  <label className="template-field-label">Color</label>
+                  <label className="template-field-label">{t('color')}</label>
                   <input
                     type="color"
                     value={lang.color}
@@ -174,7 +176,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                   />
                 </div>
                 <div className="template-field">
-                  <label className="template-field-label">Font Family</label>
+                  <label className="template-field-label">{t('fontFamily')}</label>
                   <select
                     value={lang.fontFamily}
                     onChange={e => updateLanguageStyle(index, 'fontFamily', e.target.value)}
@@ -186,7 +188,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                   </select>
                 </div>
                 <div className="template-field">
-                  <label className="template-field-label">Alignment</label>
+                  <label className="template-field-label">{t('alignment')}</label>
                   <select
                     value={lang.alignment}
                     onChange={e => updateLanguageStyle(index, 'alignment', e.target.value)}
@@ -198,7 +200,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                   </select>
                 </div>
                 <div className="template-field">
-                  <label className="template-field-label">Line Height</label>
+                  <label className="template-field-label">{t('lineHeight')}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -214,10 +216,10 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
 
         {/* Margins */}
         <div className="template-section">
-          <div className="template-section-header">Margins</div>
+          <div className="template-section-header">{t('margins')}</div>
           <div className="template-lang-grid">
             <div className="template-field">
-              <label className="template-field-label">Top</label>
+              <label className="template-field-label">{t('top')}</label>
               <input
                 type="number"
                 value={templateDef.margins.top}
@@ -226,7 +228,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
               />
             </div>
             <div className="template-field">
-              <label className="template-field-label">Right</label>
+              <label className="template-field-label">{t('right')}</label>
               <input
                 type="number"
                 value={templateDef.margins.right}
@@ -235,7 +237,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
               />
             </div>
             <div className="template-field">
-              <label className="template-field-label">Bottom</label>
+              <label className="template-field-label">{t('bottom')}</label>
               <input
                 type="number"
                 value={templateDef.margins.bottom}
@@ -244,7 +246,7 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
               />
             </div>
             <div className="template-field">
-              <label className="template-field-label">Left</label>
+              <label className="template-field-label">{t('left')}</label>
               <input
                 type="number"
                 value={templateDef.margins.left}
@@ -257,9 +259,9 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
 
         {/* Layout */}
         <div className="template-section">
-          <div className="template-section-header">Layout</div>
+          <div className="template-section-header">{t('layout')}</div>
           <div className="template-row">
-            <span className="template-row-label">Gap between languages</span>
+            <span className="template-row-label">{t('gapBetweenLanguages')}</span>
             <input
               type="number"
               value={templateDef.layout.gap}
@@ -273,10 +275,10 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
         {/* Actions */}
         <div className="dialog-actions">
           <button onClick={onClose} className="btn-cancel">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button onClick={handleSave} className="btn-save" disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? t('common:saving') : t('saveChanges')}
           </button>
         </div>
       </div>

@@ -1,10 +1,12 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePresentationDataStore } from '../store/presentationDataStore';
 import { appSettingsRepository } from '../repositories';
 import { AppSettings } from '../domain/entities/AppSettings';
 import { toast } from '../store/toastStore';
 
 export function useSettings() {
+  const { t } = useTranslation('settings');
   const appSettings = usePresentationDataStore(s => s.appSettings);
   const setAppSettings = usePresentationDataStore(s => s.setAppSettings);
 
@@ -15,10 +17,10 @@ export function useSettings() {
       return true;
     } catch (error) {
       console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings');
+      toast.error(t('failedToSave'));
       return false;
     }
-  }, [setAppSettings]);
+  }, [setAppSettings, t]);
 
   return {
     appSettings,

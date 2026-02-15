@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Verse } from '../domain/entities/Verse';
 import { verseRepository, templateRepository } from '../repositories';
 import { excelImportService } from '../services/ExcelImportService';
@@ -6,6 +7,7 @@ import { useAppStore } from '../store/appStore';
 import { toast } from '../store/toastStore';
 
 export function useVerses() {
+  const { t } = useTranslation('manager');
   const [verses, setLocalVerses] = useState<Verse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { setVerses: setStoreVerses } = useAppStore();
@@ -17,10 +19,10 @@ export function useVerses() {
       return all;
     } catch (error) {
       console.error('Failed to load Verse records:', error);
-      toast.error('Failed to load Verse records');
+      toast.error(t('failedToLoadKidases'));
       return [];
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const init = async () => {
@@ -35,7 +37,7 @@ export function useVerses() {
     const templates = await templateRepository.getAll();
     const defaultTemplateId = templates[0]?.id;
     if (!defaultTemplateId) {
-      toast.error('No template available. Please create a template first.');
+      toast.error(t('noTemplateAvailable'));
       return false;
     }
 
@@ -43,7 +45,7 @@ export function useVerses() {
       const result = await excelImportService.importFromPath(filePath, defaultTemplateId);
 
       if (result.verses.length === 0) {
-        toast.error('No Verses data found in the Excel file. Make sure there is a "Verses" sheet.');
+        toast.error(t('noVerseRecords'));
         return false;
       }
 
@@ -58,14 +60,14 @@ export function useVerses() {
 
       const loaded = await loadVerses();
       setStoreVerses(loaded);
-      toast.success(`Imported ${result.verses.length} Verse records`);
+      toast.success(t('importSuccess', { count: result.verses.length }));
       return true;
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error('Failed to import: ' + (error as Error).message);
+      toast.error(t('failedToImport', { message: (error as Error).message }));
       return false;
     }
-  }, [loadVerses, setStoreVerses]);
+  }, [loadVerses, setStoreVerses, t]);
 
   const deleteAll = useCallback(async (): Promise<boolean> => {
     try {
@@ -74,14 +76,14 @@ export function useVerses() {
       }
       await loadVerses();
       setStoreVerses([]);
-      toast.success('All Verse records deleted');
+      toast.success(t('deleteAllSuccess'));
       return true;
     } catch (error) {
       console.error('Delete failed:', error);
-      toast.error('Failed to delete Verse records');
+      toast.error(t('deleteAllFailed'));
       return false;
     }
-  }, [verses, loadVerses, setStoreVerses]);
+  }, [verses, loadVerses, setStoreVerses, t]);
 
   return {
     verses,

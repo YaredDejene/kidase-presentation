@@ -3,6 +3,7 @@ export interface AppSettings {
   defaultExportFormat: 'pdf' | 'pptx';
   showSlideNumbers: boolean;
   presentationDisplay: 'primary' | 'secondary' | 'auto';
+  locale: 'en' | 'am';
 }
 
 export const defaultAppSettings: AppSettings = {
@@ -10,4 +11,5 @@ export const defaultAppSettings: AppSettings = {
   defaultExportFormat: 'pdf',
   showSlideNumbers: true,
   presentationDisplay: 'auto',
+  locale: 'en',
 };

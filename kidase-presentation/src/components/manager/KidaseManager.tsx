@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Presentation } from '../../domain/entities/Presentation';
 import { presentationService } from '../../services/PresentationService';
 import { usePresentation } from '../../hooks/usePresentation';
@@ -16,6 +17,7 @@ interface PresentationRow {
 }
 
 export const KidaseManager: React.FC = () => {
+  const { t } = useTranslation('manager');
   const [rows, setRows] = useState<PresentationRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -31,9 +33,9 @@ export const KidaseManager: React.FC = () => {
       setRows(rowsWithCount);
     } catch (error) {
       console.error('Failed to load kidases:', error);
-      toast.error('Failed to load kidases');
+      toast.error(t('failedToLoadKidases'));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const init = async () => {
@@ -50,9 +52,9 @@ export const KidaseManager: React.FC = () => {
       setCurrentView('editor');
     } catch (error) {
       console.error('Failed to open kidase:', error);
-      toast.error('Failed to open kidase');
+      toast.error(t('failedToOpenKidase'));
     }
-  }, [loadPresentation, setCurrentView]);
+  }, [loadPresentation, setCurrentView, t]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!confirmDelete) return;
@@ -68,13 +70,13 @@ export const KidaseManager: React.FC = () => {
       }
 
       await loadPresentations();
-      toast.success(`"${name}" deleted`);
+      toast.success(t('deletedName', { name }));
     } catch (error) {
       console.error('Failed to delete kidase:', error);
-      toast.error('Failed to delete kidase');
+      toast.error(t('failedToDeleteKidase'));
     }
     setDeletingId(null);
-  }, [confirmDelete, currentPresentation, clearPresentationData, loadPresentations]);
+  }, [confirmDelete, currentPresentation, clearPresentationData, loadPresentations, t]);
 
   const handleImportExcel = useCallback(async () => {
     const filePath = await open({
@@ -85,19 +87,19 @@ export const KidaseManager: React.FC = () => {
 
     const defaultTemplate = templates[0];
     if (!defaultTemplate) {
-      toast.error('No template available. Please create a template first.');
+      toast.error(t('noTemplateAvailable'));
       return;
     }
 
     try {
       const loaded = await presentationService.importFromPath(filePath, defaultTemplate.id);
       await loadPresentations();
-      toast.success(`Imported "${loaded.presentation.name}"`);
+      toast.success(t('importedName', { name: loaded.presentation.name }));
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error('Failed to import: ' + (error as Error).message);
+      toast.error(t('failedToImport', { message: (error as Error).message }));
     }
-  }, [templates, loadPresentations]);
+  }, [templates, loadPresentations, t]);
 
   const getLanguages = (p: Presentation) => {
     const langs = Object.values(p.languageMap).filter(Boolean);
@@ -105,7 +107,7 @@ export const KidaseManager: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="manager-loading">Loading...</div>;
+    return <div className="manager-loading">{t('common:loading')}</div>;
   }
 
   return (
@@ -113,14 +115,14 @@ export const KidaseManager: React.FC = () => {
       {/* Toolbar */}
       <div className="manager-toolbar">
         <div className="manager-toolbar-left">
-          <span className="manager-title">Kidases</span>
+          <span className="manager-title">{t('kidases')}</span>
           <span className="manager-count">
-            {rows.length} {rows.length === 1 ? 'kidase' : 'kidases'}
+            {t('kidaseCount', { count: rows.length })}
           </span>
         </div>
         <div className="manager-toolbar-right">
           <button onClick={handleImportExcel} className="manager-btn manager-btn-import">
-            Import Excel
+            {t('importExcel')}
           </button>
         </div>
       </div>
@@ -128,19 +130,19 @@ export const KidaseManager: React.FC = () => {
       {/* Content */}
       {rows.length === 0 ? (
         <div className="manager-empty">
-          <p>No kidases yet.</p>
-          <p>Import from Excel to get started.</p>
+          <p>{t('noKidases')}</p>
+          <p>{t('importToStart')}</p>
         </div>
       ) : (
         <div className="manager-table-wrapper">
           <table className="manager-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Slides</th>
-                <th>Languages</th>
-                <th>Created</th>
+                <th>{t('name')}</th>
+                <th>{t('type')}</th>
+                <th>{t('slides')}</th>
+                <th>{t('languages')}</th>
+                <th>{t('created')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -159,7 +161,7 @@ export const KidaseManager: React.FC = () => {
                   <td className="manager-cell-actions">
                     <button
                       className="manager-btn-delete"
-                      title="Delete"
+                      title={t('common:delete')}
                       disabled={deletingId === p.id}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -185,8 +187,8 @@ export const KidaseManager: React.FC = () => {
 
       <ConfirmDialog
         isOpen={!!confirmDelete}
-        title="Delete Kidase"
-        message={confirmDelete ? `Delete "${confirmDelete.name}" and all its slides? This cannot be undone.` : ''}
+        title={t('deleteKidase')}
+        message={confirmDelete ? t('deleteKidaseConfirm', { name: confirmDelete.name }) : ''}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDelete(null)}
       />

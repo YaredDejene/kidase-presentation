@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../common/Modal';
 import { Variable } from '../../domain/entities/Variable';
 import { Presentation, LanguageMap, LanguageSettings, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '../../domain/entities/Presentation';
@@ -46,6 +47,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   onVariablesChange,
   onTemplateChange,
 }) => {
+  const { t } = useTranslation('dialogs');
   const { ruleEvaluationDate, setRuleEvaluationDate, isMehella, setIsMehella, ruleFilteredSlideIds } = useAppStore();
   const { saveAll } = useVariables();
   const { updatePresentation } = usePresentation();
@@ -235,21 +237,21 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
       onClose();
     } catch (error) {
       console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings');
+      toast.error(t('failedToSaveSettings'));
     }
     setIsSaving(false);
   };
 
   const tabs: { id: TabId; label: string }[] = [
-    { id: 'general', label: 'General' },
-    { id: 'languages', label: 'Languages' },
-    { id: 'placeholders', label: 'Placeholders' },
+    { id: 'general', label: t('general') },
+    { id: 'languages', label: t('languages') },
+    { id: 'placeholders', label: t('placeholders') },
   ];
 
   const sortedLanguages = [...languages].sort((a, b) => a.order - b.order);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Presentation Settings">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('presentationSettings')}>
       <div className="dialog-tabs">
         {tabs.map(tab => (
           <button
@@ -267,25 +269,25 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
         {activeTab === 'general' && (
           <div className="tab-content">
             <div className="form-group">
-              <label className="form-label">Presentation Date</label>
+              <label className="form-label">{t('presentationDate')}</label>
               <DatePicker
                 value={ruleEvaluationDate}
                 onChange={setRuleEvaluationDate}
               />
               <p className="form-hint">
-                Display rules evaluate against this date. Leave empty for today.
+                {t('dateHint')}
               </p>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Template</label>
+              <label className="form-label">{t('template')}</label>
               <select
                 value={selectedTemplateId}
                 onChange={e => setSelectedTemplateId(e.target.value)}
                 className="form-select"
               >
-                {templates.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                {templates.map(tmpl => (
+                  <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
                 ))}
               </select>
             </div>
@@ -293,8 +295,8 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
             <div className="form-group">
               <div className="setting-row">
                 <div className="setting-label">
-                  <span>Mehella (ምህላ)</span>
-                  <span className="setting-hint">Supplication / rogation prayer mode</span>
+                  <span>{t('mehella')}</span>
+                  <span className="setting-hint">{t('mehellaHint')}</span>
                 </div>
                 <button
                   className={`toggle-switch ${isMehella ? 'active' : ''}`}
@@ -306,19 +308,19 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
             </div>
 
             <div className="form-group">
-              <label className="form-label">Statistics</label>
+              <label className="form-label">{t('statistics')}</label>
               <div className="stats-grid">
                 <div className="stat-item">
                   <span className="stat-value">{slides.length}</span>
-                  <span className="stat-label">Total Slides</span>
+                  <span className="stat-label">{t('totalSlides')}</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-value">{slides.filter(s => !s.isDisabled && (ruleFilteredSlideIds === null || ruleFilteredSlideIds.includes(s.id))).length}</span>
-                  <span className="stat-label">Active Slides</span>
+                  <span className="stat-label">{t('activeSlides')}</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-value">{detectedPlaceholders.length}</span>
-                  <span className="stat-label">Placeholders</span>
+                  <span className="stat-label">{t('placeholders')}</span>
                 </div>
               </div>
             </div>
@@ -329,7 +331,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
         {activeTab === 'languages' && (
           <div className="tab-content">
             <p className="tab-hint">
-              Drag and drop to reorder languages. The order here determines display order on slides.
+              {t('languageReorderHint')}
             </p>
 
             <div className="languages-list">
@@ -343,7 +345,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                       className="reorder-btn"
                       onClick={() => moveLanguage(index, 'up')}
                       disabled={index === 0}
-                      title="Move up"
+                      title={t('moveUp')}
                     >
                       ▲
                     </button>
@@ -351,7 +353,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                       className="reorder-btn"
                       onClick={() => moveLanguage(index, 'down')}
                       disabled={index === sortedLanguages.length - 1}
-                      title="Move down"
+                      title={t('moveDown')}
                     >
                       ▼
                     </button>
@@ -362,12 +364,12 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                     className="language-name-input"
                     value={lang.name}
                     onChange={(e) => handleLanguageNameChange(lang.slot, e.target.value)}
-                    placeholder="Language name..."
+                    placeholder={t('languageNamePlaceholder')}
                   />
                   <button
                     className={`toggle-switch ${lang.enabled ? 'active' : ''}`}
                     onClick={() => handleLanguageToggle(lang.slot)}
-                    title={lang.enabled ? 'Disable' : 'Enable'}
+                    title={lang.enabled ? t('disable') : t('enable')}
                   >
                     <span className="toggle-knob" />
                   </button>
@@ -376,7 +378,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
             </div>
 
             <p className="tab-note">
-              Note: Disabled languages will be hidden in the presentation view.
+              {t('disabledLanguagesNote')}
             </p>
           </div>
         )}
@@ -385,7 +387,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
         {activeTab === 'placeholders' && (
           <div className="tab-content">
             <p className="tab-hint">
-              Set values for placeholders detected in your slides. These will be replaced when displaying or exporting.
+              {t('placeholderDetectionHint')}
             </p>
 
             {localVariables.length > 0 ? (
@@ -411,7 +413,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                                   value={(variable[fieldKey] as string) || ''}
                                   onChange={e => handleVariableChange(variable.name, e.target.value, slot)}
                                   className="placeholder-input"
-                                  placeholder={`Value for ${langName}...`}
+                                  placeholder={t('valueForLang', { lang: langName })}
                                 />
                               </div>
                             );
@@ -423,7 +425,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                           value={variable.value}
                           onChange={e => handleVariableChange(variable.name, e.target.value)}
                           className="placeholder-input"
-                          placeholder="Enter value..."
+                          placeholder={t('enterValue')}
                         />
                       )}
                     </div>
@@ -432,9 +434,9 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
               </div>
             ) : (
               <div className="tab-empty">
-                <p>No placeholders detected in your slides.</p>
+                <p>{t('noPlaceholders')}</p>
                 <p className="tab-hint">
-                  Use {'{{PLACEHOLDER_NAME}}'} for single-value or @VARIABLE_NAME for per-language placeholders.
+                  {t('placeholderUsageHint')}
                 </p>
               </div>
             )}
@@ -444,10 +446,10 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
         {/* Actions */}
         <div className="dialog-actions">
           <button onClick={onClose} className="btn-cancel">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button onClick={handleSave} className="btn-save" disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? t('common:saving') : t('saveChanges')}
           </button>
         </div>
       </div>

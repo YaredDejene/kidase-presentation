@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../styles/datepicker.css';
 
 interface DatePickerProps {
@@ -6,10 +7,10 @@ interface DatePickerProps {
   onChange: (value: string | null) => void;
 }
 
-const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+const DAY_KEYS = ['daysSu', 'daysMo', 'daysTu', 'daysWe', 'daysTh', 'daysFr', 'daysSa'];
+const MONTH_KEYS = [
+  'monthJanuary', 'monthFebruary', 'monthMarch', 'monthApril', 'monthMay', 'monthJune',
+  'monthJuly', 'monthAugust', 'monthSeptember', 'monthOctober', 'monthNovember', 'monthDecember',
 ];
 
 function parseDate(value: string | null): Date {
@@ -32,6 +33,7 @@ function isSameDay(a: Date, b: Date): boolean {
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const selected = parseDate(value);
   const [viewYear, setViewYear] = useState(selected.getFullYear());
@@ -112,7 +114,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange }) => {
 
   const displayText = value
     ? selected.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-    : 'Today';
+    : t('today');
 
   return (
     <div className="dp-container" ref={containerRef}>
@@ -144,7 +146,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange }) => {
               </svg>
             </button>
             <span className="dp-month-year">
-              {MONTHS[viewMonth]} {viewYear}
+              {t(MONTH_KEYS[viewMonth])} {viewYear}
             </span>
             <button className="dp-nav-btn" onClick={handleNextMonth} type="button">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -154,8 +156,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange }) => {
           </div>
 
           <div className="dp-weekdays">
-            {DAYS.map(d => (
-              <span key={d} className="dp-weekday">{d}</span>
+            {DAY_KEYS.map(key => (
+              <span key={key} className="dp-weekday">{t(key)}</span>
             ))}
           </div>
 
@@ -187,7 +189,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange }) => {
 
           <div className="dp-footer">
             <button className="dp-today-btn" onClick={handleToday} type="button">
-              Today
+              {t('today')}
             </button>
           </div>
         </div>

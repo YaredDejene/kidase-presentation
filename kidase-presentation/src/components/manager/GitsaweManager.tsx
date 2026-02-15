@@ -1,10 +1,12 @@
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGitsawe } from '../../hooks/useGitsawe';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import '../../styles/gitsawe-manager.css';
 
 export const GitsaweManager: React.FC = () => {
+  const { t } = useTranslation('manager');
   const { gitsawes, isLoading, importFromExcel, deleteAll } = useGitsawe();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -26,7 +28,7 @@ export const GitsaweManager: React.FC = () => {
   }, [deleteAll]);
 
   if (isLoading) {
-    return <div className="gitsawe-loading">Loading...</div>;
+    return <div className="gitsawe-loading">{t('common:loading')}</div>;
   }
 
   return (
@@ -34,9 +36,9 @@ export const GitsaweManager: React.FC = () => {
       {/* Toolbar */}
       <div className="gitsawe-toolbar">
         <div className="gitsawe-toolbar-left">
-          <span className="gitsawe-title">Gitsawe</span>
+          <span className="gitsawe-title">{t('gitsawe')}</span>
           <span className="gitsawe-count">
-            {gitsawes.length} {gitsawes.length === 1 ? 'record' : 'records'}
+            {t('recordCount', { count: gitsawes.length })}
           </span>
         </div>
         <div className="gitsawe-toolbar-right">
@@ -45,10 +47,10 @@ export const GitsaweManager: React.FC = () => {
             className="gitsawe-btn gitsawe-btn-delete-all"
             disabled={gitsawes.length === 0 || isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete All'}
+            {isDeleting ? t('deleting') : t('deleteAll')}
           </button>
           <button onClick={handleImportExcel} className="gitsawe-btn gitsawe-btn-import">
-            Import Excel
+            {t('importExcel')}
           </button>
         </div>
       </div>
@@ -56,24 +58,24 @@ export const GitsaweManager: React.FC = () => {
       {/* Content */}
       {gitsawes.length === 0 ? (
         <div className="gitsawe-empty">
-          <p>No Gitsawe records.</p>
-          <p>Import from Excel to get started.</p>
+          <p>{t('noGitsaweRecords')}</p>
+          <p>{t('importToStart')}</p>
         </div>
       ) : (
         <div className="gitsawe-table-wrapper">
           <table className="gitsawe-table">
             <thead>
               <tr>
-                <th>Line ID</th>
-                <th>Message StPaul</th>
-                <th>Message Apostle</th>
-                <th>Message BookOfActs</th>
-                <th>Misbak</th>
-                <th>Wengel</th>
-                <th>Kidase Type</th>
-                <th>Message Apostle Evangelist</th>
-                <th>Gitsawe Type</th>
-                <th>Priority</th>
+                <th>{t('lineId')}</th>
+                <th>{t('messageStPaul')}</th>
+                <th>{t('messageApostle')}</th>
+                <th>{t('messageBookOfActs')}</th>
+                <th>{t('misbak')}</th>
+                <th>{t('wengel')}</th>
+                <th>{t('kidaseType')}</th>
+                <th>{t('messageApostleEvangelist')}</th>
+                <th>{t('gitsaweType')}</th>
+                <th>{t('priority')}</th>
               </tr>
             </thead>
             <tbody>
@@ -98,8 +100,8 @@ export const GitsaweManager: React.FC = () => {
 
       <ConfirmDialog
         isOpen={showConfirmDelete}
-        title="Delete All Gitsawe Records"
-        message={`Delete all ${gitsawes.length} Gitsawe records? This cannot be undone.`}
+        title={t('deleteAllGitsawe')}
+        message={t('deleteAllGitsaweConfirm', { count: gitsawes.length })}
         onConfirm={handleDeleteAllConfirm}
         onCancel={() => setShowConfirmDelete(false)}
       />

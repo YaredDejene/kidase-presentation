@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../styles/sidebar.css';
 
 type ViewId = 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
@@ -8,10 +9,10 @@ interface SidebarProps {
   onViewChange: (view: ViewId) => void;
 }
 
-const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
+const menuItems: { id: ViewId; labelKey: string; icon: React.ReactNode }[] = [
   {
     id: 'presentation',
-    label: 'Presentation',
+    labelKey: 'presentation',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
@@ -22,7 +23,7 @@ const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: 'editor',
-    label: 'Editor',
+    labelKey: 'editor',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -32,7 +33,7 @@ const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: 'kidases',
-    label: 'Kidases',
+    labelKey: 'kidases',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -42,7 +43,7 @@ const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: 'gitsawe',
-    label: 'Gitsawe',
+    labelKey: 'gitsawe',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -54,7 +55,7 @@ const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: 'verses',
-    label: 'Verses',
+    labelKey: 'verses',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -67,7 +68,7 @@ const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: 'templates',
-    label: 'Templates',
+    labelKey: 'templates',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7" />
@@ -79,7 +80,7 @@ const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: 'settings',
-    label: 'Settings',
+    labelKey: 'settings',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="3" />
@@ -93,6 +94,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onViewChange,
 }) => {
+  const { t } = useTranslation('sidebar');
+
   return (
     <nav className="sidebar">
       <div className="sidebar-logo">KP</div>
@@ -102,10 +105,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             key={item.id}
             className={`sidebar-item ${currentView === item.id ? 'sidebar-item--active' : ''}`}
             onClick={() => onViewChange(item.id)}
-            title={item.label}
+            title={t(item.labelKey)}
           >
             <span className="sidebar-item-icon">{item.icon}</span>
-            <span className="sidebar-item-label">{item.label}</span>
+            <span className="sidebar-item-label">{t(item.labelKey)}</span>
           </button>
         ))}
       </div>

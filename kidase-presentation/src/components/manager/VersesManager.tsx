@@ -1,10 +1,12 @@
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useVerses } from '../../hooks/useVerses';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import '../../styles/verses-manager.css';
 
 export const VersesManager: React.FC = () => {
+  const { t } = useTranslation('manager');
   const { verses, isLoading, importFromExcel, deleteAll } = useVerses();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -31,7 +33,7 @@ export const VersesManager: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="verses-loading">Loading...</div>;
+    return <div className="verses-loading">{t('common:loading')}</div>;
   }
 
   return (
@@ -39,9 +41,9 @@ export const VersesManager: React.FC = () => {
       {/* Toolbar */}
       <div className="verses-toolbar">
         <div className="verses-toolbar-left">
-          <span className="verses-title">Verses</span>
+          <span className="verses-title">{t('verses')}</span>
           <span className="verses-count">
-            {verses.length} {verses.length === 1 ? 'record' : 'records'}
+            {t('recordCount', { count: verses.length })}
           </span>
         </div>
         <div className="verses-toolbar-right">
@@ -50,10 +52,10 @@ export const VersesManager: React.FC = () => {
             className="verses-btn verses-btn-delete-all"
             disabled={verses.length === 0 || isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete All'}
+            {isDeleting ? t('deleting') : t('deleteAll')}
           </button>
           <button onClick={handleImportExcel} className="verses-btn verses-btn-import">
-            Import Excel
+            {t('importExcel')}
           </button>
         </div>
       </div>
@@ -61,19 +63,19 @@ export const VersesManager: React.FC = () => {
       {/* Content */}
       {verses.length === 0 ? (
         <div className="verses-empty">
-          <p>No Verse records.</p>
-          <p>Import from Excel to get started.</p>
+          <p>{t('noVerseRecords')}</p>
+          <p>{t('importToStart')}</p>
         </div>
       ) : (
         <div className="verses-table-wrapper">
           <table className="verses-table">
             <thead>
               <tr>
-                <th>Segment ID</th>
-                <th>Text Lang1</th>
-                <th>Text Lang2</th>
-                <th>Text Lang3</th>
-                <th>Text Lang4</th>
+                <th>{t('segmentId')}</th>
+                <th>{t('textLang1')}</th>
+                <th>{t('textLang2')}</th>
+                <th>{t('textLang3')}</th>
+                <th>{t('textLang4')}</th>
               </tr>
             </thead>
             <tbody>
@@ -93,8 +95,8 @@ export const VersesManager: React.FC = () => {
 
       <ConfirmDialog
         isOpen={showConfirmDelete}
-        title="Delete All Verse Records"
-        message={`Delete all ${verses.length} Verse records? This cannot be undone.`}
+        title={t('deleteAllVerses')}
+        message={t('deleteAllVersesConfirm', { count: verses.length })}
         onConfirm={handleDeleteAllConfirm}
         onCancel={() => setShowConfirmDelete(false)}
       />

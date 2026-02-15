@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../store/appStore';
 import { useSlides } from '../../hooks/useSlides';
 import { usePresentation } from '../../hooks/usePresentation';
@@ -11,6 +12,7 @@ import { Presentation } from '../../domain/entities/Presentation';
 import '../../styles/editor.css';
 
 export const SlideEditor: React.FC = () => {
+  const { t } = useTranslation('editor');
   const {
     currentTemplate,
     currentPresentation,
@@ -103,8 +105,8 @@ export const SlideEditor: React.FC = () => {
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </div>
-        <h2>No Presentation Loaded</h2>
-        <p>Select a Kidase from the Kidases page to start editing.</p>
+        <h2>{t('noPresentationLoaded')}</h2>
+        <p>{t('selectKidaseToEdit')}</p>
       </div>
     );
   }
@@ -116,14 +118,14 @@ export const SlideEditor: React.FC = () => {
         <div className="editor-toolbar-left">
           <span className="editor-title">{currentPresentation.name}</span>
           <span className="editor-count">
-            {activeCount} slides
+            {activeCount} {t('slides')}
           </span>
         </div>
         <div className="editor-toolbar-right">
           <button
             onClick={() => setShowSettings(true)}
             className="btn-icon"
-            title="Presentation settings"
+            title={t('presentationSettings')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -154,7 +156,7 @@ export const SlideEditor: React.FC = () => {
               <thead>
                 <tr>
                   <th className="col-order">#</th>
-                  <th className="col-content">Content</th>
+                  <th className="col-content">{t('content')}</th>
                   <th className="col-actions"></th>
                 </tr>
               </thead>
@@ -182,7 +184,7 @@ export const SlideEditor: React.FC = () => {
 
             {currentSlides.length === 0 && (
               <div className="editor-no-slides">
-                <p>No slides in this kidase.</p>
+                <p>{t('noSlides')}</p>
               </div>
             )}
           </div>
@@ -207,24 +209,24 @@ export const SlideEditor: React.FC = () => {
 
               {/* Template override */}
               <div className="editor-template-override">
-                <label className="editor-template-override-label">Template Override</label>
+                <label className="editor-template-override-label">{t('templateOverride')}</label>
                 <select
                   value={currentSelectedSlide.templateOverrideId || ''}
                   onChange={(e) => handleTemplateOverrideChange(e.target.value)}
                   className="editor-template-override-select"
                 >
-                  <option value="">Default ({currentTemplate.name})</option>
+                  <option value="">{t('defaultTemplate', { name: currentTemplate.name })}</option>
                   {allTemplates
-                    .filter(t => t.id !== currentPresentation.templateId)
-                    .map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
+                    .filter(tmpl => tmpl.id !== currentPresentation.templateId)
+                    .map(tmpl => (
+                      <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
                     ))}
                 </select>
               </div>
             </>
           ) : (
             <div className="editor-preview-empty">
-              <p>Select a slide to view its content</p>
+              <p>{t('selectSlideToView')}</p>
             </div>
           )}
         </div>
@@ -233,8 +235,8 @@ export const SlideEditor: React.FC = () => {
       {/* Delete slide confirmation */}
       <ConfirmDialog
         isOpen={!!confirmDeleteSlideId}
-        title="Delete Slide"
-        message="Are you sure you want to delete this slide?"
+        title={t('deleteSlide')}
+        message={t('deleteSlideConfirm')}
         onConfirm={() => {
           if (confirmDeleteSlideId) deleteSlide(confirmDeleteSlideId);
           setConfirmDeleteSlideId(null);
@@ -243,13 +245,13 @@ export const SlideEditor: React.FC = () => {
       />
 
       {/* Kidase Settings Dialog */}
-      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Kidase Settings">
+      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title={t('kidaseSettings')}>
         <div className="dialog-content">
           <div className="form-group">
             <div className="setting-row">
               <div className="setting-label">
-                <span>Primary Kidase</span>
-                <span className="setting-hint">Primary kidase is the main service; secondary is supplementary</span>
+                <span>{t('primaryKidase')}</span>
+                <span className="setting-hint">{t('primaryKidaseHint')}</span>
               </div>
               <button
                 className={`toggle-switch ${isPrimary ? 'active' : ''}`}
@@ -261,7 +263,7 @@ export const SlideEditor: React.FC = () => {
           </div>
           <div className="dialog-actions">
             <button onClick={() => setShowSettings(false)} className="btn-cancel">
-              Cancel
+              {t('common:cancel')}
             </button>
             <button
               onClick={async () => {
@@ -273,7 +275,7 @@ export const SlideEditor: React.FC = () => {
               }}
               className="btn-save"
             >
-              Save
+              {t('common:save')}
             </button>
           </div>
         </div>

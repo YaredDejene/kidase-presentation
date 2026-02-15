@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from '../common/Modal';
 import { Variable, COMMON_VARIABLES, formatVariableName } from '../../domain/entities/Variable';
 import { Presentation, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '../../domain/entities/Presentation';
@@ -21,6 +22,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
   variables,
   onVariablesChange,
 }) => {
+  const { t } = useTranslation('dialogs');
   const { createVariable, deleteVariable, saveAll } = useVariables();
   const [localVariables, setLocalVariables] = useState<Variable[]>([]);
   const [newVarName, setNewVarName] = useState('');
@@ -49,7 +51,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
 
     // Check if already exists
     if (localVariables.some(v => v.name === formattedName)) {
-      toast.error('Variable already exists');
+      toast.error(t('variableAlreadyExists'));
       return;
     }
 
@@ -100,7 +102,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to save variables:', error);
-      toast.error('Failed to save variables');
+      toast.error(t('failedToSaveVariables'));
     }
     setIsSaving(false);
   };
@@ -111,22 +113,22 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Presentation Variables">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('presentationVariables')}>
       <div className="dialog-content">
         {/* Presentation Info */}
         <div className="dialog-section">
-          <h4>Presentation Info</h4>
+          <h4>{t('presentationInfo')}</h4>
           <div className="info-grid">
             <div className="info-row">
-              <span className="info-label">Name:</span>
+              <span className="info-label">{t('common:name')}:</span>
               <span className="info-value">{presentation.name}</span>
             </div>
             <div className="info-row">
-              <span className="info-label">Type:</span>
+              <span className="info-label">{t('common:type')}:</span>
               <span className="info-value">{presentation.type}</span>
             </div>
             <div className="info-row">
-              <span className="info-label">Languages:</span>
+              <span className="info-label">{t('languages')}:</span>
               <span className="info-value">
                 {Object.entries(presentation.languageMap)
                   .filter(([, value]) => value)
@@ -139,9 +141,9 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
 
         {/* Variables */}
         <div className="dialog-section">
-          <h4>Placeholder Values</h4>
+          <h4>{t('placeholderValues')}</h4>
           <p className="dialog-hint">
-            Set values for placeholders used in your slides. Use {'{{VARIABLE_NAME}}'} for single-value or @VARIABLE_NAME for per-language placeholders.
+            {t('placeholderHint')}
           </p>
 
           {localVariables.length > 0 ? (
@@ -155,7 +157,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
                       <button
                         onClick={() => handleDeleteVariable(variable.id)}
                         className="variable-delete"
-                        title="Delete variable"
+                        title={t('deleteVariable')}
                       >
                         ×
                       </button>
@@ -174,7 +176,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
                                 value={(variable[fieldKey] as string) || ''}
                                 onChange={e => handleValueChange(variable.id, e.target.value, slot)}
                                 className="variable-input"
-                                placeholder={`Value for ${langName}...`}
+                                placeholder={t('valueForLang', { lang: langName })}
                               />
                             </div>
                           );
@@ -185,7 +187,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
                         type="text"
                         value={variable.value}
                         onChange={e => handleValueChange(variable.id, e.target.value)}
-                        placeholder="Enter value..."
+                        placeholder={t('enterValue')}
                         className="variable-input"
                       />
                     )}
@@ -194,7 +196,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
               })}
             </div>
           ) : (
-            <p className="dialog-empty">No variables defined yet.</p>
+            <p className="dialog-empty">{t('noVariables')}</p>
           )}
 
           {/* Add new variable */}
@@ -203,19 +205,19 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
               type="text"
               value={newVarName}
               onChange={e => setNewVarName(e.target.value)}
-              placeholder="VARIABLE_NAME"
+              placeholder={t('variableNamePlaceholder')}
               className="variable-input"
               onKeyDown={e => e.key === 'Enter' && handleAddVariable()}
             />
             <button onClick={handleAddVariable} className="btn-add">
-              Add
+              {t('add')}
             </button>
           </div>
 
           {/* Common variables */}
           {unusedCommonVars.length > 0 && (
             <div className="common-variables">
-              <span className="common-label">Quick add:</span>
+              <span className="common-label">{t('quickAdd')}</span>
               <div className="common-tags">
                 {unusedCommonVars.map(name => (
                   <button
@@ -234,10 +236,10 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
         {/* Actions */}
         <div className="dialog-actions">
           <button onClick={onClose} className="btn-cancel">
-            Cancel
+            {t('common:cancel')}
           </button>
           <button onClick={handleSave} className="btn-save" disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? t('common:saving') : t('common:save')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Gitsawe } from '../domain/entities/Gitsawe';
 import { gitsaweRepository, ruleRepository, templateRepository } from '../repositories';
 import { excelImportService } from '../services/ExcelImportService';
@@ -6,6 +7,7 @@ import { createRuleDefinition } from '../domain/entities/RuleDefinition';
 import { toast } from '../store/toastStore';
 
 export function useGitsawe() {
+  const { t } = useTranslation('manager');
   const [gitsawes, setGitsawes] = useState<Gitsawe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -16,10 +18,10 @@ export function useGitsawe() {
       return all;
     } catch (error) {
       console.error('Failed to load Gitsawe records:', error);
-      toast.error('Failed to load Gitsawe records');
+      toast.error(t('failedToLoadKidases'));
       return [];
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const init = async () => {
@@ -34,7 +36,7 @@ export function useGitsawe() {
     const templates = await templateRepository.getAll();
     const defaultTemplateId = templates[0]?.id;
     if (!defaultTemplateId) {
-      toast.error('No template available. Please create a template first.');
+      toast.error(t('noTemplateAvailable'));
       return false;
     }
 
@@ -42,7 +44,7 @@ export function useGitsawe() {
       const result = await excelImportService.importFromPath(filePath, defaultTemplateId);
 
       if (result.gitsawes.length === 0) {
-        toast.error('No Gitsawe data found in the Excel file. Make sure there is a "Gitsawe" sheet.');
+        toast.error(t('noGitsaweRecords'));
         return false;
       }
 
@@ -71,14 +73,14 @@ export function useGitsawe() {
       }
 
       await loadGitsawes();
-      toast.success(`Imported ${result.gitsawes.length} Gitsawe records`);
+      toast.success(t('importSuccess', { count: result.gitsawes.length }));
       return true;
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error('Failed to import: ' + (error as Error).message);
+      toast.error(t('failedToImport', { message: (error as Error).message }));
       return false;
     }
-  }, [loadGitsawes]);
+  }, [loadGitsawes, t]);
 
   const deleteAll = useCallback(async (): Promise<boolean> => {
     try {
@@ -87,14 +89,14 @@ export function useGitsawe() {
         await gitsaweRepository.delete(g.id);
       }
       await loadGitsawes();
-      toast.success('All Gitsawe records deleted');
+      toast.success(t('deleteAllSuccess'));
       return true;
     } catch (error) {
       console.error('Delete failed:', error);
-      toast.error('Failed to delete Gitsawe records');
+      toast.error(t('deleteAllFailed'));
       return false;
     }
-  }, [gitsawes, loadGitsawes]);
+  }, [gitsawes, loadGitsawes, t]);
 
   return {
     gitsawes,

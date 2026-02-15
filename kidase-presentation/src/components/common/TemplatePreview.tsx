@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { TemplateDefinition } from '../../domain/entities/Template';
 
 const DESIGN_WIDTH = 1920;
@@ -20,6 +21,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
   definition: def,
   width = 480,
 }) => {
+  const { t } = useTranslation('editor');
   const scale = width / DESIGN_WIDTH;
   const height = (width / DESIGN_WIDTH) * DESIGN_HEIGHT;
   const s = (v: number) => v * scale;
@@ -54,7 +56,7 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
             marginBottom: `${s(def.layout.gap)}px`,
           }}
         >
-          Title
+          {t('titlePreview')}
         </div>
       )}
 

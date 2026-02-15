@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Template } from '../../domain/entities/Template';
 
 interface TemplateSelectorProps {
@@ -14,10 +15,12 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onSelect,
   disabled = false,
 }) => {
+  const { t } = useTranslation('editor');
+
   return (
     <div className="template-selector">
       <label htmlFor="template-select" className="template-selector-label">
-        Template
+        {t('template')}
       </label>
       <select
         id="template-select"
@@ -27,13 +30,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         className="template-selector-dropdown"
       >
         {templates.length === 0 ? (
-          <option value="">No templates available</option>
+          <option value="">{t('noTemplatesAvailable')}</option>
         ) : (
           <>
-            <option value="">Select a template...</option>
+            <option value="">{t('selectTemplate')}</option>
             {templates.map((template) => (
               <option key={template.id} value={template.id}>
-                {template.name} ({template.maxLangCount} languages)
+                {template.name} ({t('languageCount', { count: template.maxLangCount })})
               </option>
             ))}
           </>
