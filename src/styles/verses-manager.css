@@ -1,0 +1,172 @@
+/* Verses Manager Page */
+
+.verses-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #888;
+}
+
+.verses-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Toolbar */
+.verses-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #222;
+  flex-shrink: 0;
+}
+
+.verses-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ddd;
+}
+
+.verses-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.verses-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verses-count {
+  color: #666;
+  font-size: 13px;
+}
+
+.verses-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.verses-btn-import {
+  background-color: #2a4a2a;
+}
+
+.verses-btn-import:hover {
+  background-color: #3a5a3a;
+}
+
+.verses-btn-delete-all {
+  background-color: #4a2a2a;
+}
+
+.verses-btn-delete-all:hover {
+  background-color: #5a3a3a;
+}
+
+.verses-btn-delete-all:disabled {
+  background-color: #333;
+  cursor: not-allowed;
+}
+
+/* Empty state */
+.verses-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #666;
+  font-size: 15px;
+  gap: 4px;
+}
+
+.verses-empty p {
+  margin: 0;
+}
+
+/* Table */
+.verses-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.verses-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.verses-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.verses-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
+  color: #888;
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.verses-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #222;
+}
+
+.verses-row {
+  transition: background-color 0.15s;
+}
+
+.verses-row:hover {
+  background-color: #1a1a2a;
+}
+
+.verses-cell-segment {
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verses-cell-order {
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.verses-cell-title {
+  color: #ccc;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verses-cell-text {
+  color: #aaa;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verses-cell-date {
+  color: #888;
+  white-space: nowrap;
+}

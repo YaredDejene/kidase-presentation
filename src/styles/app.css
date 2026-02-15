@@ -1,0 +1,22 @@
+/* App Layout */
+
+.app-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #0a0a0a;
+  color: #fff;
+}
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+  background-color: #0a0a0a;
+  color: #fff;
+}
+
+.app-main {
+  flex: 1;
+  overflow: hidden;
+}
