@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getVersion } from '@tauri-apps/api/app';
 import '../../styles/sidebar.css';
 
 type ViewId = 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
@@ -95,6 +96,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onViewChange,
 }) => {
   const { t } = useTranslation('sidebar');
+  const [version, setVersion] = useState('');
+
+  useEffect(() => {
+    getVersion().then(v => setVersion(v)).catch(() => {});
+  }, []);
 
   return (
     <nav className="sidebar">
@@ -112,6 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         ))}
       </div>
+      {version && <div className="sidebar-version">v{version}</div>}
     </nav>
   );
 };

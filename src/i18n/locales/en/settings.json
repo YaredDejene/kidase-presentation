@@ -22,5 +22,8 @@
   "saveSettings": "Save Settings",
   "settingsSaved": "Settings saved",
   "failedToSave": "Failed to save settings",
-  "pdf": "PDF"
+  "pdf": "PDF",
+  "about": "About",
+  "version": "Version",
+  "appName": "Kidase Presentation"
 }

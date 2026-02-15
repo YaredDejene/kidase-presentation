@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getVersion } from '@tauri-apps/api/app';
 import { useSettings } from '../../hooks/useSettings';
 import { useLocale } from '../../hooks/useLocale';
 import { AppSettings } from '../../domain/entities/AppSettings';
@@ -14,6 +15,11 @@ export const SettingsPage: React.FC = () => {
   const [localSettings, setLocalSettings] = useState<AppSettings>(appSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [version, setVersion] = useState('');
+
+  useEffect(() => {
+    getVersion().then(v => setVersion(v)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLocalSettings(appSettings);
@@ -127,6 +133,17 @@ export const SettingsPage: React.FC = () => {
           >
             <option value="pdf">{t('pdf')}</option>
           </select>
+        </div>
+      </div>
+
+      {/* About */}
+      <div className="settings-section">
+        <h2 className="settings-section-title">{t('about')}</h2>
+        <div className="setting-row">
+          <div className="setting-label">
+            <span>{t('appName')}</span>
+          </div>
+          <span className="setting-value">{version && `v${version}`}</span>
         </div>
       </div>
 
