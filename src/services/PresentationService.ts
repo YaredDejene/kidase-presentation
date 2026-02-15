@@ -8,8 +8,6 @@ import {
   templateRepository,
   variableRepository,
   ruleRepository,
-  gitsaweRepository,
-  verseRepository,
 } from '../repositories';
 import { createRuleDefinition } from '../domain/entities/RuleDefinition';
 import { excelImportService, ImportResult } from './ExcelImportService';
@@ -131,41 +129,6 @@ export class PresentationService {
         );
         await ruleRepository.create(ruleDef);
       }
-    }
-
-    // Import Gitsawe records (reference data — clear and replace)
-    if (result.gitsawes.length > 0) {
-      const existingGitsawes = await gitsaweRepository.getAll();
-      for (const existing of existingGitsawes) {
-        await ruleRepository.deleteByGitsaweId(existing.id);
-        await gitsaweRepository.delete(existing.id);
-      }
-
-      for (const imported of result.gitsawes) {
-        const created = await gitsaweRepository.create(imported.gitsawe);
-        if (imported.selectionRule) {
-          const ruleDef = createRuleDefinition(
-            imported.selectionRule.name,
-            'gitsawe',
-            imported.selectionRule.ruleJson,
-            {
-              gitsaweId: created.id,
-              isEnabled: true,
-            }
-          );
-          await ruleRepository.create(ruleDef);
-        }
-      }
-    }
-
-    // Import Verse records (reference data — clear and replace)
-    if (result.verses.length > 0) {
-      const existingVerses = await verseRepository.getAll();
-      for (const existing of existingVerses) {
-        await verseRepository.delete(existing.id);
-      }
-
-      await verseRepository.createMany(result.verses);
     }
 
     // Get template

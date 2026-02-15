@@ -11,6 +11,7 @@ interface ImportMetadata {
   presentationName: string;
   presentationType: string;
   templateName?: string;
+  isPrimary: boolean;
   lang1Name?: string;
   lang2Name?: string;
   lang3Name?: string;
@@ -115,8 +116,6 @@ export interface ImportResult {
   slides: Omit<Slide, 'id'>[];
   variables: Omit<Variable, 'id'>[];
   displayRules: ImportedDisplayRule[];
-  gitsawes: ImportedGitsawe[];
-  verses: Omit<Verse, 'id' | 'createdAt'>[];
   warnings: string[];
 }
 
@@ -139,6 +138,34 @@ export class ExcelImportService {
     return this.importFromArrayBuffer(data.buffer, templateId);
   }
 
+  async importGitsaweFromPath(filePath: string): Promise<{ gitsawes: ImportedGitsawe[]; warnings: string[] }> {
+    const data = await readFile(filePath);
+    const workbook = XLSX.read(data.buffer, { type: 'array' });
+    const warnings: string[] = [];
+
+    const gitsaweSheet = workbook.Sheets['Gitsawe'] || workbook.Sheets['gitsawe'];
+    if (!gitsaweSheet) {
+      throw new Error('Gitsawe sheet not found in Excel file');
+    }
+
+    const gitsawes = this.parseGitsaweSheet(gitsaweSheet, warnings);
+    return { gitsawes, warnings };
+  }
+
+  async importVersesFromPath(filePath: string): Promise<{ verses: Omit<Verse, 'id' | 'createdAt'>[]; warnings: string[] }> {
+    const data = await readFile(filePath);
+    const workbook = XLSX.read(data.buffer, { type: 'array' });
+    const warnings: string[] = [];
+
+    const versesSheet = workbook.Sheets['Verses'] || workbook.Sheets['verses'];
+    if (!versesSheet) {
+      throw new Error('Verses sheet not found in Excel file');
+    }
+
+    const verses = this.parseVersesSheet(versesSheet);
+    return { verses, warnings };
+  }
+
   private parseWorkbook(workbook: XLSX.WorkBook, templateId: string): ImportResult {
     const warnings: string[] = [];
 
@@ -159,7 +186,7 @@ export class ExcelImportService {
       workbook.Sheets['Content'] ||
       workbook.Sheets['content'] ||
       workbook.Sheets[workbook.SheetNames.find(name =>
-        !['metadata', 'variables'].includes(name.toLowerCase())
+        !['metadata', 'variables', 'gitsawe', 'verses'].includes(name.toLowerCase())
       ) || workbook.SheetNames[0]];
 
     if (!contentSheet) {
@@ -185,7 +212,7 @@ export class ExcelImportService {
       type: metadata.presentationType,
       templateId: templateId,
       languageMap: languageMap,
-      isPrimary: true,
+      isPrimary: metadata.isPrimary,
       isActive: false,
     };
 
@@ -214,32 +241,7 @@ export class ExcelImportService {
     // Parse display rules
     const displayRules = this.parseDisplayRules(rows, warnings);
 
-    // Read Gitsawe sheet (optional)
-    console.log('[Import] Sheet names:', workbook.SheetNames);
-    const gitsaweSheet =
-      workbook.Sheets['Gitsawe'] || workbook.Sheets['gitsawe'];
-
-    let gitsawes: ImportedGitsawe[] = [];
-    if (gitsaweSheet) {
-      gitsawes = this.parseGitsaweSheet(gitsaweSheet, warnings);
-      console.log('[Import] Parsed Gitsawe records:', gitsawes.length);
-    } else {
-      console.log('[Import] No Gitsawe sheet found');
-    }
-
-    // Read Verses sheet (optional)
-    const versesSheet =
-      workbook.Sheets['Verses'] || workbook.Sheets['verses'];
-
-    let verses: Omit<Verse, 'id' | 'createdAt'>[] = [];
-    if (versesSheet) {
-      verses = this.parseVersesSheet(versesSheet);
-      console.log('[Import] Parsed Verse records:', verses.length);
-    } else {
-      console.log('[Import] No Verses sheet found');
-    }
-
-    return { presentation, slides, variables, displayRules, gitsawes, verses, warnings };
+    return { presentation, slides, variables, displayRules, warnings };
   }
 
   private parseMetadata(sheet: XLSX.WorkSheet): ImportMetadata {
@@ -268,10 +270,16 @@ export class ExcelImportService {
       }
     }
 
+    const isPrimaryRaw = metadata['IsPrimary'] || metadata['isPrimary'] || '';
+    const isPrimary = isPrimaryRaw
+      ? ['yes', 'true', '1'].includes(isPrimaryRaw.trim().toLowerCase())
+      : false;
+
     return {
       presentationName: metadata['PresentationName'] || metadata['Name'] || 'Untitled',
       presentationType: metadata['PresentationType'] || metadata['Type'] || 'Custom',
       templateName: metadata['TemplateName'] || metadata['Template'],
+      isPrimary,
       lang1Name: metadata['Lang1Name'] || metadata['Lang1'] || metadata['Language1'],
       lang2Name: metadata['Lang2Name'] || metadata['Lang2'] || metadata['Language2'],
       lang3Name: metadata['Lang3Name'] || metadata['Lang3'] || metadata['Language3'],
@@ -283,6 +291,7 @@ export class ExcelImportService {
     return {
       presentationName: 'Imported Presentation',
       presentationType: 'Custom',
+      isPrimary: false,
     };
   }
 
@@ -521,6 +530,7 @@ export class ExcelImportService {
     const metadataData = [
       ['PresentationName', 'My Liturgy'],
       ['PresentationType', 'Kidase'],
+      ['IsPrimary', 'No'],
       ['Lang1Name', "Ge'ez"],
       ['Lang2Name', 'Amharic'],
       ['Lang3Name', 'English'],

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Verse } from '../domain/entities/Verse';
-import { verseRepository, templateRepository } from '../repositories';
+import { verseRepository } from '../repositories';
 import { excelImportService } from '../services/ExcelImportService';
 import { useAppStore } from '../store/appStore';
 import { toast } from '../store/toastStore';
@@ -34,15 +34,8 @@ export function useVerses() {
   }, [loadVerses]);
 
   const importFromExcel = useCallback(async (filePath: string): Promise<boolean> => {
-    const templates = await templateRepository.getAll();
-    const defaultTemplateId = templates[0]?.id;
-    if (!defaultTemplateId) {
-      toast.error(t('noTemplateAvailable'));
-      return false;
-    }
-
     try {
-      const result = await excelImportService.importFromPath(filePath, defaultTemplateId);
+      const result = await excelImportService.importVersesFromPath(filePath);
 
       if (result.verses.length === 0) {
         toast.error(t('noVerseRecords'));

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Gitsawe } from '../domain/entities/Gitsawe';
-import { gitsaweRepository, ruleRepository, templateRepository } from '../repositories';
+import { gitsaweRepository, ruleRepository } from '../repositories';
 import { excelImportService } from '../services/ExcelImportService';
 import { createRuleDefinition } from '../domain/entities/RuleDefinition';
 import { toast } from '../store/toastStore';
@@ -33,15 +33,8 @@ export function useGitsawe() {
   }, [loadGitsawes]);
 
   const importFromExcel = useCallback(async (filePath: string): Promise<boolean> => {
-    const templates = await templateRepository.getAll();
-    const defaultTemplateId = templates[0]?.id;
-    if (!defaultTemplateId) {
-      toast.error(t('noTemplateAvailable'));
-      return false;
-    }
-
     try {
-      const result = await excelImportService.importFromPath(filePath, defaultTemplateId);
+      const result = await excelImportService.importGitsaweFromPath(filePath);
 
       if (result.gitsawes.length === 0) {
         toast.error(t('noGitsaweRecords'));
