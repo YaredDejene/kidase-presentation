@@ -64,6 +64,14 @@ export class PresentationRepository implements IPresentationRepository {
     return rows.length > 0 ? this.mapRowToEntity(rows[0]) : null;
   }
 
+  async getPrimary(): Promise<Presentation | null> {
+    const db = await getDatabase();
+    const rows = await db.select<PresentationRow[]>(
+      'SELECT * FROM presentations WHERE is_primary = 1 LIMIT 1'
+    );
+    return rows.length > 0 ? this.mapRowToEntity(rows[0]) : null;
+  }
+
   async setActive(id: string): Promise<void> {
     const db = await getDatabase();
     await db.execute('UPDATE presentations SET is_active = 0');

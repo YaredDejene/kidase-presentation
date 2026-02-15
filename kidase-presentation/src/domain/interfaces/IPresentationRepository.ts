@@ -10,6 +10,7 @@ export interface IPresentationRepository {
   getById(id: string): Promise<Presentation | null>;
   getByName(name: string): Promise<Presentation | null>;
   getActive(): Promise<Presentation | null>;
+  getPrimary(): Promise<Presentation | null>;
   setActive(id: string): Promise<void>;
   clearActive(): Promise<void>;
   getByTemplateId(templateId: string): Promise<Presentation[]>;

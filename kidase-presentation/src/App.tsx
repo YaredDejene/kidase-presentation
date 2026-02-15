@@ -66,14 +66,15 @@ function App() {
         const loadedVerses = await verseRepository.getAll();
         setVerses(loadedVerses);
 
-        // Auto-load active presentation
-        const active = await presentationRepository.getActive();
-        if (active) {
+        // Auto-load primary presentation (fall back to active)
+        const primary = await presentationRepository.getPrimary();
+        const toLoad = primary ?? await presentationRepository.getActive();
+        if (toLoad) {
           try {
-            const loaded = await presentationService.loadPresentation(active.id);
+            const loaded = await presentationService.loadPresentation(toLoad.id);
             if (loaded) loadPresentationData(loaded);
           } catch (error) {
-            console.error('Failed to load active presentation:', error);
+            console.error('Failed to load presentation:', error);
           }
         }
       } catch (error) {

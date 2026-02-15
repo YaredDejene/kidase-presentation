@@ -45,7 +45,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   onVariablesChange,
   onTemplateChange,
 }) => {
-  const { ruleEvaluationDate, setRuleEvaluationDate, isMehella, setIsMehella } = useAppStore();
+  const { ruleEvaluationDate, setRuleEvaluationDate, isMehella, setIsMehella, ruleFilteredSlideIds } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -331,7 +331,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
                   <span className="stat-label">Total Slides</span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-value">{slides.filter(s => !s.isDisabled).length}</span>
+                  <span className="stat-value">{slides.filter(s => !s.isDisabled && (ruleFilteredSlideIds === null || ruleFilteredSlideIds.includes(s.id))).length}</span>
                   <span className="stat-label">Active Slides</span>
                 </div>
                 <div className="stat-item">

@@ -190,9 +190,82 @@ export function useRules() {
       }
     }
 
+    // Evaluate secondary presentation rules (if secondary is loaded)
+    const { secondaryPresentation, secondarySlides, secondaryVariables } = useAppStore.getState();
+    if (secondaryPresentation && secondarySlides.length > 0) {
+      try {
+        const secRules = await ruleRepository.getByPresentationId(secondaryPresentation.id);
+        const enabledSecRules = secRules.filter(r => r.isEnabled);
+
+        for (const ruleDef of enabledSecRules) {
+          try {
+            const ruleEntry: RuleEntry = JSON.parse(ruleDef.ruleJson);
+
+            if (ruleDef.scope === 'slide') {
+              if (ruleDef.slideId) {
+                const targetSlide = secondarySlides.find(s => s.id === ruleDef.slideId);
+                if (targetSlide) {
+                  const slideContext = buildContext({
+                    presentation: secondaryPresentation,
+                    slide: targetSlide,
+                    variables: secondaryVariables,
+                    appSettings,
+                    gitsawes: allGitsawes,
+                    gitsaweRules,
+                    overrideDate,
+                    extra: { isMehella },
+                  });
+                  const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
+                  results.push(result);
+                  if (result.outcome.visible === false) {
+                    hiddenSlideIds.add(targetSlide.id);
+                  }
+                }
+              } else {
+                for (const slide of secondarySlides) {
+                  const slideContext = buildContext({
+                    presentation: secondaryPresentation,
+                    slide,
+                    variables: secondaryVariables,
+                    appSettings,
+                    gitsawes: allGitsawes,
+                    gitsaweRules,
+                    overrideDate,
+                    extra: { isMehella },
+                  });
+                  const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
+                  results.push(result);
+                  if (result.outcome.visible === false) {
+                    hiddenSlideIds.add(slide.id);
+                  }
+                }
+              }
+            } else {
+              const secContext = buildContext({
+                presentation: secondaryPresentation,
+                variables: secondaryVariables,
+                appSettings,
+                gitsawes: allGitsawes,
+                gitsaweRules,
+                overrideDate,
+                extra: { isMehella },
+              });
+              const result = ruleEngine.evaluateRule(ruleEntry, secContext);
+              results.push(result);
+            }
+          } catch (err) {
+            console.error(`Failed to evaluate secondary rule ${ruleDef.id}:`, err);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load secondary rules:', err);
+      }
+    }
+
     // Compute filtered slide IDs (slides not hidden by rules)
+    const allSlides = [...currentSlides, ...secondarySlides];
     if (hiddenSlideIds.size > 0) {
-      const visibleIds = currentSlides
+      const visibleIds = allSlides
         .filter(s => !hiddenSlideIds.has(s.id))
         .map(s => s.id);
       setRuleFilteredSlideIds(visibleIds);

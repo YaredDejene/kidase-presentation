@@ -196,8 +196,9 @@
 }
 
 .slide-row td {
-  padding: 12px 15px;
+  padding: 8px 15px;
   vertical-align: middle;
+  height: 48px;
 }
 
 .slide-order-badge {

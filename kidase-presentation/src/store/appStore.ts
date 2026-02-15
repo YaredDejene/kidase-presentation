@@ -9,12 +9,18 @@ import { Verse } from '../domain/entities/Verse';
 import { placeholderService } from '../services/PlaceholderService';
 
 interface AppState {
-  // Current presentation data
+  // Current (primary) presentation data
   currentPresentation: Presentation | null;
   currentSlides: Slide[];
   currentTemplate: Template | null;
   currentVariables: Variable[];
   allTemplates: Template[];
+
+  // Secondary presentation data (auto-loaded based on gitsawe.kidaseType)
+  secondaryPresentation: Presentation | null;
+  secondarySlides: Slide[];
+  secondaryTemplate: Template | null;
+  secondaryVariables: Variable[];
 
   // Reference data
   verses: Verse[];
@@ -68,6 +74,15 @@ interface AppState {
   }) => void;
   clearPresentationData: () => void;
 
+  // Secondary presentation actions
+  loadSecondaryData: (data: {
+    presentation: Presentation;
+    slides: Slide[];
+    template: Template;
+    variables: Variable[];
+  }) => void;
+  clearSecondaryData: () => void;
+
   // Presentation mode controls
   startPresentation: () => void;
   stopPresentation: () => void;
@@ -88,8 +103,11 @@ interface AppState {
   toggleSlideDisabled: (id: string) => void;
   setSlideTemplateOverride: (slideId: string, templateId: string | null) => void;
 
-  // Template override resolution
+  // Per-slide resolution (handles primary vs secondary)
   getTemplateForSlide: (slide: Slide) => Template | null;
+  getVariablesForSlide: (slide: Slide) => Variable[];
+  getLanguageMapForSlide: (slide: Slide) => Presentation['languageMap'];
+  getLanguageSettingsForSlide: (slide: Slide) => Presentation['languageSettings'];
 
   // Variable manipulation
   updateVariable: (id: string, value: string) => void;
@@ -99,6 +117,7 @@ interface AppState {
   // Computed getters
   expandDynamicSlides: (slides: Slide[]) => Slide[];
   getEnabledSlides: () => Slide[];
+  getMergedEnabledSlides: () => Slide[];
   getExpandedSlides: () => Slide[];
   getCurrentSlide: () => Slide | null;
   getSlideCount: () => number;
@@ -113,6 +132,10 @@ export const useAppStore = create<AppState>()(
     currentTemplate: null,
     currentVariables: [],
     allTemplates: [],
+    secondaryPresentation: null,
+    secondarySlides: [],
+    secondaryTemplate: null,
+    secondaryVariables: [],
     verses: [],
     appSettings: defaultAppSettings,
     ruleFilteredSlideIds: null,
@@ -123,7 +146,7 @@ export const useAppStore = create<AppState>()(
     currentSlideIndex: 0,
     isEditing: false,
     selectedSlideId: null,
-    currentView: 'editor',
+    currentView: 'presentation',
     isLoading: false,
     error: null,
 
@@ -157,6 +180,10 @@ export const useAppStore = create<AppState>()(
       currentSlides: [],
       currentTemplate: null,
       currentVariables: [],
+      secondaryPresentation: null,
+      secondarySlides: [],
+      secondaryTemplate: null,
+      secondaryVariables: [],
       ruleFilteredSlideIds: null,
       ruleEvaluationDate: null,
       isMehella: false,
@@ -167,9 +194,24 @@ export const useAppStore = create<AppState>()(
       selectedSlideId: null,
     }),
 
+    // Secondary presentation data
+    loadSecondaryData: (data) => set({
+      secondaryPresentation: data.presentation,
+      secondarySlides: data.slides,
+      secondaryTemplate: data.template,
+      secondaryVariables: data.variables,
+    }),
+
+    clearSecondaryData: () => set({
+      secondaryPresentation: null,
+      secondarySlides: [],
+      secondaryTemplate: null,
+      secondaryVariables: [],
+    }),
+
     // Presentation mode controls
     startPresentation: () => {
-      const slides = get().getEnabledSlides();
+      const slides = get().getMergedEnabledSlides();
       if (slides.length > 0) {
         set({ isPresenting: true, currentSlideIndex: 0, isEditing: false });
         document.documentElement.requestFullscreen?.().catch(() => {
@@ -187,7 +229,7 @@ export const useAppStore = create<AppState>()(
 
     nextSlide: () => {
       const { currentSlideIndex } = get();
-      const enabledSlides = get().getEnabledSlides();
+      const enabledSlides = get().getMergedEnabledSlides();
       if (currentSlideIndex < enabledSlides.length - 1) {
         set({ currentSlideIndex: currentSlideIndex + 1 });
       }
@@ -201,7 +243,7 @@ export const useAppStore = create<AppState>()(
     },
 
     goToSlide: (index) => {
-      const enabledSlides = get().getEnabledSlides();
+      const enabledSlides = get().getMergedEnabledSlides();
       if (index >= 0 && index < enabledSlides.length) {
         set({ currentSlideIndex: index });
       }
@@ -266,11 +308,36 @@ export const useAppStore = create<AppState>()(
     },
 
     getTemplateForSlide: (slide) => {
-      const { allTemplates, currentTemplate } = get();
+      const { allTemplates, currentTemplate, secondaryTemplate, secondarySlides } = get();
       if (slide.templateOverrideId) {
         return allTemplates.find(t => t.id === slide.templateOverrideId) || currentTemplate;
       }
-      return currentTemplate;
+      const isSecondary = secondarySlides.some(s => s.id === slide.id)
+        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
+      return isSecondary ? secondaryTemplate : currentTemplate;
+    },
+
+    getVariablesForSlide: (slide) => {
+      const { currentVariables, secondarySlides, secondaryVariables } = get();
+      const isSecondary = secondarySlides.some(s => s.id === slide.id)
+        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
+      return isSecondary ? secondaryVariables : currentVariables;
+    },
+
+    getLanguageMapForSlide: (slide) => {
+      const { currentPresentation, secondaryPresentation, secondarySlides } = get();
+      const isSecondary = secondarySlides.some(s => s.id === slide.id)
+        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
+      const pres = isSecondary ? secondaryPresentation : currentPresentation;
+      return pres?.languageMap ?? {};
+    },
+
+    getLanguageSettingsForSlide: (slide) => {
+      const { currentPresentation, secondaryPresentation, secondarySlides } = get();
+      const isSecondary = secondarySlides.some(s => s.id === slide.id)
+        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
+      const pres = isSecondary ? secondaryPresentation : currentPresentation;
+      return pres?.languageSettings;
     },
 
     // Variable manipulation
@@ -360,6 +427,23 @@ export const useAppStore = create<AppState>()(
       return get().expandDynamicSlides(slides);
     },
 
+    getMergedEnabledSlides: () => {
+      const state = get();
+      const primarySlides = state.getEnabledSlides();
+
+      if (!state.secondaryPresentation || state.secondarySlides.length === 0) {
+        return primarySlides;
+      }
+
+      let secSlides = state.secondarySlides.filter(s => !s.isDisabled);
+      if (state.ruleFilteredSlideIds !== null) {
+        secSlides = secSlides.filter(s => state.ruleFilteredSlideIds!.includes(s.id));
+      }
+      secSlides = state.expandDynamicSlides(secSlides);
+
+      return [...primarySlides, ...secSlides];
+    },
+
     getExpandedSlides: () => {
       const { currentSlides } = get();
       return get().expandDynamicSlides(currentSlides);
@@ -368,7 +452,7 @@ export const useAppStore = create<AppState>()(
     getCurrentSlide: () => {
       const { currentSlideIndex, isPresenting } = get();
       if (!isPresenting) return null;
-      const enabledSlides = get().getEnabledSlides();
+      const enabledSlides = get().getMergedEnabledSlides();
       return enabledSlides[currentSlideIndex] || null;
     },
 
@@ -387,6 +471,8 @@ export const selectAppSettings = (state: AppState) => state.appSettings;
 export const selectRuleFilteredSlideIds = (state: AppState) => state.ruleFilteredSlideIds;
 export const selectRuleEvaluationDate = (state: AppState) => state.ruleEvaluationDate;
 export const selectRuleContextMeta = (state: AppState) => state.ruleContextMeta;
+export const selectSecondaryPresentation = (state: AppState) => state.secondaryPresentation;
+export const selectSecondarySlides = (state: AppState) => state.secondarySlides;
 export const selectIsPresenting = (state: AppState) => state.isPresenting;
 export const selectCurrentSlideIndex = (state: AppState) => state.currentSlideIndex;
 export const selectCurrentView = (state: AppState) => state.currentView;

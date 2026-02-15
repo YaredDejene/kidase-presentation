@@ -6,7 +6,9 @@ import { PresentationSettingsDialog } from '../dialogs/PresentationSettingsDialo
 import { Slide } from '../../domain/entities/Slide';
 import { Template } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
-import { templateRepository } from '../../repositories';
+import { LanguageMap } from '../../domain/entities/Presentation';
+import { templateRepository, presentationRepository } from '../../repositories';
+import { presentationService } from '../../services/PresentationService';
 import { pdfExportService } from '../../services/PdfExportService';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from '../../store/toastStore';
@@ -18,6 +20,8 @@ export const PresentationPage: React.FC = () => {
     currentTemplate,
     currentSlides,
     currentVariables,
+    secondaryPresentation,
+    secondarySlides,
     verses,
     ruleFilteredSlideIds,
     ruleContextMeta,
@@ -25,7 +29,13 @@ export const PresentationPage: React.FC = () => {
     setCurrentPresentation,
     setCurrentTemplate,
     setCurrentVariables,
-    getEnabledSlides,
+    getMergedEnabledSlides,
+    getTemplateForSlide,
+    getVariablesForSlide,
+    getLanguageMapForSlide,
+    getLanguageSettingsForSlide,
+    loadSecondaryData,
+    clearSecondaryData,
   } = useAppStore();
 
   const { evaluateRules } = useRules();
@@ -49,10 +59,46 @@ export const PresentationPage: React.FC = () => {
     }
   }, [evaluateRules, currentPresentation]);
 
-  // Get the filtered/expanded slides for display
+  // Load secondary kidase based on gitsawe.kidaseType
+  useEffect(() => {
+    const gitsawe = ruleContextMeta?.gitsawe as Record<string, unknown> | undefined;
+    const kidaseType = gitsawe?.kidaseType as string | undefined;
+
+    if (!kidaseType || !currentPresentation) {
+      clearSecondaryData();
+      return;
+    }
+
+    // Don't load secondary if it matches the primary
+    if (kidaseType === currentPresentation.name) {
+      clearSecondaryData();
+      return;
+    }
+
+    // Don't reload if already loaded
+    if (secondaryPresentation?.name === kidaseType) return;
+
+    presentationRepository.getByName(kidaseType).then(async (pres) => {
+      if (!pres) {
+        clearSecondaryData();
+        return;
+      }
+      const loaded = await presentationService.loadPresentation(pres.id);
+      if (loaded) {
+        loadSecondaryData(loaded);
+        // Re-evaluate rules to include secondary slides
+        evaluateRules();
+      }
+    }).catch((err) => {
+      console.error('Failed to load secondary kidase:', err);
+      clearSecondaryData();
+    });
+  }, [ruleContextMeta, currentPresentation]);
+
+  // Get the filtered/expanded slides for display (merged primary + secondary)
   const displaySlides = useMemo(() => {
-    return getEnabledSlides();
-  }, [currentSlides, ruleFilteredSlideIds, ruleContextMeta, verses, getEnabledSlides]);
+    return getMergedEnabledSlides();
+  }, [currentSlides, secondarySlides, ruleFilteredSlideIds, ruleContextMeta, verses, getMergedEnabledSlides]);
 
   // Auto-select first slide when slides change
   useEffect(() => {
@@ -73,11 +119,26 @@ export const PresentationPage: React.FC = () => {
     return displaySlides.find(s => s.id === selectedSlideId) || null;
   }, [selectedSlideId, displaySlides]);
 
-  // Resolve template for selected slide (respects template overrides)
+  // Resolve per-slide properties for selected slide
   const resolvedTemplate = useMemo(() => {
     if (!selectedSlide || !currentTemplate) return currentTemplate;
-    return useAppStore.getState().getTemplateForSlide(selectedSlide) || currentTemplate;
-  }, [selectedSlide, currentTemplate]);
+    return getTemplateForSlide(selectedSlide) || currentTemplate;
+  }, [selectedSlide, currentTemplate, getTemplateForSlide]);
+
+  const resolvedVariables = useMemo(() => {
+    if (!selectedSlide) return currentVariables;
+    return getVariablesForSlide(selectedSlide);
+  }, [selectedSlide, currentVariables, getVariablesForSlide]);
+
+  const resolvedLanguageMap = useMemo(() => {
+    if (!selectedSlide || !currentPresentation) return currentPresentation?.languageMap ?? {};
+    return getLanguageMapForSlide(selectedSlide);
+  }, [selectedSlide, currentPresentation, getLanguageMapForSlide]);
+
+  const resolvedLanguageSettings = useMemo(() => {
+    if (!selectedSlide || !currentPresentation) return currentPresentation?.languageSettings;
+    return getLanguageSettingsForSlide(selectedSlide);
+  }, [selectedSlide, currentPresentation, getLanguageSettingsForSlide]);
 
   // Resizable panel
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -120,14 +181,17 @@ export const PresentationPage: React.FC = () => {
     const exportSlides = displaySlides;
     const progress = toast.progress(`Exporting PDF (0/${exportSlides.length})...`);
 
-    // Build template override map for per-slide templates
-    const { allTemplates } = useAppStore.getState();
+    // Build per-slide maps for templates, variables, and language maps
+    const store = useAppStore.getState();
     const templateMap = new Map<string, Template>();
+    const variablesMap = new Map<string, Variable[]>();
+    const languageMapMap = new Map<string, LanguageMap>();
+
     for (const slide of exportSlides) {
-      if (slide.templateOverrideId) {
-        const override = allTemplates.find(t => t.id === slide.templateOverrideId);
-        if (override) templateMap.set(slide.id, override);
-      }
+      const tmpl = store.getTemplateForSlide(slide);
+      if (tmpl) templateMap.set(slide.id, tmpl);
+      variablesMap.set(slide.id, store.getVariablesForSlide(slide));
+      languageMapMap.set(slide.id, store.getLanguageMapForSlide(slide));
     }
 
     try {
@@ -142,7 +206,9 @@ export const PresentationPage: React.FC = () => {
           progress.update(pct, `Exporting slide ${current}/${total}...`);
         },
         ruleContextMeta,
-        templateMap.size > 0 ? templateMap : undefined
+        templateMap.size > 0 ? templateMap : undefined,
+        variablesMap.size > 0 ? variablesMap : undefined,
+        languageMapMap.size > 0 ? languageMapMap : undefined
       );
 
       const { writeFile } = await import('@tauri-apps/plugin-fs');
@@ -201,7 +267,10 @@ export const PresentationPage: React.FC = () => {
       {/* Toolbar */}
       <div className="pres-page-toolbar">
         <div className="pres-page-toolbar-left">
-          <span className="pres-page-name">{currentPresentation.name}</span>
+          <span className="pres-page-name">
+            {currentPresentation.name}
+            {secondaryPresentation && ` + ${secondaryPresentation.name}`}
+          </span>
           <span className="pres-page-count">{displaySlides.length} slides</span>
         </div>
         <div className="pres-page-toolbar-right">
@@ -279,9 +348,9 @@ export const PresentationPage: React.FC = () => {
               <SlidePreview
                 slide={selectedSlide}
                 template={resolvedTemplate!}
-                variables={currentVariables}
-                languageMap={currentPresentation.languageMap}
-                languageSettings={currentPresentation.languageSettings}
+                variables={resolvedVariables}
+                languageMap={resolvedLanguageMap}
+                languageSettings={resolvedLanguageSettings}
                 meta={ruleContextMeta}
               />
               <div className="pres-page-slide-details">

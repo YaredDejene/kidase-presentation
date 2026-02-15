@@ -7,7 +7,6 @@ export const PresentationView: React.FC = () => {
   const {
     currentTemplate,
     currentPresentation,
-    currentVariables,
     currentSlideIndex,
     isPresenting,
     appSettings,
@@ -16,16 +15,23 @@ export const PresentationView: React.FC = () => {
     previousSlide,
     stopPresentation,
     goToSlide,
-    getEnabledSlides,
+    getMergedEnabledSlides,
+    getTemplateForSlide,
+    getVariablesForSlide,
+    getLanguageMapForSlide,
+    getLanguageSettingsForSlide,
   } = useAppStore();
 
-  const enabledSlides = getEnabledSlides();
+  const enabledSlides = getMergedEnabledSlides();
   const currentSlide = enabledSlides[currentSlideIndex];
 
-  // Resolve template for current slide (respects template overrides)
+  // Resolve per-slide properties
   const resolvedTemplate = currentSlide
-    ? (useAppStore.getState().getTemplateForSlide(currentSlide) || currentTemplate)
+    ? (getTemplateForSlide(currentSlide) || currentTemplate)
     : currentTemplate;
+  const resolvedVariables = currentSlide ? getVariablesForSlide(currentSlide) : [];
+  const resolvedLanguageMap = currentSlide ? getLanguageMapForSlide(currentSlide) : {};
+  const resolvedLanguageSettings = currentSlide ? getLanguageSettingsForSlide(currentSlide) : undefined;
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     switch (event.key) {
@@ -117,9 +123,9 @@ export const PresentationView: React.FC = () => {
       <SlideRenderer
         slide={currentSlide}
         template={resolvedTemplate!}
-        variables={currentVariables}
-        languageMap={currentPresentation.languageMap}
-        languageSettings={currentPresentation.languageSettings}
+        variables={resolvedVariables}
+        languageMap={resolvedLanguageMap}
+        languageSettings={resolvedLanguageSettings}
         meta={ruleContextMeta}
       />
 

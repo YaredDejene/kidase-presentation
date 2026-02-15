@@ -62,7 +62,7 @@ export const SlideEditor: React.FC = () => {
     return currentSlides.find(s => s.id === selectedSlideId) || null;
   }, [selectedSlideId, currentSlides]);
 
-  const disabledCount = currentSlides.filter(s => s.isDisabled).length;
+  const activeCount = currentSlides.filter(s => !s.isDisabled).length;
 
   const handleKidaseChange = useCallback(async (id: string) => {
     if (!id || id === currentPresentation?.id) return;
@@ -150,7 +150,7 @@ export const SlideEditor: React.FC = () => {
         <div className="editor-toolbar-left">
           <span className="editor-title">{currentPresentation.name}</span>
           <span className="editor-count">
-            {currentSlides.length} slides{disabledCount > 0 ? ` (${disabledCount} disabled)` : ''}
+            {activeCount} slides
           </span>
         </div>
         <div className="editor-toolbar-right">
