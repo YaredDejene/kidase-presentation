@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useRules } from '../../hooks/useRules';
+import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { SlidePreview } from '../editor/SlidePreview';
 import { PresentationSettingsDialog } from '../dialogs/PresentationSettingsDialog';
-import { Slide } from '../../domain/entities/Slide';
+import { getSlidePreviewText, getSlideTitle } from '../../domain/entities/Slide';
 import { Template } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
 import { LanguageMap } from '../../domain/entities/Presentation';
@@ -41,11 +42,10 @@ export const PresentationPage: React.FC = () => {
   const { evaluateRules } = useRules();
 
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
-  const [listWidth, setListWidth] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isResizing = useRef(false);
+  const { width: listWidth, handleResizeStart } = useResizablePanel(containerRef);
 
   // Load templates for the settings dialog
   useEffect(() => {
@@ -140,34 +140,6 @@ export const PresentationPage: React.FC = () => {
     return getLanguageSettingsForSlide(selectedSlide);
   }, [selectedSlide, currentPresentation, getLanguageSettingsForSlide]);
 
-  // Resizable panel
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizing.current = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current || !containerRef.current) return;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const newWidth = e.clientX - containerRect.left;
-      const minWidth = 300;
-      const maxWidth = containerRect.width - 350;
-      setListWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
-    };
-
-    const handleMouseUp = () => {
-      isResizing.current = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, []);
-
   const handleExportPdf = async () => {
     if (!currentPresentation || !currentTemplate) return;
 
@@ -221,31 +193,6 @@ export const PresentationPage: React.FC = () => {
     }
   };
 
-  // Get preview text for a slide
-  const getSlidePreviewText = (slide: Slide): string => {
-    const blocks = slide.blocksJson || [];
-    for (const block of blocks) {
-      for (const key of ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const) {
-        const val = block[key];
-        if (val && typeof val === 'string' && val.trim()) {
-          return val.trim().substring(0, 80);
-        }
-      }
-    }
-    return '(empty)';
-  };
-
-  const getSlideTitle = (slide: Slide): string | null => {
-    if (!slide.titleJson) return null;
-    for (const key of ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const) {
-      const val = slide.titleJson[key];
-      if (val && typeof val === 'string' && val.trim()) {
-        return val.trim();
-      }
-    }
-    return null;
-  };
-
   if (!currentPresentation || !currentTemplate) {
     return (
       <div className="pres-page-empty">
@@ -276,7 +223,7 @@ export const PresentationPage: React.FC = () => {
         <div className="pres-page-toolbar-right">
           <button
             onClick={() => setShowSettings(true)}
-            className="pres-page-btn-icon"
+            className="btn-icon"
             title="Presentation settings"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useSlides } from '../../hooks/useSlides';
+import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { SlideRow } from './SlideRow';
 import { SlideContentPanel } from './SlideContentPanel';
 import { Modal } from '../common/Modal';
@@ -32,11 +33,10 @@ export const SlideEditor: React.FC = () => {
 
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [listWidth, setListWidth] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [isPrimary, setIsPrimary] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isResizing = useRef(false);
+  const { width: listWidth, handleResizeStart } = useResizablePanel(containerRef);
 
   // Load all presentations
   useEffect(() => {
@@ -100,34 +100,6 @@ export const SlideEditor: React.FC = () => {
     await setTemplateOverride(selectedSlideId, value || null);
   }, [selectedSlideId, setTemplateOverride]);
 
-  // Resizable panel handlers
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizing.current = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current || !containerRef.current) return;
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const newWidth = e.clientX - containerRect.left;
-      const minWidth = 300;
-      const maxWidth = containerRect.width - 350;
-      setListWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
-    };
-
-    const handleMouseUp = () => {
-      isResizing.current = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, []);
-
   if (!currentPresentation || !currentTemplate) {
     return (
       <div className="editor-empty">
@@ -156,7 +128,7 @@ export const SlideEditor: React.FC = () => {
         <div className="editor-toolbar-right">
           <button
             onClick={() => setShowSettings(true)}
-            className="editor-btn-icon"
+            className="btn-icon"
             title="Presentation settings"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -11,7 +11,6 @@ interface SlidePreviewProps {
   variables: Variable[];
   languageMap: LanguageMap;
   languageSettings?: LanguageSettings;
-  isRuleHidden?: boolean;
   meta?: Record<string, unknown> | null;
 }
 
@@ -21,7 +20,6 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
   variables,
   languageMap,
   languageSettings,
-  isRuleHidden,
   meta,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,11 +74,6 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
         </div>
       )}
 
-      {isRuleHidden && !slide.isDisabled && (
-        <div className="slide-preview-rule-hidden-overlay">
-          <span>HIDDEN BY RULE</span>
-        </div>
-      )}
     </div>
   );
 };

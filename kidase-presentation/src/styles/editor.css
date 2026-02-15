@@ -189,28 +189,10 @@
   color: #a0a0d0;
 }
 
-.slide-order-badge-verse {
-  background-color: #3a2a6a;
-  color: #9a8acd;
-  font-size: 14px;
-}
-
 .slide-row td {
   padding: 8px 15px;
   vertical-align: middle;
   height: 48px;
-}
-
-.slide-order-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background-color: #333;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #888;
 }
 
 .slide-title-preview {
@@ -603,22 +585,3 @@
   font-family: inherit;
 }
 
-/* Icon button in toolbar */
-.editor-btn-icon {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 4px;
-  background-color: transparent;
-  color: #888;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.editor-btn-icon:hover {
-  background-color: #333;
-  color: #ccc;
-}

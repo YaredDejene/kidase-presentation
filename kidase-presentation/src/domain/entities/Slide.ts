@@ -47,7 +47,25 @@ export function createEmptySlide(presentationId: string, order: number): Omit<Sl
 }
 
 export function getSlidePreviewText(slide: Slide): string {
-  const block = slide.blocksJson[0] || {};
-  const text = block.Lang1 || block.Lang2 || block.Lang3 || block.Lang4 || '';
-  return text.length > 100 ? text.substring(0, 100) + '...' : text;
+  const blocks = slide.blocksJson || [];
+  for (const block of blocks) {
+    for (const key of ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const) {
+      const val = block[key];
+      if (val && typeof val === 'string' && val.trim()) {
+        return val.trim().substring(0, 80);
+      }
+    }
+  }
+  return '(empty)';
+}
+
+export function getSlideTitle(slide: Slide): string | null {
+  if (!slide.titleJson) return null;
+  for (const key of ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const) {
+    const val = slide.titleJson[key];
+    if (val && typeof val === 'string' && val.trim()) {
+      return val.trim();
+    }
+  }
+  return null;
 }

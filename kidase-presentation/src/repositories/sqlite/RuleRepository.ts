@@ -39,54 +39,11 @@ export class RuleRepository implements IRuleRepository {
     return rows.length > 0 ? this.mapRowToEntity(rows[0]) : null;
   }
 
-  async getByScope(scope: RuleScope, scopeId?: string): Promise<RuleDefinition[]> {
-    const db = await getDatabase();
-
-    if (scope === 'presentation' && scopeId) {
-      const rows = await db.select<RuleRow[]>(
-        'SELECT * FROM rule_definitions WHERE scope = ? AND presentation_id = ? ORDER BY created_at',
-        [scope, scopeId]
-      );
-      return rows.map(r => this.mapRowToEntity(r));
-    }
-
-    if (scope === 'slide' && scopeId) {
-      const rows = await db.select<RuleRow[]>(
-        'SELECT * FROM rule_definitions WHERE scope = ? AND slide_id = ? ORDER BY created_at',
-        [scope, scopeId]
-      );
-      return rows.map(r => this.mapRowToEntity(r));
-    }
-
-    if (scope === 'gitsawe' && scopeId) {
-      const rows = await db.select<RuleRow[]>(
-        'SELECT * FROM rule_definitions WHERE scope = ? AND gitsawe_id = ? ORDER BY created_at',
-        [scope, scopeId]
-      );
-      return rows.map(r => this.mapRowToEntity(r));
-    }
-
-    const rows = await db.select<RuleRow[]>(
-      'SELECT * FROM rule_definitions WHERE scope = ? ORDER BY created_at',
-      [scope]
-    );
-    return rows.map(r => this.mapRowToEntity(r));
-  }
-
   async getByPresentationId(presentationId: string): Promise<RuleDefinition[]> {
     const db = await getDatabase();
     const rows = await db.select<RuleRow[]>(
       'SELECT * FROM rule_definitions WHERE presentation_id = ? ORDER BY created_at',
       [presentationId]
-    );
-    return rows.map(r => this.mapRowToEntity(r));
-  }
-
-  async getBySlideId(slideId: string): Promise<RuleDefinition[]> {
-    const db = await getDatabase();
-    const rows = await db.select<RuleRow[]>(
-      'SELECT * FROM rule_definitions WHERE slide_id = ? ORDER BY created_at',
-      [slideId]
     );
     return rows.map(r => this.mapRowToEntity(r));
   }
@@ -175,11 +132,6 @@ export class RuleRepository implements IRuleRepository {
   async deleteByPresentationId(presentationId: string): Promise<void> {
     const db = await getDatabase();
     await db.execute('DELETE FROM rule_definitions WHERE presentation_id = ?', [presentationId]);
-  }
-
-  async deleteBySlideId(slideId: string): Promise<void> {
-    const db = await getDatabase();
-    await db.execute('DELETE FROM rule_definitions WHERE slide_id = ?', [slideId]);
   }
 
   async deleteByGitsaweId(gitsaweId: string): Promise<void> {

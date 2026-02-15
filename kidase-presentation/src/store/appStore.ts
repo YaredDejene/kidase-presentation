@@ -32,10 +32,6 @@ interface AppState {
   isPresenting: boolean;
   currentSlideIndex: number;
 
-  // Edit mode state
-  isEditing: boolean;
-  selectedSlideId: string | null;
-
   // Rule engine state
   ruleFilteredSlideIds: string[] | null; // null = no filtering, array = only these IDs visible
   ruleEvaluationDate: string | null; // null = use today, ISO string = override date for rule evaluation
@@ -90,11 +86,6 @@ interface AppState {
   previousSlide: () => void;
   goToSlide: (index: number) => void;
 
-  // Edit mode controls
-  startEditing: () => void;
-  stopEditing: () => void;
-  selectSlide: (id: string | null) => void;
-
   // Slide manipulation
   updateSlide: (id: string, updates: Partial<Slide>) => void;
   addSlide: (slide: Slide) => void;
@@ -108,11 +99,6 @@ interface AppState {
   getVariablesForSlide: (slide: Slide) => Variable[];
   getLanguageMapForSlide: (slide: Slide) => Presentation['languageMap'];
   getLanguageSettingsForSlide: (slide: Slide) => Presentation['languageSettings'];
-
-  // Variable manipulation
-  updateVariable: (id: string, value: string) => void;
-  addVariable: (variable: Variable) => void;
-  removeVariable: (id: string) => void;
 
   // Computed getters
   expandDynamicSlides: (slides: Slide[]) => Slide[];
@@ -144,8 +130,6 @@ export const useAppStore = create<AppState>()(
     ruleContextMeta: null,
     isPresenting: false,
     currentSlideIndex: 0,
-    isEditing: false,
-    selectedSlideId: null,
     currentView: 'presentation',
     isLoading: false,
     error: null,
@@ -190,8 +174,6 @@ export const useAppStore = create<AppState>()(
       ruleContextMeta: null,
       isPresenting: false,
       currentSlideIndex: 0,
-      isEditing: false,
-      selectedSlideId: null,
     }),
 
     // Secondary presentation data
@@ -213,7 +195,7 @@ export const useAppStore = create<AppState>()(
     startPresentation: () => {
       const slides = get().getMergedEnabledSlides();
       if (slides.length > 0) {
-        set({ isPresenting: true, currentSlideIndex: 0, isEditing: false });
+        set({ isPresenting: true, currentSlideIndex: 0 });
         document.documentElement.requestFullscreen?.().catch(() => {
           // Fullscreen request may fail, but we can still present
         });
@@ -249,11 +231,6 @@ export const useAppStore = create<AppState>()(
       }
     },
 
-    // Edit mode controls
-    startEditing: () => set({ isEditing: true, isPresenting: false }),
-    stopEditing: () => set({ isEditing: false, selectedSlideId: null }),
-    selectSlide: (id) => set({ selectedSlideId: id }),
-
     // Slide manipulation
     updateSlide: (id, updates) => {
       const slides = get().currentSlides.map(slide =>
@@ -274,7 +251,7 @@ export const useAppStore = create<AppState>()(
         ...slide,
         slideOrder: index + 1,
       }));
-      set({ currentSlides: reorderedSlides, selectedSlideId: null });
+      set({ currentSlides: reorderedSlides });
     },
 
     reorderSlides: (fromIndex, toIndex) => {
@@ -338,24 +315,6 @@ export const useAppStore = create<AppState>()(
         || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
       const pres = isSecondary ? secondaryPresentation : currentPresentation;
       return pres?.languageSettings;
-    },
-
-    // Variable manipulation
-    updateVariable: (id, value) => {
-      const variables = get().currentVariables.map(v =>
-        v.id === id ? { ...v, value } : v
-      );
-      set({ currentVariables: variables });
-    },
-
-    addVariable: (variable) => {
-      const variables = [...get().currentVariables, variable];
-      set({ currentVariables: variables });
-    },
-
-    removeVariable: (id) => {
-      const variables = get().currentVariables.filter(v => v.id !== id);
-      set({ currentVariables: variables });
     },
 
     // Computed getters
@@ -462,19 +421,3 @@ export const useAppStore = create<AppState>()(
   }))
 );
 
-// Selectors for optimized re-renders
-export const selectCurrentPresentation = (state: AppState) => state.currentPresentation;
-export const selectCurrentSlides = (state: AppState) => state.currentSlides;
-export const selectCurrentTemplate = (state: AppState) => state.currentTemplate;
-export const selectCurrentVariables = (state: AppState) => state.currentVariables;
-export const selectAppSettings = (state: AppState) => state.appSettings;
-export const selectRuleFilteredSlideIds = (state: AppState) => state.ruleFilteredSlideIds;
-export const selectRuleEvaluationDate = (state: AppState) => state.ruleEvaluationDate;
-export const selectRuleContextMeta = (state: AppState) => state.ruleContextMeta;
-export const selectSecondaryPresentation = (state: AppState) => state.secondaryPresentation;
-export const selectSecondarySlides = (state: AppState) => state.secondarySlides;
-export const selectIsPresenting = (state: AppState) => state.isPresenting;
-export const selectCurrentSlideIndex = (state: AppState) => state.currentSlideIndex;
-export const selectCurrentView = (state: AppState) => state.currentView;
-export const selectIsLoading = (state: AppState) => state.isLoading;
-export const selectError = (state: AppState) => state.error;

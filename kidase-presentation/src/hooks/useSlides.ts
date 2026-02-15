@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '../store/appStore';
 import { slideRepository } from '../repositories';
 import { Slide, SlideBlock, SlideTitle } from '../domain/entities/Slide';
@@ -17,7 +17,6 @@ export function useSlides() {
   const {
     currentSlides,
     currentPresentation,
-    selectedSlideId,
     verses,
     ruleContextMeta,
     updateSlide,
@@ -25,10 +24,12 @@ export function useSlides() {
     removeSlide,
     reorderSlides,
     toggleSlideDisabled,
-    selectSlide,
     setCurrentSlides,
     getExpandedSlides,
   } = useAppStore();
+
+  const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
+  const selectSlide = useCallback((id: string | null) => setSelectedSlideId(id), []);
 
   const expandedSlides = useMemo(
     () => getExpandedSlides(),

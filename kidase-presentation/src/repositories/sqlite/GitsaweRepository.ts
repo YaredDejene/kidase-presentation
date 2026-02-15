@@ -65,24 +65,6 @@ export class GitsaweRepository implements IGitsaweRepository {
     return rows.length > 0 ? this.mapRowToEntity(rows[0]) : null;
   }
 
-  async getByPriority(priority: number): Promise<Gitsawe[]> {
-    const db = await getDatabase();
-    const rows = await db.select<GitsaweRow[]>(
-      'SELECT * FROM gitsawes WHERE priority = ? ORDER BY line_id',
-      [priority]
-    );
-    return rows.map(this.mapRowToEntity);
-  }
-
-  async getByGitsaweType(gitsaweType: string): Promise<Gitsawe[]> {
-    const db = await getDatabase();
-    const rows = await db.select<GitsaweRow[]>(
-      'SELECT * FROM gitsawes WHERE gitsawe_type = ? ORDER BY priority, line_id',
-      [gitsaweType]
-    );
-    return rows.map(this.mapRowToEntity);
-  }
-
   async create(gitsawe: Omit<Gitsawe, 'id' | 'createdAt'>): Promise<Gitsawe> {
     const db = await getDatabase();
     const id = uuidv4();
