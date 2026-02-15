@@ -59,6 +59,26 @@ export function getSlidePreviewText(slide: Slide): string {
   return '(empty)';
 }
 
+/**
+ * Check if a slide belongs to the secondary presentation.
+ * A slide is secondary if it exists directly in secondarySlides,
+ * or if it's a verse expansion of a secondary slide.
+ */
+export function isSecondarySlide(slide: Slide, secondarySlides: Slide[]): boolean {
+  return secondarySlides.some(s => s.id === slide.id)
+    || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
+}
+
+/** Check if a slide ID is a synthetic verse expansion */
+export function isVerseSlide(id: string): boolean {
+  return id.includes('__verse_');
+}
+
+/** Extract the parent slide ID from a synthetic verse slide ID */
+export function getParentSlideId(id: string): string {
+  return id.split('__verse_')[0];
+}
+
 export function getSlideTitle(slide: Slide): string | null {
   if (!slide.titleJson) return null;
   for (const key of ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const) {

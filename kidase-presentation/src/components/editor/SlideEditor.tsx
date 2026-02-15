@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useSlides } from '../../hooks/useSlides';
+import { usePresentation } from '../../hooks/usePresentation';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { SlideRow } from './SlideRow';
 import { SlideContentPanel } from './SlideContentPanel';
 import { Modal } from '../common/Modal';
 import { Presentation } from '../../domain/entities/Presentation';
-import { presentationRepository } from '../../repositories';
-import { presentationService } from '../../services/PresentationService';
 import '../../styles/editor.css';
 
 export const SlideEditor: React.FC = () => {
@@ -17,9 +16,6 @@ export const SlideEditor: React.FC = () => {
     currentSlides,
     allTemplates,
     setCurrentPresentation,
-    setCurrentSlides,
-    setCurrentTemplate,
-    setCurrentVariables,
   } = useAppStore();
 
   const {
@@ -31,6 +27,12 @@ export const SlideEditor: React.FC = () => {
     setTemplateOverride,
   } = useSlides();
 
+  const {
+    listPresentations,
+    loadPresentation: loadPresentationById,
+    updatePresentation,
+  } = usePresentation();
+
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -40,8 +42,8 @@ export const SlideEditor: React.FC = () => {
 
   // Load all presentations
   useEffect(() => {
-    presentationRepository.getAll().then(setPresentations);
-  }, []);
+    listPresentations().then(setPresentations);
+  }, [listPresentations]);
 
   // Sync isPrimary when presentation changes
   useEffect(() => {
@@ -66,18 +68,8 @@ export const SlideEditor: React.FC = () => {
 
   const handleKidaseChange = useCallback(async (id: string) => {
     if (!id || id === currentPresentation?.id) return;
-    try {
-      const loaded = await presentationService.loadPresentation(id);
-      if (!loaded) return;
-      setCurrentPresentation(loaded.presentation);
-      setCurrentSlides(loaded.slides);
-      setCurrentTemplate(loaded.template);
-      setCurrentVariables(loaded.variables);
-      await presentationRepository.setActive(id);
-    } catch (error) {
-      console.error('Failed to load kidase:', error);
-    }
-  }, [currentPresentation, setCurrentPresentation, setCurrentSlides, setCurrentTemplate, setCurrentVariables]);
+    await loadPresentationById(id);
+  }, [currentPresentation, loadPresentationById]);
 
   const handleDragStart = useCallback((index: number) => {
     setDraggedIndex(index);
@@ -260,8 +252,8 @@ export const SlideEditor: React.FC = () => {
             <button
               onClick={async () => {
                 if (currentPresentation) {
-                  const updated = await presentationRepository.update(currentPresentation.id, { isPrimary });
-                  setCurrentPresentation(updated);
+                  const updated = await updatePresentation(currentPresentation.id, { isPrimary });
+                  if (updated) setCurrentPresentation(updated);
                 }
                 setShowSettings(false);
               }}

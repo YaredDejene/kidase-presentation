@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useRules } from '../../hooks/useRules';
+import { useTemplates } from '../../hooks/useTemplates';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { SlidePreview } from '../editor/SlidePreview';
 import { PresentationSettingsDialog } from '../dialogs/PresentationSettingsDialog';
@@ -8,7 +9,7 @@ import { getSlidePreviewText, getSlideTitle } from '../../domain/entities/Slide'
 import { Template } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
 import { LanguageMap } from '../../domain/entities/Presentation';
-import { templateRepository, presentationRepository } from '../../repositories';
+import { presentationRepository } from '../../repositories';
 import { presentationService } from '../../services/PresentationService';
 import { pdfExportService } from '../../services/PdfExportService';
 import { save } from '@tauri-apps/plugin-dialog';
@@ -40,17 +41,12 @@ export const PresentationPage: React.FC = () => {
   } = useAppStore();
 
   const { evaluateRules } = useRules();
+  const { templates, getTemplateById } = useTemplates();
 
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [templates, setTemplates] = useState<Template[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: listWidth, handleResizeStart } = useResizablePanel(containerRef);
-
-  // Load templates for the settings dialog
-  useEffect(() => {
-    templateRepository.getAll().then(setTemplates);
-  }, []);
 
   // Evaluate rules when presentation changes (also builds gitsawe context)
   useEffect(() => {
@@ -334,10 +330,10 @@ export const PresentationPage: React.FC = () => {
       {/* Presentation Settings Dialog */}
       <PresentationSettingsDialog
         isOpen={showSettings}
-        onClose={async () => {
+        onClose={() => {
           setShowSettings(false);
           if (currentPresentation) {
-            const updatedTemplate = await templateRepository.getById(currentPresentation.templateId);
+            const updatedTemplate = getTemplateById(currentPresentation.templateId);
             if (updatedTemplate) setCurrentTemplate(updatedTemplate);
           }
         }}
@@ -348,8 +344,8 @@ export const PresentationPage: React.FC = () => {
         templates={templates}
         onPresentationChange={setCurrentPresentation}
         onVariablesChange={(vars: Variable[]) => setCurrentVariables(vars)}
-        onTemplateChange={async (templateId: string) => {
-          const newTemplate = await templateRepository.getById(templateId);
+        onTemplateChange={(templateId: string) => {
+          const newTemplate = getTemplateById(templateId);
           if (newTemplate) setCurrentTemplate(newTemplate);
         }}
       />

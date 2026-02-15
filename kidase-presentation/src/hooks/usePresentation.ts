@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useAppStore } from '../store/appStore';
 import { presentationService, LoadedPresentation } from '../services/PresentationService';
+import { presentationRepository } from '../repositories';
 import { Presentation } from '../domain/entities/Presentation';
 
 export function usePresentation() {
@@ -122,6 +123,28 @@ export function usePresentation() {
     }
   }, [loadPresentationData, setLoading, setError]);
 
+  const listPresentations = useCallback(async (): Promise<Presentation[]> => {
+    try {
+      return await presentationRepository.getAll();
+    } catch (err) {
+      console.error('Failed to list presentations:', err);
+      return [];
+    }
+  }, []);
+
+  const updatePresentation = useCallback(async (
+    id: string,
+    updates: Partial<Pick<Presentation, 'isPrimary' | 'name' | 'type' | 'languageMap' | 'languageSettings' | 'templateId'>>
+  ): Promise<Presentation | null> => {
+    try {
+      const updated = await presentationRepository.update(id, updates);
+      return updated;
+    } catch (err) {
+      console.error('Failed to update presentation:', err);
+      return null;
+    }
+  }, []);
+
   return {
     // State
     currentPresentation,
@@ -138,6 +161,8 @@ export function usePresentation() {
     deletePresentation,
     duplicatePresentation,
     loadActivePresentation,
+    listPresentations,
+    updatePresentation,
     clearPresentation: clearPresentationData,
   };
 }

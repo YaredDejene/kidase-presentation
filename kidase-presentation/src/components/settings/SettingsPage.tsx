@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useAppStore } from '../../store/appStore';
-import { appSettingsRepository } from '../../repositories';
+import { useSettings } from '../../hooks/useSettings';
 import { AppSettings } from '../../domain/entities/AppSettings';
 import { toast } from '../../store/toastStore';
 import '../../styles/dialogs.css';
 import '../../styles/settings-page.css';
 
 export const SettingsPage: React.FC = () => {
-  const { appSettings, setAppSettings } = useAppStore();
+  const { appSettings, saveSettings } = useSettings();
   const [localSettings, setLocalSettings] = useState<AppSettings>(appSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -24,17 +23,12 @@ export const SettingsPage: React.FC = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    try {
-      await appSettingsRepository.setAll(localSettings);
-      setAppSettings(localSettings);
+    const success = await saveSettings(localSettings);
+    if (success) {
       setHasChanges(false);
       toast.success('Settings saved');
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings');
-    } finally {
-      setIsSaving(false);
     }
+    setIsSaving(false);
   };
 
   return (

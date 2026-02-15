@@ -7,4 +7,7 @@ export { usePresentation } from './usePresentation';
 export { useSlides } from './useSlides';
 export { useTemplates } from './useTemplates';
 export { useRules } from './useRules';
+export { useSettings } from './useSettings';
+export { useGitsawe } from './useGitsawe';
+export { useVerses } from './useVerses';
 export { useResizablePanel } from './useResizablePanel';

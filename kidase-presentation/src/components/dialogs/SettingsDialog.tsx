@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAppStore } from '../../store/appStore';
-import { appSettingsRepository } from '../../repositories';
+import { useSettings } from '../../hooks/useSettings';
 import { AppSettings, defaultAppSettings } from '../../domain/entities/AppSettings';
 import '../../styles/dialogs.css';
 
@@ -13,7 +12,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { appSettings, setAppSettings } = useAppStore();
+  const { appSettings, saveSettings } = useSettings();
   const [localSettings, setLocalSettings] = useState<AppSettings>(defaultAppSettings);
   const [activeTab, setActiveTab] = useState<'general' | 'display' | 'export'>('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -26,15 +25,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   const handleSave = async () => {
     setIsSaving(true);
-    try {
-      await appSettingsRepository.setAll(localSettings);
-      setAppSettings(localSettings);
+    const success = await saveSettings(localSettings);
+    if (success) {
       onClose();
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-    } finally {
-      setIsSaving(false);
     }
+    setIsSaving(false);
   };
 
   const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {

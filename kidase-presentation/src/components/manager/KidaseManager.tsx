@@ -4,11 +4,7 @@ import {
   presentationRepository,
   slideRepository,
   templateRepository,
-  variableRepository,
-  ruleRepository,
 } from '../../repositories';
-import { createRuleDefinition } from '../../domain/entities/RuleDefinition';
-import { excelImportService } from '../../services/ExcelImportService';
 import { presentationService } from '../../services/PresentationService';
 import { useAppStore } from '../../store/appStore';
 import { toast } from '../../store/toastStore';
@@ -119,51 +115,9 @@ export const KidaseManager: React.FC = () => {
     }
 
     try {
-      const result = await excelImportService.importFromPath(
-        filePath,
-        defaultTemplate.id,
-      );
-
-      // Create presentation
-      const presentation = await presentationRepository.create(result.presentation);
-
-      // Create slides
-      const slidesWithId = result.slides.map(s => ({
-        ...s,
-        presentationId: presentation.id,
-      }));
-      const createdSlides = await slideRepository.createMany(slidesWithId);
-
-      // Create variables
-      for (const variable of result.variables) {
-        await variableRepository.create({
-          ...variable,
-          presentationId: presentation.id,
-        });
-      }
-
-      // Create display rules linked to slides
-      for (const displayRule of result.displayRules) {
-        const slide = createdSlides[displayRule.slideIndex];
-        if (!slide) continue;
-
-        const ruleDef = createRuleDefinition(
-          displayRule.name,
-          'slide',
-          displayRule.ruleJson,
-          {
-            presentationId: presentation.id,
-            slideId: slide.id,
-            isEnabled: true,
-          },
-        );
-        await ruleRepository.create(ruleDef);
-      }
-
-      // Skip gitsawe and verses import — handled from their own pages
-
+      const loaded = await presentationService.importFromPath(filePath, defaultTemplate.id);
       await loadPresentations();
-      toast.success(`Imported "${presentation.name}"`);
+      toast.success(`Imported "${loaded.presentation.name}"`);
     } catch (error) {
       console.error('Import failed:', error);
       toast.error('Failed to import: ' + (error as Error).message);

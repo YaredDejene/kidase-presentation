@@ -178,6 +178,61 @@ export class PresentationService {
   }
 
   /**
+   * Import presentation from an Excel file path (Tauri filesystem).
+   * Creates the presentation, slides, variables, and display rules.
+   * Does NOT import gitsawe or verse records.
+   */
+  async importFromPath(
+    filePath: string,
+    templateId: string,
+  ): Promise<LoadedPresentation> {
+    const result = await excelImportService.importFromPath(filePath, templateId);
+
+    // Create presentation
+    const presentation = await presentationRepository.create(result.presentation);
+
+    // Create slides
+    const slidesWithId = result.slides.map(s => ({
+      ...s,
+      presentationId: presentation.id,
+    }));
+    const slides = await slideRepository.createMany(slidesWithId);
+
+    // Create variables
+    const variablesWithId = result.variables.map(v => ({
+      ...v,
+      presentationId: presentation.id,
+    }));
+    const variables = await variableRepository.createMany(variablesWithId);
+
+    // Create display rules linked to slides
+    for (const displayRule of result.displayRules) {
+      const slide = slides[displayRule.slideIndex];
+      if (!slide) continue;
+
+      const ruleDef = createRuleDefinition(
+        displayRule.name,
+        'slide',
+        displayRule.ruleJson,
+        {
+          presentationId: presentation.id,
+          slideId: slide.id,
+          isEnabled: true,
+        },
+      );
+      await ruleRepository.create(ruleDef);
+    }
+
+    // Get template
+    const template = await templateRepository.getById(presentation.templateId);
+    if (!template) {
+      throw new Error(`Template ${presentation.templateId} not found`);
+    }
+
+    return { presentation, slides, template, variables };
+  }
+
+  /**
    * Delete a presentation and all related data
    */
   async deletePresentation(id: string): Promise<void> {

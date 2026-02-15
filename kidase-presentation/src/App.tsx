@@ -9,14 +9,7 @@ import { VersesManager } from './components/manager/VersesManager';
 import { TemplatesManager } from './components/manager/TemplatesManager';
 import { SettingsPage } from './components/settings/SettingsPage';
 import { PresentationView } from './components/presentation/PresentationView';
-import {
-  templateRepository,
-  appSettingsRepository,
-  verseRepository,
-  presentationRepository,
-} from './repositories';
-import { presentationService } from './services/PresentationService';
-import { createDefaultTemplate } from './domain/entities/Template';
+import { appBootstrapService } from './services/AppBootstrapService';
 import { ToastContainer } from './components/common/Toast';
 import './styles/global.css';
 import './styles/app.css';
@@ -27,58 +20,23 @@ function App() {
     isPresenting,
     setCurrentView,
     setAppSettings,
+    setAllTemplates,
     setVerses,
     loadPresentationData,
   } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load initial data (settings, templates, verses, active presentation)
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Load app settings
-        const settings = await appSettingsRepository.get();
+        const { settings, templates, verses, presentation } = await appBootstrapService.initialize();
         setAppSettings(settings);
-
-        // Ensure default template exists
-        const loadedTemplates = await templateRepository.getAll();
-        const defaultDef = createDefaultTemplate();
-        const existingDefault = loadedTemplates.find(t => t.name === 'Default Template');
-
-        if (existingDefault) {
-          await templateRepository.update(existingDefault.id, {
-            definitionJson: defaultDef,
-          });
-        } else {
-          await templateRepository.create({
-            name: 'Default Template',
-            maxLangCount: 4,
-            definitionJson: defaultDef,
-          });
-        }
-
-        // Cache all templates for template override resolution
-        const allTemplates = await templateRepository.getAll();
-        useAppStore.getState().setAllTemplates(allTemplates);
-
-        // Load reference data (verses)
-        const loadedVerses = await verseRepository.getAll();
-        setVerses(loadedVerses);
-
-        // Auto-load primary presentation (fall back to active)
-        const primary = await presentationRepository.getPrimary();
-        const toLoad = primary ?? await presentationRepository.getActive();
-        if (toLoad) {
-          try {
-            const loaded = await presentationService.loadPresentation(toLoad.id);
-            if (loaded) loadPresentationData(loaded);
-          } catch (error) {
-            console.error('Failed to load presentation:', error);
-          }
-        }
+        setAllTemplates(templates);
+        setVerses(verses);
+        if (presentation) loadPresentationData(presentation);
       } catch (error) {
-        console.error('Failed to load data:', error);
+        console.error('Failed to initialize app:', error);
       }
       setIsLoading(false);
     };

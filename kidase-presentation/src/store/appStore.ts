@@ -1,423 +1,240 @@
-import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
-import { Presentation } from '../domain/entities/Presentation';
+/**
+ * App Store Facade
+ *
+ * This file re-exports a unified `useAppStore` hook that combines state from
+ * the four focused store slices. Existing consumers can continue importing
+ * `useAppStore` without changes. New code should import from the specific
+ * store slices directly.
+ *
+ * Slices:
+ *   - presentationDataStore  — presentation data, slides, templates, settings
+ *   - presentationModeStore  — fullscreen playback state
+ *   - ruleStore              — rule evaluation state
+ *   - navigationStore        — current view
+ *   - slideFiltering (pure)  — expandDynamicSlides, getEnabledSlides, getMergedEnabledSlides
+ */
+
+import { usePresentationDataStore } from './presentationDataStore';
+import { usePresentationModeStore } from './presentationModeStore';
+import { useRuleStore } from './ruleStore';
+import { useNavigationStore, type AppView } from './navigationStore';
+import {
+  expandDynamicSlides,
+  getEnabledSlides as getEnabledSlidesFiltering,
+} from '../domain/slideFiltering';
 import { Slide } from '../domain/entities/Slide';
-import { Template } from '../domain/entities/Template';
-import { Variable } from '../domain/entities/Variable';
-import { AppSettings, defaultAppSettings } from '../domain/entities/AppSettings';
-import { Verse } from '../domain/entities/Verse';
-import { placeholderService } from '../services/PlaceholderService';
 
-interface AppState {
-  // Current (primary) presentation data
-  currentPresentation: Presentation | null;
-  currentSlides: Slide[];
-  currentTemplate: Template | null;
-  currentVariables: Variable[];
-  allTemplates: Template[];
+// Re-export individual stores for direct access
+export { usePresentationDataStore } from './presentationDataStore';
+export { usePresentationModeStore } from './presentationModeStore';
+export { useRuleStore } from './ruleStore';
+export { useNavigationStore } from './navigationStore';
 
-  // Secondary presentation data (auto-loaded based on gitsawe.kidaseType)
-  secondaryPresentation: Presentation | null;
-  secondarySlides: Slide[];
-  secondaryTemplate: Template | null;
-  secondaryVariables: Variable[];
-
-  // Reference data
-  verses: Verse[];
-
-  // App settings
-  appSettings: AppSettings;
-
-  // Presentation mode state
-  isPresenting: boolean;
-  currentSlideIndex: number;
-
-  // Rule engine state
-  ruleFilteredSlideIds: string[] | null; // null = no filtering, array = only these IDs visible
-  ruleEvaluationDate: string | null; // null = use today, ISO string = override date for rule evaluation
-  isMehella: boolean; // runtime flag added to rule context meta
-  ruleContextMeta: Record<string, unknown> | null; // meta context from last rule evaluation
-
-  // Navigation state
-  currentView: 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
-
-  // Loading state
-  isLoading: boolean;
-  error: string | null;
-
-  // Actions - Setters
-  setCurrentPresentation: (presentation: Presentation | null) => void;
-  setCurrentSlides: (slides: Slide[]) => void;
-  setCurrentTemplate: (template: Template | null) => void;
-  setCurrentVariables: (variables: Variable[]) => void;
-  setVerses: (verses: Verse[]) => void;
-  setAppSettings: (settings: AppSettings) => void;
-  setRuleFilteredSlideIds: (ids: string[] | null) => void;
-  setRuleEvaluationDate: (date: string | null) => void;
-  setIsMehella: (value: boolean) => void;
-  setRuleContextMeta: (meta: Record<string, unknown> | null) => void;
-  setAllTemplates: (templates: Template[]) => void;
-  setCurrentView: (view: 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings') => void;
-  setLoading: (isLoading: boolean) => void;
-  setError: (error: string | null) => void;
-
-  // Actions - Load all presentation data at once
-  loadPresentationData: (data: {
-    presentation: Presentation;
-    slides: Slide[];
-    template: Template;
-    variables: Variable[];
-  }) => void;
-  clearPresentationData: () => void;
-
-  // Secondary presentation actions
-  loadSecondaryData: (data: {
-    presentation: Presentation;
-    slides: Slide[];
-    template: Template;
-    variables: Variable[];
-  }) => void;
-  clearSecondaryData: () => void;
-
-  // Presentation mode controls
-  startPresentation: () => void;
-  stopPresentation: () => void;
-  nextSlide: () => void;
-  previousSlide: () => void;
-  goToSlide: (index: number) => void;
-
-  // Slide manipulation
-  updateSlide: (id: string, updates: Partial<Slide>) => void;
-  addSlide: (slide: Slide) => void;
-  removeSlide: (id: string) => void;
-  reorderSlides: (fromIndex: number, toIndex: number) => void;
-  toggleSlideDisabled: (id: string) => void;
-  setSlideTemplateOverride: (slideId: string, templateId: string | null) => void;
-
-  // Per-slide resolution (handles primary vs secondary)
-  getTemplateForSlide: (slide: Slide) => Template | null;
-  getVariablesForSlide: (slide: Slide) => Variable[];
-  getLanguageMapForSlide: (slide: Slide) => Presentation['languageMap'];
-  getLanguageSettingsForSlide: (slide: Slide) => Presentation['languageSettings'];
-
-  // Computed getters
-  expandDynamicSlides: (slides: Slide[]) => Slide[];
-  getEnabledSlides: () => Slide[];
-  getMergedEnabledSlides: () => Slide[];
-  getExpandedSlides: () => Slide[];
-  getCurrentSlide: () => Slide | null;
-  getSlideCount: () => number;
-  getEnabledSlideCount: () => number;
+/**
+ * Unified facade hook — combines all four stores into a single selector.
+ * This exists for backward compatibility. Prefer importing from individual stores.
+ */
+export function useAppStore(): ReturnType<typeof useUnifiedSelector>;
+export function useAppStore<T>(selector: (state: ReturnType<typeof useUnifiedSelector>) => T): T;
+export function useAppStore<T>(selector?: (state: ReturnType<typeof useUnifiedSelector>) => T) {
+  const state = useUnifiedSelector();
+  return selector ? selector(state) : state;
 }
 
-export const useAppStore = create<AppState>()(
-  subscribeWithSelector((set, get) => ({
-    // Initial state
-    currentPresentation: null,
-    currentSlides: [],
-    currentTemplate: null,
-    currentVariables: [],
-    allTemplates: [],
-    secondaryPresentation: null,
-    secondarySlides: [],
-    secondaryTemplate: null,
-    secondaryVariables: [],
-    verses: [],
-    appSettings: defaultAppSettings,
-    ruleFilteredSlideIds: null,
-    ruleEvaluationDate: null,
-    isMehella: false,
-    ruleContextMeta: null,
-    isPresenting: false,
-    currentSlideIndex: 0,
-    currentView: 'presentation',
-    isLoading: false,
-    error: null,
+function useUnifiedSelector() {
+  // Read from all four stores (this makes the component subscribe to all of them)
+  const dataState = usePresentationDataStore();
+  const modeState = usePresentationModeStore();
+  const ruleState = useRuleStore();
+  const navState = useNavigationStore();
 
-    // Setters
-    setCurrentPresentation: (presentation) => set({ currentPresentation: presentation }),
-    setCurrentSlides: (slides) => set({ currentSlides: slides }),
-    setCurrentTemplate: (template) => set({ currentTemplate: template }),
-    setCurrentVariables: (variables) => set({ currentVariables: variables }),
-    setVerses: (verses) => set({ verses }),
-    setAppSettings: (settings) => set({ appSettings: settings }),
-    setRuleFilteredSlideIds: (ids) => set({ ruleFilteredSlideIds: ids }),
-    setRuleEvaluationDate: (date) => set({ ruleEvaluationDate: date }),
-    setIsMehella: (value) => set({ isMehella: value }),
-    setRuleContextMeta: (meta) => set({ ruleContextMeta: meta }),
-    setAllTemplates: (templates) => set({ allTemplates: templates }),
-    setCurrentView: (view) => set({ currentView: view }),
-    setLoading: (isLoading) => set({ isLoading }),
-    setError: (error) => set({ error }),
-
-    // Load all presentation data at once
-    loadPresentationData: (data) => set({
-      currentPresentation: data.presentation,
-      currentSlides: data.slides,
-      currentTemplate: data.template,
-      currentVariables: data.variables,
-      error: null,
-    }),
-
-    clearPresentationData: () => set({
-      currentPresentation: null,
-      currentSlides: [],
-      currentTemplate: null,
-      currentVariables: [],
-      secondaryPresentation: null,
-      secondarySlides: [],
-      secondaryTemplate: null,
-      secondaryVariables: [],
-      ruleFilteredSlideIds: null,
-      ruleEvaluationDate: null,
-      isMehella: false,
-      ruleContextMeta: null,
-      isPresenting: false,
-      currentSlideIndex: 0,
-    }),
-
-    // Secondary presentation data
-    loadSecondaryData: (data) => set({
-      secondaryPresentation: data.presentation,
-      secondarySlides: data.slides,
-      secondaryTemplate: data.template,
-      secondaryVariables: data.variables,
-    }),
-
-    clearSecondaryData: () => set({
-      secondaryPresentation: null,
-      secondarySlides: [],
-      secondaryTemplate: null,
-      secondaryVariables: [],
-    }),
-
-    // Presentation mode controls
-    startPresentation: () => {
-      const slides = get().getMergedEnabledSlides();
-      if (slides.length > 0) {
-        set({ isPresenting: true, currentSlideIndex: 0 });
-        document.documentElement.requestFullscreen?.().catch(() => {
-          // Fullscreen request may fail, but we can still present
-        });
-      }
+  return {
+    // --- presentationDataStore ---
+    currentPresentation: dataState.currentPresentation,
+    currentSlides: dataState.currentSlides,
+    currentTemplate: dataState.currentTemplate,
+    currentVariables: dataState.currentVariables,
+    allTemplates: dataState.allTemplates,
+    secondaryPresentation: dataState.secondaryPresentation,
+    secondarySlides: dataState.secondarySlides,
+    secondaryTemplate: dataState.secondaryTemplate,
+    secondaryVariables: dataState.secondaryVariables,
+    verses: dataState.verses,
+    appSettings: dataState.appSettings,
+    isLoading: dataState.isLoading,
+    error: dataState.error,
+    setCurrentPresentation: dataState.setCurrentPresentation,
+    setCurrentSlides: dataState.setCurrentSlides,
+    setCurrentTemplate: dataState.setCurrentTemplate,
+    setCurrentVariables: dataState.setCurrentVariables,
+    setAllTemplates: dataState.setAllTemplates,
+    setVerses: dataState.setVerses,
+    setAppSettings: dataState.setAppSettings,
+    setLoading: dataState.setLoading,
+    setError: dataState.setError,
+    loadPresentationData: dataState.loadPresentationData,
+    clearPresentationData: () => {
+      dataState.clearPresentationData();
+      // Also reset mode and rule state when clearing presentation
+      usePresentationModeStore.setState({ isPresenting: false, currentSlideIndex: 0 });
+      useRuleStore.setState({
+        ruleFilteredSlideIds: null,
+        ruleEvaluationDate: null,
+        isMehella: false,
+        ruleContextMeta: null,
+      });
     },
+    loadSecondaryData: dataState.loadSecondaryData,
+    clearSecondaryData: dataState.clearSecondaryData,
+    updateSlide: dataState.updateSlide,
+    addSlide: dataState.addSlide,
+    removeSlide: dataState.removeSlide,
+    reorderSlides: dataState.reorderSlides,
+    toggleSlideDisabled: dataState.toggleSlideDisabled,
+    setSlideTemplateOverride: dataState.setSlideTemplateOverride,
+    getTemplateForSlide: dataState.getTemplateForSlide,
+    getVariablesForSlide: dataState.getVariablesForSlide,
+    getLanguageMapForSlide: dataState.getLanguageMapForSlide,
+    getLanguageSettingsForSlide: dataState.getLanguageSettingsForSlide,
 
-    stopPresentation: () => {
-      set({ isPresenting: false, currentSlideIndex: 0 });
-      if (document.fullscreenElement) {
-        document.exitFullscreen?.().catch(() => {});
-      }
+    // --- presentationModeStore ---
+    isPresenting: modeState.isPresenting,
+    currentSlideIndex: modeState.currentSlideIndex,
+    startPresentation: modeState.startPresentation,
+    stopPresentation: modeState.stopPresentation,
+    nextSlide: modeState.nextSlide,
+    previousSlide: modeState.previousSlide,
+    goToSlide: modeState.goToSlide,
+    getCurrentSlide: modeState.getCurrentSlide,
+    getSlideCount: modeState.getSlideCount,
+    getEnabledSlideCount: modeState.getEnabledSlideCount,
+    getMergedEnabledSlides: modeState.getMergedEnabledSlides,
+
+    // --- ruleStore ---
+    ruleFilteredSlideIds: ruleState.ruleFilteredSlideIds,
+    ruleEvaluationDate: ruleState.ruleEvaluationDate,
+    isMehella: ruleState.isMehella,
+    ruleContextMeta: ruleState.ruleContextMeta,
+    setRuleFilteredSlideIds: ruleState.setRuleFilteredSlideIds,
+    setRuleEvaluationDate: ruleState.setRuleEvaluationDate,
+    setIsMehella: ruleState.setIsMehella,
+    setRuleContextMeta: ruleState.setRuleContextMeta,
+
+    // --- navigationStore ---
+    currentView: navState.currentView,
+    setCurrentView: navState.setCurrentView as (view: AppView) => void,
+
+    // --- Pure computed (from slideFiltering.ts) ---
+    expandDynamicSlides: (slides: Slide[]) =>
+      expandDynamicSlides(slides, dataState.verses, ruleState.ruleContextMeta),
+
+    getEnabledSlides: () =>
+      getEnabledSlidesFiltering(
+        dataState.currentSlides,
+        ruleState.ruleFilteredSlideIds,
+        dataState.verses,
+        ruleState.ruleContextMeta,
+      ),
+
+    getExpandedSlides: () =>
+      expandDynamicSlides(dataState.currentSlides, dataState.verses, ruleState.ruleContextMeta),
+  };
+}
+
+// Static getState()-style access for non-React code (e.g., PDF export, event handlers)
+useAppStore.getState = () => {
+  const dataState = usePresentationDataStore.getState();
+  const modeState = usePresentationModeStore.getState();
+  const ruleState = useRuleStore.getState();
+  const navState = useNavigationStore.getState();
+
+  return {
+    currentPresentation: dataState.currentPresentation,
+    currentSlides: dataState.currentSlides,
+    currentTemplate: dataState.currentTemplate,
+    currentVariables: dataState.currentVariables,
+    allTemplates: dataState.allTemplates,
+    secondaryPresentation: dataState.secondaryPresentation,
+    secondarySlides: dataState.secondarySlides,
+    secondaryTemplate: dataState.secondaryTemplate,
+    secondaryVariables: dataState.secondaryVariables,
+    verses: dataState.verses,
+    appSettings: dataState.appSettings,
+    isLoading: dataState.isLoading,
+    error: dataState.error,
+    setCurrentPresentation: dataState.setCurrentPresentation,
+    setCurrentSlides: dataState.setCurrentSlides,
+    setCurrentTemplate: dataState.setCurrentTemplate,
+    setCurrentVariables: dataState.setCurrentVariables,
+    setAllTemplates: dataState.setAllTemplates,
+    setVerses: dataState.setVerses,
+    setAppSettings: dataState.setAppSettings,
+    setLoading: dataState.setLoading,
+    setError: dataState.setError,
+    loadPresentationData: dataState.loadPresentationData,
+    clearPresentationData: () => {
+      dataState.clearPresentationData();
+      usePresentationModeStore.setState({ isPresenting: false, currentSlideIndex: 0 });
+      useRuleStore.setState({
+        ruleFilteredSlideIds: null,
+        ruleEvaluationDate: null,
+        isMehella: false,
+        ruleContextMeta: null,
+      });
     },
+    loadSecondaryData: dataState.loadSecondaryData,
+    clearSecondaryData: dataState.clearSecondaryData,
+    updateSlide: dataState.updateSlide,
+    addSlide: dataState.addSlide,
+    removeSlide: dataState.removeSlide,
+    reorderSlides: dataState.reorderSlides,
+    toggleSlideDisabled: dataState.toggleSlideDisabled,
+    setSlideTemplateOverride: dataState.setSlideTemplateOverride,
+    getTemplateForSlide: dataState.getTemplateForSlide,
+    getVariablesForSlide: dataState.getVariablesForSlide,
+    getLanguageMapForSlide: dataState.getLanguageMapForSlide,
+    getLanguageSettingsForSlide: dataState.getLanguageSettingsForSlide,
 
-    nextSlide: () => {
-      const { currentSlideIndex } = get();
-      const enabledSlides = get().getMergedEnabledSlides();
-      if (currentSlideIndex < enabledSlides.length - 1) {
-        set({ currentSlideIndex: currentSlideIndex + 1 });
-      }
-    },
+    isPresenting: modeState.isPresenting,
+    currentSlideIndex: modeState.currentSlideIndex,
+    startPresentation: modeState.startPresentation,
+    stopPresentation: modeState.stopPresentation,
+    nextSlide: modeState.nextSlide,
+    previousSlide: modeState.previousSlide,
+    goToSlide: modeState.goToSlide,
+    getCurrentSlide: modeState.getCurrentSlide,
+    getSlideCount: modeState.getSlideCount,
+    getEnabledSlideCount: modeState.getEnabledSlideCount,
+    getMergedEnabledSlides: modeState.getMergedEnabledSlides,
 
-    previousSlide: () => {
-      const { currentSlideIndex } = get();
-      if (currentSlideIndex > 0) {
-        set({ currentSlideIndex: currentSlideIndex - 1 });
-      }
-    },
+    ruleFilteredSlideIds: ruleState.ruleFilteredSlideIds,
+    ruleEvaluationDate: ruleState.ruleEvaluationDate,
+    isMehella: ruleState.isMehella,
+    ruleContextMeta: ruleState.ruleContextMeta,
+    setRuleFilteredSlideIds: ruleState.setRuleFilteredSlideIds,
+    setRuleEvaluationDate: ruleState.setRuleEvaluationDate,
+    setIsMehella: ruleState.setIsMehella,
+    setRuleContextMeta: ruleState.setRuleContextMeta,
 
-    goToSlide: (index) => {
-      const enabledSlides = get().getMergedEnabledSlides();
-      if (index >= 0 && index < enabledSlides.length) {
-        set({ currentSlideIndex: index });
-      }
-    },
+    currentView: navState.currentView,
+    setCurrentView: navState.setCurrentView as (view: AppView) => void,
 
-    // Slide manipulation
-    updateSlide: (id, updates) => {
-      const slides = get().currentSlides.map(slide =>
-        slide.id === id ? { ...slide, ...updates } : slide
-      );
-      set({ currentSlides: slides });
-    },
+    expandDynamicSlides: (slides: Slide[]) =>
+      expandDynamicSlides(slides, dataState.verses, ruleState.ruleContextMeta),
 
-    addSlide: (slide) => {
-      const slides = [...get().currentSlides, slide];
-      set({ currentSlides: slides });
-    },
+    getEnabledSlides: () =>
+      getEnabledSlidesFiltering(
+        dataState.currentSlides,
+        ruleState.ruleFilteredSlideIds,
+        dataState.verses,
+        ruleState.ruleContextMeta,
+      ),
 
-    removeSlide: (id) => {
-      const slides = get().currentSlides.filter(s => s.id !== id);
-      // Reorder remaining slides
-      const reorderedSlides = slides.map((slide, index) => ({
-        ...slide,
-        slideOrder: index + 1,
-      }));
-      set({ currentSlides: reorderedSlides });
-    },
+    getExpandedSlides: () =>
+      expandDynamicSlides(dataState.currentSlides, dataState.verses, ruleState.ruleContextMeta),
+  };
+};
 
-    reorderSlides: (fromIndex, toIndex) => {
-      const slides = [...get().currentSlides];
-      const [removed] = slides.splice(fromIndex, 1);
-      slides.splice(toIndex, 0, removed);
-
-      // Update slide orders
-      const reorderedSlides = slides.map((slide, index) => ({
-        ...slide,
-        slideOrder: index + 1,
-      }));
-
-      set({ currentSlides: reorderedSlides });
-    },
-
-    toggleSlideDisabled: (id) => {
-      const slides = get().currentSlides.map(slide =>
-        slide.id === id ? { ...slide, isDisabled: !slide.isDisabled } : slide
-      );
-      set({ currentSlides: slides });
-    },
-
-    setSlideTemplateOverride: (slideId, templateId) => {
-      const slides = get().currentSlides.map(slide =>
-        slide.id === slideId
-          ? { ...slide, templateOverrideId: templateId ?? undefined }
-          : slide
-      );
-      set({ currentSlides: slides });
-    },
-
-    getTemplateForSlide: (slide) => {
-      const { allTemplates, currentTemplate, secondaryTemplate, secondarySlides } = get();
-      if (slide.templateOverrideId) {
-        return allTemplates.find(t => t.id === slide.templateOverrideId) || currentTemplate;
-      }
-      const isSecondary = secondarySlides.some(s => s.id === slide.id)
-        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
-      return isSecondary ? secondaryTemplate : currentTemplate;
-    },
-
-    getVariablesForSlide: (slide) => {
-      const { currentVariables, secondarySlides, secondaryVariables } = get();
-      const isSecondary = secondarySlides.some(s => s.id === slide.id)
-        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
-      return isSecondary ? secondaryVariables : currentVariables;
-    },
-
-    getLanguageMapForSlide: (slide) => {
-      const { currentPresentation, secondaryPresentation, secondarySlides } = get();
-      const isSecondary = secondarySlides.some(s => s.id === slide.id)
-        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
-      const pres = isSecondary ? secondaryPresentation : currentPresentation;
-      return pres?.languageMap ?? {};
-    },
-
-    getLanguageSettingsForSlide: (slide) => {
-      const { currentPresentation, secondaryPresentation, secondarySlides } = get();
-      const isSecondary = secondarySlides.some(s => s.id === slide.id)
-        || (slide.id.includes('__verse_') && secondarySlides.some(s => slide.id.startsWith(s.id + '__verse_')));
-      const pres = isSecondary ? secondaryPresentation : currentPresentation;
-      return pres?.languageSettings;
-    },
-
-    // Computed getters
-    expandDynamicSlides: (slides: Slide[]) => {
-      const { verses, ruleContextMeta } = get();
-      if (verses.length === 0) return slides;
-
-      const expanded: Slide[] = [];
-      for (const slide of slides) {
-        if (slide.isDynamic && slide.lineId) {
-          // Resolve @meta.X.Y placeholder to get the actual segmentId
-          let segmentId = slide.lineId;
-          if (segmentId.startsWith('@meta.')) {
-            if (!ruleContextMeta) {
-              console.warn(`[Dynamic Slide] Cannot resolve "${segmentId}" — rule context meta not available yet`);
-            } else {
-              const resolved = placeholderService.resolveMetaPlaceholder(segmentId, ruleContextMeta);
-              if (resolved === undefined) {
-                console.warn(`[Dynamic Slide] Failed to resolve "${segmentId}" from meta context`);
-              } else {
-                segmentId = resolved;
-              }
-            }
-          }
-
-          const matchingVerses = verses
-            .filter(v => v.segmentId === segmentId)
-            .sort((a, b) => a.verseOrder - b.verseOrder);
-
-          for (const verse of matchingVerses) {
-            expanded.push({
-              ...slide,
-              id: `${slide.id}__verse_${verse.id}`,
-              titleJson: (verse.titleLang1 || verse.titleLang2 || verse.titleLang3 || verse.titleLang4)
-                ? {
-                    Lang1: verse.titleLang1,
-                    Lang2: verse.titleLang2,
-                    Lang3: verse.titleLang3,
-                    Lang4: verse.titleLang4,
-                  }
-                : slide.titleJson,
-              blocksJson: [{
-                Lang1: verse.textLang1,
-                Lang2: verse.textLang2,
-                Lang3: verse.textLang3,
-                Lang4: verse.textLang4,
-              }],
-            });
-          }
-
-          // If no verses matched, keep the original slide as fallback
-          if (matchingVerses.length === 0) {
-            console.warn(`[Dynamic Slide] No verses found for segmentId="${segmentId}" (lineId="${slide.lineId}")`);
-            expanded.push(slide);
-          }
-        } else {
-          expanded.push(slide);
-        }
-      }
-      return expanded;
-    },
-
-    getEnabledSlides: () => {
-      const { currentSlides, ruleFilteredSlideIds } = get();
-      let slides = currentSlides.filter(s => !s.isDisabled);
-      if (ruleFilteredSlideIds !== null) {
-        slides = slides.filter(s => ruleFilteredSlideIds.includes(s.id));
-      }
-      return get().expandDynamicSlides(slides);
-    },
-
-    getMergedEnabledSlides: () => {
-      const state = get();
-      const primarySlides = state.getEnabledSlides();
-
-      if (!state.secondaryPresentation || state.secondarySlides.length === 0) {
-        return primarySlides;
-      }
-
-      let secSlides = state.secondarySlides.filter(s => !s.isDisabled);
-      if (state.ruleFilteredSlideIds !== null) {
-        secSlides = secSlides.filter(s => state.ruleFilteredSlideIds!.includes(s.id));
-      }
-      secSlides = state.expandDynamicSlides(secSlides);
-
-      return [...primarySlides, ...secSlides];
-    },
-
-    getExpandedSlides: () => {
-      const { currentSlides } = get();
-      return get().expandDynamicSlides(currentSlides);
-    },
-
-    getCurrentSlide: () => {
-      const { currentSlideIndex, isPresenting } = get();
-      if (!isPresenting) return null;
-      const enabledSlides = get().getMergedEnabledSlides();
-      return enabledSlides[currentSlideIndex] || null;
-    },
-
-    getSlideCount: () => get().currentSlides.length,
-
-    getEnabledSlideCount: () => get().currentSlides.filter(s => !s.isDisabled).length,
-  }))
-);
-
+// Subscribe support for non-React code (e.g., useRules.ts accessing store state)
+useAppStore.subscribe = usePresentationDataStore.subscribe as any;
+useAppStore.setState = usePresentationDataStore.setState as any;

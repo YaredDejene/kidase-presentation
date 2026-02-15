@@ -1,17 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useAppStore } from '../store/appStore';
 import { slideRepository } from '../repositories';
-import { Slide, SlideBlock, SlideTitle } from '../domain/entities/Slide';
-
-/** Check if a slide ID is a synthetic verse expansion */
-function isVerseSlide(id: string): boolean {
-  return id.includes('__verse_');
-}
-
-/** Extract the parent slide ID from a synthetic verse slide ID */
-function getParentSlideId(id: string): string {
-  return id.split('__verse_')[0];
-}
+import { Slide, SlideBlock, SlideTitle, isVerseSlide, getParentSlideId } from '../domain/entities/Slide';
 
 export function useSlides() {
   const {
