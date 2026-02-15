@@ -1,7 +1,4 @@
-# Tauri + React + Typescript
+# Kidase Presentation
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+Offline first multilingual presentation system for Ethiopian Orthodox Tewahedo Church liturgy programs. Displays liturgical texts in multiple languages simultaneously with clear readability on large TV screens. Fully offline, supports structured service flow, and built for simplicity, reliability, and future expansion to mobile and cloud platforms.
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
