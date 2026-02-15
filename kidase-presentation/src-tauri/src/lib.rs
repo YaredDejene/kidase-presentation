@@ -198,6 +198,12 @@ pub fn run() {
             sql: "ALTER TABLE slides ADD COLUMN template_override_id TEXT;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 11,
+            description: "add_is_primary_to_presentations",
+            sql: "ALTER TABLE presentations ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 1;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

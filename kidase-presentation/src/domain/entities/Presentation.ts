@@ -46,6 +46,7 @@ export interface Presentation {
   templateId: string;
   languageMap: LanguageMap; // For backward compatibility
   languageSettings?: LanguageSettings; // Enhanced settings with order/enabled
+  isPrimary: boolean;
   isActive: boolean;
   createdAt: string;
 }

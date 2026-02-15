@@ -10,6 +10,7 @@ interface PresentationRow {
   template_id: string;
   language_map: string;
   language_settings: string | null;
+  is_primary: number;
   is_active: number;
   created_at: string;
 }
@@ -23,6 +24,7 @@ export class PresentationRepository implements IPresentationRepository {
       templateId: row.template_id,
       languageMap: JSON.parse(row.language_map),
       languageSettings: row.language_settings ? JSON.parse(row.language_settings) : undefined,
+      isPrimary: row.is_primary === 1,
       isActive: row.is_active === 1,
       createdAt: row.created_at,
     };
@@ -89,8 +91,8 @@ export class PresentationRepository implements IPresentationRepository {
 
     await db.execute(
       `INSERT INTO presentations
-       (id, name, type, template_id, language_map, language_settings, is_active, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, name, type, template_id, language_map, language_settings, is_primary, is_active, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         presentation.name,
@@ -98,6 +100,7 @@ export class PresentationRepository implements IPresentationRepository {
         presentation.templateId,
         JSON.stringify(presentation.languageMap),
         presentation.languageSettings ? JSON.stringify(presentation.languageSettings) : null,
+        presentation.isPrimary ? 1 : 0,
         presentation.isActive ? 1 : 0,
         createdAt,
       ]
@@ -115,7 +118,7 @@ export class PresentationRepository implements IPresentationRepository {
 
     await db.execute(
       `UPDATE presentations
-       SET name = ?, type = ?, template_id = ?, language_map = ?, language_settings = ?, is_active = ?
+       SET name = ?, type = ?, template_id = ?, language_map = ?, language_settings = ?, is_primary = ?, is_active = ?
        WHERE id = ?`,
       [
         updated.name,
@@ -123,6 +126,7 @@ export class PresentationRepository implements IPresentationRepository {
         updated.templateId,
         JSON.stringify(updated.languageMap),
         updated.languageSettings ? JSON.stringify(updated.languageSettings) : null,
+        updated.isPrimary ? 1 : 0,
         updated.isActive ? 1 : 0,
         id,
       ]

@@ -56,6 +56,7 @@ export class PresentationService {
       type,
       templateId,
       languageMap,
+      isPrimary: true,
       isActive: false,
     });
 
@@ -203,6 +204,7 @@ export class PresentationService {
       type: original.presentation.type,
       templateId: original.presentation.templateId,
       languageMap: original.presentation.languageMap,
+      isPrimary: original.presentation.isPrimary,
       isActive: false,
     });
 

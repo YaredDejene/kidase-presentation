@@ -85,15 +85,23 @@
   background-color: #5a3a5a;
 }
 
-.pres-page-btn-settings {
-  background-color: #2a3a4a;
+.pres-page-btn-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #888;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.pres-page-btn-settings:hover {
-  background-color: #3a4a5a;
+.pres-page-btn-icon:hover {
+  background-color: #333;
+  color: #ccc;
 }
 
 .pres-page-btn-present {
@@ -157,13 +165,23 @@
   border-left: 3px solid #4a6a4a;
 }
 
-.pres-page-slide-num {
-  color: #555;
+.pres-page-slide-row .slide-order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: #333;
+  border-radius: 4px;
   font-size: 12px;
-  min-width: 24px;
-  text-align: right;
-  padding-top: 2px;
+  color: #888;
   flex-shrink: 0;
+}
+
+.pres-page-slide-row .slide-order-badge-verse {
+  background-color: #3a2a6a;
+  color: #9a8acd;
+  font-size: 14px;
 }
 
 .pres-page-slide-text {

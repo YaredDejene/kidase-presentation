@@ -1,21 +1,24 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useSlides } from '../../hooks/useSlides';
-import { useRules } from '../../hooks/useRules';
 import { SlideRow } from './SlideRow';
-import { SlidePreview } from './SlidePreview';
+import { SlideContentPanel } from './SlideContentPanel';
+import { Modal } from '../common/Modal';
+import { Presentation } from '../../domain/entities/Presentation';
+import { presentationRepository } from '../../repositories';
+import { presentationService } from '../../services/PresentationService';
 import '../../styles/editor.css';
 
 export const SlideEditor: React.FC = () => {
   const {
     currentTemplate,
     currentPresentation,
-    currentVariables,
     currentSlides,
     allTemplates,
-    ruleFilteredSlideIds,
-    ruleContextMeta,
-    getTemplateForSlide,
+    setCurrentPresentation,
+    setCurrentSlides,
+    setCurrentTemplate,
+    setCurrentVariables,
   } = useAppStore();
 
   const {
@@ -24,30 +27,28 @@ export const SlideEditor: React.FC = () => {
     moveSlide,
     toggleDisabled,
     deleteSlide,
-    createSlide,
     setTemplateOverride,
   } = useSlides();
 
-  const { evaluateRules } = useRules();
-
-  // Evaluate rules whenever deps change
-  useEffect(() => {
-    if (currentPresentation) {
-      evaluateRules();
-    }
-  }, [evaluateRules, currentPresentation]);
-
-  // Compute set of rule-hidden slide IDs for quick lookup
-  const ruleHiddenIds = useMemo(() => {
-    if (ruleFilteredSlideIds === null) return new Set<string>();
-    const visibleSet = new Set(ruleFilteredSlideIds);
-    return new Set(currentSlides.filter(s => !visibleSet.has(s.id)).map(s => s.id));
-  }, [ruleFilteredSlideIds, currentSlides]);
-
+  const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [listWidth, setListWidth] = useState<number | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [isPrimary, setIsPrimary] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
+
+  // Load all presentations
+  useEffect(() => {
+    presentationRepository.getAll().then(setPresentations);
+  }, []);
+
+  // Sync isPrimary when presentation changes
+  useEffect(() => {
+    if (currentPresentation) {
+      setIsPrimary(currentPresentation.isPrimary);
+    }
+  }, [currentPresentation?.isPrimary]);
 
   // Select first slide if none selected
   useEffect(() => {
@@ -56,19 +57,27 @@ export const SlideEditor: React.FC = () => {
     }
   }, [currentSlides, selectedSlideId, selectSlide]);
 
-  // Find the selected slide from raw currentSlides (not expanded)
   const currentSelectedSlide = useMemo(() => {
     if (!selectedSlideId) return null;
     return currentSlides.find(s => s.id === selectedSlideId) || null;
   }, [selectedSlideId, currentSlides]);
 
-  // Resolve template for the selected slide
-  const resolvedTemplate = useMemo(() => {
-    if (!currentSelectedSlide) return currentTemplate;
-    return getTemplateForSlide(currentSelectedSlide) || currentTemplate;
-  }, [currentSelectedSlide, currentTemplate, getTemplateForSlide]);
-
   const disabledCount = currentSlides.filter(s => s.isDisabled).length;
+
+  const handleKidaseChange = useCallback(async (id: string) => {
+    if (!id || id === currentPresentation?.id) return;
+    try {
+      const loaded = await presentationService.loadPresentation(id);
+      if (!loaded) return;
+      setCurrentPresentation(loaded.presentation);
+      setCurrentSlides(loaded.slides);
+      setCurrentTemplate(loaded.template);
+      setCurrentVariables(loaded.variables);
+      await presentationRepository.setActive(id);
+    } catch (error) {
+      console.error('Failed to load kidase:', error);
+    }
+  }, [currentPresentation, setCurrentPresentation, setCurrentSlides, setCurrentTemplate, setCurrentVariables]);
 
   const handleDragStart = useCallback((index: number) => {
     setDraggedIndex(index);
@@ -85,12 +94,6 @@ export const SlideEditor: React.FC = () => {
   const handleDragEnd = useCallback(() => {
     setDraggedIndex(null);
   }, []);
-
-  const handleAddSlide = useCallback(async () => {
-    await createSlide({
-      blocksJson: [{ Lang1: '', Lang2: '', Lang3: '', Lang4: '' }],
-    });
-  }, [createSlide]);
 
   const handleTemplateOverrideChange = useCallback(async (value: string) => {
     if (!selectedSlideId) return;
@@ -152,11 +155,24 @@ export const SlideEditor: React.FC = () => {
         </div>
         <div className="editor-toolbar-right">
           <button
-            onClick={handleAddSlide}
-            className="editor-toolbar-btn editor-toolbar-btn-add"
+            onClick={() => setShowSettings(true)}
+            className="editor-btn-icon"
+            title="Presentation settings"
           >
-            + Add Slide
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
           </button>
+          <select
+            className="editor-kidase-select"
+            value={currentPresentation.id}
+            onChange={(e) => handleKidaseChange(e.target.value)}
+          >
+            {presentations.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -177,34 +193,30 @@ export const SlideEditor: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentSlides.map((slide, index) => {
-                  const isRuleHidden = ruleHiddenIds.has(slide.id);
-                  return (
-                    <SlideRow
-                      key={slide.id}
-                      slide={slide}
-                      index={index}
-                      isSelected={slide.id === selectedSlideId}
-                      isRuleHidden={isRuleHidden}
-                      isDynamic={slide.isDynamic}
-                      hasTemplateOverride={!!slide.templateOverrideId}
-                      languageMap={currentPresentation.languageMap}
-                      onSelect={() => selectSlide(slide.id)}
-                      onToggleDisable={() => toggleDisabled(slide.id)}
-                      onDelete={() => deleteSlide(slide.id)}
-                      onDragStart={() => handleDragStart(index)}
-                      onDragOver={(e) => handleDragOver(e, index)}
-                      onDragEnd={handleDragEnd}
-                      isDragging={draggedIndex === index}
-                    />
-                  );
-                })}
+                {currentSlides.map((slide, index) => (
+                  <SlideRow
+                    key={slide.id}
+                    slide={slide}
+                    index={index}
+                    isSelected={slide.id === selectedSlideId}
+                    isDynamic={slide.isDynamic}
+                    hasTemplateOverride={!!slide.templateOverrideId}
+                    languageMap={currentPresentation.languageMap}
+                    onSelect={() => selectSlide(slide.id)}
+                    onToggleDisable={() => toggleDisabled(slide.id)}
+                    onDelete={() => deleteSlide(slide.id)}
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedIndex === index}
+                  />
+                ))}
               </tbody>
             </table>
 
             {currentSlides.length === 0 && (
               <div className="editor-no-slides">
-                <p>No slides yet. Click "+ Add Slide" to create one.</p>
+                <p>No slides in this kidase.</p>
               </div>
             )}
           </div>
@@ -216,45 +228,16 @@ export const SlideEditor: React.FC = () => {
           onMouseDown={handleResizeStart}
         />
 
-        {/* Preview panel */}
+        {/* Content panel */}
         <div className="editor-preview-panel">
-          {currentSelectedSlide && resolvedTemplate ? (
+          {currentSelectedSlide ? (
             <>
-              <SlidePreview
+              <SlideContentPanel
                 slide={currentSelectedSlide}
-                template={resolvedTemplate}
-                variables={currentVariables}
                 languageMap={currentPresentation.languageMap}
                 languageSettings={currentPresentation.languageSettings}
-                isRuleHidden={ruleHiddenIds.has(currentSelectedSlide.id)}
-                meta={ruleContextMeta}
+                template={currentTemplate}
               />
-
-              {/* Slide details */}
-              <div className="editor-slide-details">
-                <div className="editor-detail-row">
-                  <span className="editor-detail-label">Order:</span>
-                  <span>{currentSelectedSlide.slideOrder}</span>
-                </div>
-                {currentSelectedSlide.lineId && (
-                  <div className="editor-detail-row">
-                    <span className="editor-detail-label">Line ID:</span>
-                    <span>{currentSelectedSlide.lineId}</span>
-                  </div>
-                )}
-                {currentSelectedSlide.isDynamic && (
-                  <div className="editor-detail-row">
-                    <span className="editor-detail-label">Type:</span>
-                    <span>Dynamic (verse-expanded)</span>
-                  </div>
-                )}
-                {currentSelectedSlide.notes && (
-                  <div className="editor-detail-row">
-                    <span className="editor-detail-label">Notes:</span>
-                    <span className="editor-detail-notes">{currentSelectedSlide.notes}</span>
-                  </div>
-                )}
-              </div>
 
               {/* Template override */}
               <div className="editor-template-override">
@@ -275,50 +258,48 @@ export const SlideEditor: React.FC = () => {
             </>
           ) : (
             <div className="editor-preview-empty">
-              <p>Select a slide to preview</p>
+              <p>Select a slide to view its content</p>
             </div>
-          )}
-
-          {ruleContextMeta?.gitsawe != null && (
-            <GitsaweContext gitsawe={ruleContextMeta.gitsawe as Record<string, unknown>} />
           )}
         </div>
       </div>
-    </div>
-  );
-};
 
-const gitsaweLabels: Record<string, string> = {
-  lineId: 'Line ID',
-  kidaseType: 'Kidase Type',
-  gitsaweType: 'Gitsawe Type',
-  messageStPaul: 'St. Paul',
-  messageApostle: 'Apostle',
-  messageBookOfActs: 'Book of Acts',
-  messageApostleEvangelist: 'Apostle Evangelist',
-  misbak: 'Misbak',
-  wengel: 'Wengel',
-  evangelist: 'Evangelist',
-};
-
-function GitsaweContext({ gitsawe }: { gitsawe: Record<string, unknown> }) {
-  const entries = Object.entries(gitsaweLabels)
-    .map(([key, label]) => ({ label, value: gitsawe[key] }))
-    .filter((e): e is { label: string; value: string | number } => e.value != null && e.value !== '');
-
-  if (entries.length === 0) return null;
-
-  return (
-    <div className="editor-slide-details editor-context-section">
-      <div className="editor-context-header">Current Gitsawe</div>
-      <div className="editor-context-grid">
-        {entries.map(({ label, value }) => (
-          <div className="editor-detail-row" key={label}>
-            <span className="editor-detail-label">{label}:</span>
-            <span>{String(value)}</span>
+      {/* Kidase Settings Dialog */}
+      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Kidase Settings">
+        <div className="dialog-content">
+          <div className="form-group">
+            <div className="setting-row">
+              <div className="setting-label">
+                <span>Primary Kidase</span>
+                <span className="setting-hint">Primary kidase is the main service; secondary is supplementary</span>
+              </div>
+              <button
+                className={`toggle-switch ${isPrimary ? 'active' : ''}`}
+                onClick={() => setIsPrimary(!isPrimary)}
+              >
+                <span className="toggle-knob" />
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
+          <div className="dialog-actions">
+            <button onClick={() => setShowSettings(false)} className="btn-cancel">
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (currentPresentation) {
+                  const updated = await presentationRepository.update(currentPresentation.id, { isPrimary });
+                  setCurrentPresentation(updated);
+                }
+                setShowSettings(false);
+              }}
+              className="btn-save"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
-}
+};

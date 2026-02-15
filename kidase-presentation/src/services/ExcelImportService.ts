@@ -183,6 +183,7 @@ export class ExcelImportService {
       type: metadata.presentationType,
       templateId: templateId,
       languageMap: languageMap,
+      isPrimary: true,
       isActive: false,
     };
 

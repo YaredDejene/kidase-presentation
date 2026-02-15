@@ -207,14 +207,13 @@ export const PresentationPage: React.FC = () => {
         <div className="pres-page-toolbar-right">
           <button
             onClick={() => setShowSettings(true)}
-            className="pres-page-btn pres-page-btn-settings"
+            className="pres-page-btn-icon"
             title="Presentation settings"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
-            Settings
           </button>
           <button
             onClick={handleExportPdf}
@@ -250,7 +249,7 @@ export const PresentationPage: React.FC = () => {
                   className={`pres-page-slide-row ${slide.id === selectedSlideId ? 'pres-page-slide-row--selected' : ''} ${isVerse ? 'pres-page-slide-row--verse' : ''}`}
                   onClick={() => setSelectedSlideId(slide.id)}
                 >
-                  <span className="pres-page-slide-num">{index + 1}</span>
+                  <span className={`slide-order-badge ${isVerse ? 'slide-order-badge-verse' : ''}`}>{index + 1}</span>
                   <div className="pres-page-slide-text">
                     {title && <div className="pres-page-slide-title">{title}</div>}
                     <div className="pres-page-slide-preview">{preview}</div>

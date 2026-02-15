@@ -123,7 +123,7 @@ export const useAppStore = create<AppState>()(
     currentSlideIndex: 0,
     isEditing: false,
     selectedSlideId: null,
-    currentView: 'presentation',
+    currentView: 'editor',
     isLoading: false,
     error: null,
 
