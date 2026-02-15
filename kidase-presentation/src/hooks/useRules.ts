@@ -100,13 +100,6 @@ export function useRules() {
 
   // Evaluate all enabled rules and update filtered slide IDs in store
   const evaluateRules = useCallback(async (): Promise<EvaluationResult[]> => {
-    const enabledRules = rules.filter(r => r.isEnabled);
-
-    if (enabledRules.length === 0) {
-      setRuleFilteredSlideIds(null);
-      return [];
-    }
-
     // Parse as local date (YYYY-MM-DD → local midnight) to avoid UTC timezone shift
     const overrideDate = ruleEvaluationDate
       ? new Date(ruleEvaluationDate + 'T12:00:00')
@@ -116,6 +109,7 @@ export function useRules() {
     const allGitsawes = await gitsaweRepository.getAll();
     const gitsaweRules = (await ruleRepository.getEnabled()).filter(r => r.scope === 'gitsawe');
 
+    // Always build context (needed for gitsawe selection and placeholder resolution)
     const context = buildContext({
       presentation: currentPresentation,
       variables: currentVariables,
@@ -126,13 +120,15 @@ export function useRules() {
       extra: { isMehella },
     });
 
-    console.log('[Context] meta:', context.meta);
-    if (context.meta.gitsawe) {
-      console.log('[Gitsawe] Selected:', context.meta.gitsawe);
-    }
-
     // Store meta in app store for placeholder resolution
     setRuleContextMeta(context.meta);
+
+    // If no presentation-level rules, skip slide filtering
+    const enabledRules = rules.filter(r => r.isEnabled);
+    if (enabledRules.length === 0) {
+      setRuleFilteredSlideIds(null);
+      return [];
+    }
 
     const results: EvaluationResult[] = [];
     const hiddenSlideIds = new Set<string>();

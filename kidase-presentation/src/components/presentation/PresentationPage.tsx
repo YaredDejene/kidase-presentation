@@ -28,7 +28,7 @@ export const PresentationPage: React.FC = () => {
     getEnabledSlides,
   } = useAppStore();
 
-  const { evaluateRules, rules } = useRules();
+  const { evaluateRules } = useRules();
 
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
   const [listWidth, setListWidth] = useState<number | null>(null);
@@ -42,12 +42,12 @@ export const PresentationPage: React.FC = () => {
     templateRepository.getAll().then(setTemplates);
   }, []);
 
-  // Evaluate rules when presentation or rules change
+  // Evaluate rules when presentation changes (also builds gitsawe context)
   useEffect(() => {
-    if (currentPresentation && rules.length > 0) {
+    if (currentPresentation) {
       evaluateRules();
     }
-  }, [evaluateRules, currentPresentation, rules]);
+  }, [evaluateRules, currentPresentation]);
 
   // Get the filtered/expanded slides for display
   const displaySlides = useMemo(() => {
@@ -189,12 +189,6 @@ export const PresentationPage: React.FC = () => {
         </div>
         <div className="pres-page-toolbar-right">
           <button
-            onClick={handleExportPdf}
-            className="pres-page-btn pres-page-btn-export"
-          >
-            Export PDF
-          </button>
-          <button
             onClick={() => setShowSettings(true)}
             className="pres-page-btn pres-page-btn-settings"
             title="Presentation settings"
@@ -204,6 +198,12 @@ export const PresentationPage: React.FC = () => {
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
             Settings
+          </button>
+          <button
+            onClick={handleExportPdf}
+            className="pres-page-btn pres-page-btn-export"
+          >
+            Export PDF
           </button>
           <button
             onClick={startPresentation}

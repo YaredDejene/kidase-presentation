@@ -113,6 +113,7 @@ export const VersesManager: React.FC = () => {
       {/* Toolbar */}
       <div className="verses-toolbar">
         <div className="verses-toolbar-left">
+          <span className="verses-title">Verses</span>
           <span className="verses-count">
             {records.length} {records.length === 1 ? 'record' : 'records'}
           </span>

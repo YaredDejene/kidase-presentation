@@ -99,6 +99,7 @@ export const TemplatesManager: React.FC = () => {
       {/* Toolbar */}
       <div className="templates-toolbar">
         <div className="templates-toolbar-left">
+          <span className="templates-title">Templates</span>
           <span className="templates-count">
             {records.length} {records.length === 1 ? 'template' : 'templates'}
           </span>

@@ -39,8 +39,11 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="settings-page">
-      <h1 className="settings-page-title">Settings</h1>
+      <div className="settings-page-toolbar">
+        <h1 className="settings-page-title">Settings</h1>
+      </div>
 
+      <div className="settings-page-content">
       {/* General */}
       <div className="settings-section">
         <h2 className="settings-section-title">General</h2>
@@ -118,6 +121,7 @@ export const SettingsPage: React.FC = () => {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 };

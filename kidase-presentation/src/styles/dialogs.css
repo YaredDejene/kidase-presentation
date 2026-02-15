@@ -18,6 +18,7 @@
   border: 1px solid #333;
   border-radius: 8px;
   width: 650px;
+  height: 550px;
   max-height: 80vh;
   overflow: hidden;
   display: flex;
@@ -26,21 +27,22 @@
 }
 
 .modal-title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
-  padding: 16px 20px;
+  padding: 10px 16px;
   border-bottom: 1px solid #333;
   margin: 0;
+  color: #ddd;
 }
 
 .modal-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 6px;
+  right: 10px;
   background: none;
   border: none;
   color: #888;
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
   padding: 4px 8px;
   line-height: 1;
@@ -67,11 +69,11 @@
 }
 
 .dialog-tab {
-  padding: 12px 20px;
+  padding: 8px 16px;
   background: none;
   border: none;
   color: #888;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -90,7 +92,6 @@
 .tab-content {
   flex: 1;
   overflow-y: auto;
-  min-height: 350px;
 }
 
 .tab-hint {
@@ -118,33 +119,38 @@
 
 /* Dialog Content */
 .dialog-content {
-  padding: 20px;
+  padding: 16px;
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Form Elements */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .form-label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #888;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .form-input,
 .form-select {
   width: 100%;
-  padding: 10px 14px;
+  height: 32px;
+  padding: 0 12px;
   background-color: #252525;
   border: 1px solid #333;
   border-radius: 4px;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
 .form-input:focus,
@@ -161,63 +167,6 @@
   margin: 6px 0 0;
   color: #666;
   font-size: 12px;
-}
-
-/* Date Picker */
-.date-picker-row {
-  display: flex;
-  gap: 0;
-  align-items: stretch;
-}
-
-.date-picker-input {
-  flex: 1;
-  padding: 10px 14px;
-  background-color: #252525;
-  border: 1px solid #333;
-  border-radius: 6px 0 0 6px;
-  border-right: none;
-  color: #fff;
-  font-size: 14px;
-  font-family: inherit;
-  height: 42px;
-  box-sizing: border-box;
-}
-
-.date-picker-input:focus {
-  outline: none;
-  border-color: #4a4a8a;
-}
-
-.date-picker-input::-webkit-calendar-picker-indicator {
-  filter: invert(0.7);
-  cursor: pointer;
-}
-
-.date-picker-today {
-  padding: 0 16px;
-  background-color: #333;
-  border: 1px solid #333;
-  border-radius: 0 6px 6px 0;
-  color: #aaa;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  height: 42px;
-  box-sizing: border-box;
-  transition: all 0.15s;
-}
-
-.date-picker-today:hover {
-  background-color: #444;
-  color: #fff;
-}
-
-.date-picker-today.active {
-  background-color: #3a4a3a;
-  border-color: #4a6a4a;
-  color: #8aba8a;
 }
 
 /* Stats Grid */
@@ -840,7 +789,7 @@
 }
 
 .setting-label span:first-child {
-  font-size: 14px;
+  font-size: 13px;
   color: #fff;
 }
 
@@ -857,12 +806,13 @@
 }
 
 .setting-select {
-  padding: 8px 12px;
+  height: 32px;
+  padding: 0 12px;
   background-color: #333;
   border: 1px solid #444;
   border-radius: 4px;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   min-width: 150px;
   cursor: pointer;
 }
@@ -902,13 +852,14 @@
 }
 
 .btn-cancel {
-  padding: 8px 16px;
+  height: 32px;
+  padding: 0 14px;
   background-color: #333;
   border: 1px solid #444;
   border-radius: 4px;
   color: #fff;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .btn-cancel:hover {
@@ -916,13 +867,14 @@
 }
 
 .btn-save {
-  padding: 8px 20px;
+  height: 32px;
+  padding: 0 16px;
   background-color: #4a4a8a;
   border: none;
   border-radius: 4px;
   color: #fff;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 }
 

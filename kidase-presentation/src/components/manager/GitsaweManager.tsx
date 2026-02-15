@@ -119,6 +119,7 @@ export const GitsaweManager: React.FC = () => {
       {/* Toolbar */}
       <div className="gitsawe-toolbar">
         <div className="gitsawe-toolbar-left">
+          <span className="gitsawe-title">Gitsawe</span>
           <span className="gitsawe-count">
             {records.length} {records.length === 1 ? 'record' : 'records'}
           </span>

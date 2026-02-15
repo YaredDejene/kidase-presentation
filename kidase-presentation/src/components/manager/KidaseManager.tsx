@@ -193,6 +193,7 @@ export const KidaseManager: React.FC = () => {
       {/* Toolbar */}
       <div className="manager-toolbar">
         <div className="manager-toolbar-left">
+          <span className="manager-title">Kidases</span>
           <span className="manager-count">
             {rows.length} {rows.length === 1 ? 'presentation' : 'presentations'}
           </span>

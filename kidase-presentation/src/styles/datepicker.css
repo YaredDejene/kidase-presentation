@@ -9,13 +9,15 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 14px;
+  height: 32px;
+  padding: 0 12px;
   background-color: #252525;
   border: 1px solid #333;
-  border-radius: 6px;
+  border-radius: 4px;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
+  box-sizing: border-box;
   transition: border-color 0.15s;
 }
 
