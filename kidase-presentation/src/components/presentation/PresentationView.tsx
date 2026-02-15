@@ -1,26 +1,32 @@
 import { useEffect, useCallback } from 'react';
-import { useAppStore } from '../../store/appStore';
+import { usePresentationModeStore } from '../../store/presentationModeStore';
+import { usePresentationDataStore } from '../../store/presentationDataStore';
+import { useRuleStore } from '../../store/ruleStore';
 import { SlideRenderer } from './SlideRenderer';
 import '../../styles/presentation.css';
 
 export const PresentationView: React.FC = () => {
   const {
-    currentTemplate,
-    currentPresentation,
     currentSlideIndex,
     isPresenting,
-    appSettings,
-    ruleContextMeta,
     nextSlide,
     previousSlide,
     stopPresentation,
     goToSlide,
     getMergedEnabledSlides,
+  } = usePresentationModeStore();
+
+  const {
+    currentTemplate,
+    currentPresentation,
+    appSettings,
     getTemplateForSlide,
     getVariablesForSlide,
     getLanguageMapForSlide,
     getLanguageSettingsForSlide,
-  } = useAppStore();
+  } = usePresentationDataStore();
+
+  const ruleContextMeta = useRuleStore(s => s.ruleContextMeta);
 
   const enabledSlides = getMergedEnabledSlides();
   const currentSlide = enabledSlides[currentSlideIndex];

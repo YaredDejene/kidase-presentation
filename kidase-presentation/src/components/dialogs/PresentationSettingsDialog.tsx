@@ -4,7 +4,8 @@ import { Variable } from '../../domain/entities/Variable';
 import { Presentation, LanguageMap, LanguageSettings, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '../../domain/entities/Presentation';
 import { Template } from '../../domain/entities/Template';
 import { Slide } from '../../domain/entities/Slide';
-import { variableRepository, presentationRepository } from '../../repositories';
+import { useVariables } from '../../hooks/useVariables';
+import { usePresentation } from '../../hooks/usePresentation';
 import { placeholderService } from '../../services/PlaceholderService';
 import { useAppStore } from '../../store/appStore';
 import { toast } from '../../store/toastStore';
@@ -46,6 +47,8 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   onTemplateChange,
 }) => {
   const { ruleEvaluationDate, setRuleEvaluationDate, isMehella, setIsMehella, ruleFilteredSlideIds } = useAppStore();
+  const { saveAll } = useVariables();
+  const { updatePresentation } = usePresentation();
 
   const [activeTab, setActiveTab] = useState<TabId>('general');
   const [isSaving, setIsSaving] = useState(false);
@@ -211,38 +214,17 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
       }
 
       // Update presentation with both languageMap and languageSettings
-      const updatedPresentation = await presentationRepository.update(presentation.id, {
+      const updatedPresentation = await updatePresentation(presentation.id, {
         languageMap,
         languageSettings,
         templateId: selectedTemplateId,
       });
-      onPresentationChange(updatedPresentation);
+      if (updatedPresentation) {
+        onPresentationChange(updatedPresentation);
+      }
 
       // Update/create variables
-      const savedVariables: Variable[] = [];
-      for (const variable of localVariables) {
-        if (variable.id.startsWith('temp-')) {
-          const created = await variableRepository.create({
-            presentationId: presentation.id,
-            name: variable.name,
-            value: variable.value,
-            valueLang1: variable.valueLang1,
-            valueLang2: variable.valueLang2,
-            valueLang3: variable.valueLang3,
-            valueLang4: variable.valueLang4,
-          });
-          savedVariables.push(created);
-        } else {
-          const updated = await variableRepository.update(variable.id, {
-            value: variable.value,
-            valueLang1: variable.valueLang1,
-            valueLang2: variable.valueLang2,
-            valueLang3: variable.valueLang3,
-            valueLang4: variable.valueLang4,
-          });
-          savedVariables.push(updated);
-        }
-      }
+      const savedVariables = await saveAll(presentation.id, localVariables);
       onVariablesChange(savedVariables);
 
       // Handle template change

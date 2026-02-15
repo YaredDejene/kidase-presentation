@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { TemplatePreview } from '../common/TemplatePreview';
 import { Template, TemplateDefinition } from '../../domain/entities/Template';
-import { templateRepository } from '../../repositories';
 import { toast } from '../../store/toastStore';
 import '../../styles/dialogs.css';
 
@@ -21,14 +20,14 @@ interface TemplateEditorDialogProps {
   isOpen: boolean;
   onClose: () => void;
   template: Template;
-  onSaved: () => void;
+  onSave: (id: string, updates: Partial<Omit<Template, 'id' | 'createdAt'>>) => Promise<Template | null>;
 }
 
 export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
   isOpen,
   onClose,
   template,
-  onSaved,
+  onSave,
 }) => {
   const [name, setName] = useState('');
   const [templateDef, setTemplateDef] = useState<TemplateDefinition | null>(null);
@@ -41,21 +40,21 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
     }
   }, [isOpen, template]);
 
-  const updateTemplateField = (path: string[], value: any) => {
+  const updateTemplateField = (path: string[], value: string | number | boolean) => {
     if (!templateDef) return;
     setTemplateDef(prev => {
       if (!prev) return prev;
       const newDef = JSON.parse(JSON.stringify(prev));
-      let obj: any = newDef;
+      let obj: Record<string, unknown> = newDef;
       for (let i = 0; i < path.length - 1; i++) {
-        obj = obj[path[i]];
+        obj = obj[path[i]] as Record<string, unknown>;
       }
       obj[path[path.length - 1]] = value;
       return newDef;
     });
   };
 
-  const updateLanguageStyle = (langIndex: number, field: string, value: any) => {
+  const updateLanguageStyle = (langIndex: number, field: string, value: string | number) => {
     if (!templateDef) return;
     setTemplateDef(prev => {
       if (!prev) return prev;
@@ -69,11 +68,10 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
     if (!templateDef) return;
     setIsSaving(true);
     try {
-      await templateRepository.update(template.id, {
+      await onSave(template.id, {
         name,
         definitionJson: templateDef,
       });
-      onSaved();
       onClose();
     } catch (error) {
       console.error('Failed to save template:', error);

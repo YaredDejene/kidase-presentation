@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useAppStore } from './store/appStore';
+import { useNavigationStore } from './store/navigationStore';
+import { usePresentationModeStore } from './store/presentationModeStore';
+import { usePresentationDataStore } from './store/presentationDataStore';
 import { Sidebar } from './components/layout/Sidebar';
 import { PresentationPage } from './components/presentation/PresentationPage';
 import { SlideEditor } from './components/editor/SlideEditor';
@@ -15,15 +17,9 @@ import './styles/global.css';
 import './styles/app.css';
 
 function App() {
-  const {
-    currentView,
-    isPresenting,
-    setCurrentView,
-    setAppSettings,
-    setAllTemplates,
-    setVerses,
-    loadPresentationData,
-  } = useAppStore();
+  const { currentView, setCurrentView } = useNavigationStore();
+  const isPresenting = usePresentationModeStore(s => s.isPresenting);
+  const { setAppSettings, setAllTemplates, setVerses, loadPresentationData } = usePresentationDataStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

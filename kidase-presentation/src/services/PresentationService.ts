@@ -330,6 +330,28 @@ export class PresentationService {
   }
 
   /**
+   * Check if a template can be deleted (not referenced by any presentation)
+   */
+  async canDeleteTemplate(templateId: string): Promise<{ canDelete: boolean; usedByCount: number }> {
+    const presentations = await presentationRepository.getAll();
+    const usedBy = presentations.filter(p => p.templateId === templateId);
+    return { canDelete: usedBy.length === 0, usedByCount: usedBy.length };
+  }
+
+  /**
+   * List all presentations with their slide counts
+   */
+  async listPresentationsWithCount(): Promise<{ presentation: Presentation; slideCount: number }[]> {
+    const presentations = await presentationRepository.getAll();
+    return Promise.all(
+      presentations.map(async (presentation) => ({
+        presentation,
+        slideCount: await slideRepository.count(presentation.id),
+      }))
+    );
+  }
+
+  /**
    * Set a presentation as active
    */
   async setActivePresentation(id: string): Promise<void> {

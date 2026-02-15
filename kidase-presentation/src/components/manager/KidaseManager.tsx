@@ -1,15 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Presentation } from '../../domain/entities/Presentation';
-import {
-  presentationRepository,
-  slideRepository,
-  templateRepository,
-} from '../../repositories';
 import { presentationService } from '../../services/PresentationService';
+import { usePresentation } from '../../hooks/usePresentation';
+import { useTemplates } from '../../hooks/useTemplates';
 import { useAppStore } from '../../store/appStore';
+import { formatDate } from '../../domain/formatting';
 import { toast } from '../../store/toastStore';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Template } from '../../domain/entities/Template';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import '../../styles/manager.css';
 
@@ -20,30 +17,17 @@ interface PresentationRow {
 
 export const KidaseManager: React.FC = () => {
   const [rows, setRows] = useState<PresentationRow[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
-  const {
-    currentPresentation,
-    setCurrentPresentation,
-    setCurrentSlides,
-    setCurrentTemplate,
-    setCurrentVariables,
-    setCurrentView,
-    clearPresentationData,
-  } = useAppStore();
+  const { currentPresentation, setCurrentView, clearPresentationData } = useAppStore();
+  const { loadPresentation } = usePresentation();
+  const { templates } = useTemplates();
 
   const loadPresentations = useCallback(async () => {
     try {
-      const presentations = await presentationRepository.getAll();
-      const rowsWithCount = await Promise.all(
-        presentations.map(async (p) => ({
-          presentation: p,
-          slideCount: await slideRepository.count(p.id),
-        }))
-      );
+      const rowsWithCount = await presentationService.listPresentationsWithCount();
       setRows(rowsWithCount);
     } catch (error) {
       console.error('Failed to load presentations:', error);
@@ -54,8 +38,6 @@ export const KidaseManager: React.FC = () => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      const loadedTemplates = await templateRepository.getAll();
-      setTemplates(loadedTemplates);
       await loadPresentations();
       setIsLoading(false);
     };
@@ -64,20 +46,13 @@ export const KidaseManager: React.FC = () => {
 
   const handleOpenPresentation = useCallback(async (id: string) => {
     try {
-      const loaded = await presentationService.loadPresentation(id);
-      if (!loaded) return;
-
-      setCurrentPresentation(loaded.presentation);
-      setCurrentSlides(loaded.slides);
-      setCurrentTemplate(loaded.template);
-      setCurrentVariables(loaded.variables);
-      await presentationRepository.setActive(id);
+      await loadPresentation(id);
       setCurrentView('editor');
     } catch (error) {
       console.error('Failed to open presentation:', error);
       toast.error('Failed to open presentation');
     }
-  }, [setCurrentPresentation, setCurrentSlides, setCurrentTemplate, setCurrentVariables, setCurrentView]);
+  }, [loadPresentation, setCurrentView]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!confirmDelete) return;
@@ -123,15 +98,6 @@ export const KidaseManager: React.FC = () => {
       toast.error('Failed to import: ' + (error as Error).message);
     }
   }, [templates, loadPresentations]);
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   const getLanguages = (p: Presentation) => {
     const langs = Object.values(p.languageMap).filter(Boolean);

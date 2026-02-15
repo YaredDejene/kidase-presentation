@@ -234,7 +234,3 @@ useAppStore.getState = () => {
       expandDynamicSlides(dataState.currentSlides, dataState.verses, ruleState.ruleContextMeta),
   };
 };
-
-// Subscribe support for non-React code (e.g., useRules.ts accessing store state)
-useAppStore.subscribe = usePresentationDataStore.subscribe as any;
-useAppStore.setState = usePresentationDataStore.setState as any;

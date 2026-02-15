@@ -1,94 +1,54 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Template, createDefaultTemplate } from '../../domain/entities/Template';
-import {
-  templateRepository,
-  presentationRepository,
-} from '../../repositories';
+import React, { useCallback, useState } from 'react';
+import { Template } from '../../domain/entities/Template';
+import { useTemplates } from '../../hooks/useTemplates';
+import { presentationService } from '../../services/PresentationService';
+import { formatDate } from '../../domain/formatting';
 import { toast } from '../../store/toastStore';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { TemplateEditorDialog } from '../dialogs/TemplateEditorDialog';
 import '../../styles/templates-manager.css';
 
 export const TemplatesManager: React.FC = () => {
-  const [records, setRecords] = useState<Template[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { templates, isLoading, createTemplate, deleteTemplate, updateTemplate } = useTemplates();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
-  const loadRecords = useCallback(async () => {
-    try {
-      const all = await templateRepository.getAll();
-      setRecords(all);
-    } catch (error) {
-      console.error('Failed to load templates:', error);
-      toast.error('Failed to load templates');
-    }
-  }, []);
-
-  useEffect(() => {
-    const init = async () => {
-      setIsLoading(true);
-      await loadRecords();
-      setIsLoading(false);
-    };
-    init();
-  }, [loadRecords]);
-
   const handleCreate = useCallback(async () => {
-    try {
-      const count = records.length;
-      await templateRepository.create({
-        name: `Template ${count + 1}`,
-        maxLangCount: 4,
-        definitionJson: createDefaultTemplate(),
-      });
-      await loadRecords();
+    const count = templates.length;
+    const created = await createTemplate(`Template ${count + 1}`);
+    if (created) {
       toast.success('Template created');
-    } catch (error) {
-      console.error('Failed to create template:', error);
+    } else {
       toast.error('Failed to create template');
     }
-  }, [records.length, loadRecords]);
+  }, [templates.length, createTemplate]);
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!confirmDelete) return;
     const { id, name } = confirmDelete;
     setConfirmDelete(null);
 
-    if (records.length <= 1) {
+    if (templates.length <= 1) {
       toast.error('Cannot delete the last template.');
       return;
     }
 
-    // Check if any presentations reference this template
-    const presentations = await presentationRepository.getAll();
-    const usedBy = presentations.filter(p => p.templateId === id);
-    if (usedBy.length > 0) {
-      toast.error(`Cannot delete: template is used by ${usedBy.length} presentation(s).`);
+    const { canDelete, usedByCount } = await presentationService.canDeleteTemplate(id);
+    if (!canDelete) {
+      toast.error(`Cannot delete: template is used by ${usedByCount} presentation(s).`);
       return;
     }
 
     setDeletingId(id);
-    try {
-      await templateRepository.delete(id);
-      await loadRecords();
+    const success = await deleteTemplate(id);
+    if (success) {
       toast.success(`"${name}" deleted`);
-    } catch (error) {
-      console.error('Failed to delete template:', error);
+    } else {
       toast.error('Failed to delete template');
     }
     setDeletingId(null);
-  }, [confirmDelete, records.length, loadRecords]);
-
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  }, [confirmDelete, templates.length, deleteTemplate]);
 
   if (isLoading) {
     return <div className="templates-loading">Loading...</div>;
@@ -101,7 +61,7 @@ export const TemplatesManager: React.FC = () => {
         <div className="templates-toolbar-left">
           <span className="templates-title">Templates</span>
           <span className="templates-count">
-            {records.length} {records.length === 1 ? 'template' : 'templates'}
+            {templates.length} {templates.length === 1 ? 'template' : 'templates'}
           </span>
         </div>
         <div className="templates-toolbar-right">
@@ -112,7 +72,7 @@ export const TemplatesManager: React.FC = () => {
       </div>
 
       {/* Content */}
-      {records.length === 0 ? (
+      {templates.length === 0 ? (
         <div className="templates-empty">
           <p>No templates.</p>
           <p>Create one to get started.</p>
@@ -129,7 +89,7 @@ export const TemplatesManager: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {records.map((t) => (
+              {templates.map((t) => (
                 <tr
                   key={t.id}
                   className="templates-row templates-row-clickable"
@@ -178,7 +138,7 @@ export const TemplatesManager: React.FC = () => {
           isOpen={!!editingTemplate}
           onClose={() => setEditingTemplate(null)}
           template={editingTemplate}
-          onSaved={loadRecords}
+          onSave={updateTemplate}
         />
       )}
     </div>

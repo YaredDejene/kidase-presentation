@@ -74,9 +74,7 @@ export const SlideRow: React.FC<SlideRowProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this slide?')) {
-      onDelete();
-    }
+    onDelete();
     setShowMenu(false);
   };
 

@@ -10,4 +10,6 @@ export { useRules } from './useRules';
 export { useSettings } from './useSettings';
 export { useGitsawe } from './useGitsawe';
 export { useVerses } from './useVerses';
+export { useVariables } from './useVariables';
+export { useSecondaryKidase } from './useSecondaryKidase';
 export { useResizablePanel } from './useResizablePanel';

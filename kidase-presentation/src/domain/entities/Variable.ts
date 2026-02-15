@@ -46,6 +46,22 @@ export function createVariable(
   };
 }
 
+/**
+ * Normalize a user-entered variable name into the canonical format.
+ * Returns `@NAME` for at-variables, `{{NAME}}` for legacy brace variables.
+ */
+export function formatVariableName(input: string): string {
+  let name = input.trim().toUpperCase();
+  const isAtFormat = name.startsWith('@') || (!name.startsWith('{{') && !name.includes('{'));
+  if (isAtFormat) {
+    name = name.replace(/^@/, '');
+    return `@${name}`;
+  }
+  if (!name.startsWith('{{')) name = `{{${name}`;
+  if (!name.endsWith('}}')) name = `${name}}}`;
+  return name;
+}
+
 export function isValidVariableName(name: string): boolean {
   return /^\{\{[A-Z_]+\}\}$/.test(name);
 }

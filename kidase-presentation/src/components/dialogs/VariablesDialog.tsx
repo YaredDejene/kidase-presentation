@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
-import { Variable, COMMON_VARIABLES } from '../../domain/entities/Variable';
+import { Variable, COMMON_VARIABLES, formatVariableName } from '../../domain/entities/Variable';
 import { Presentation, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '../../domain/entities/Presentation';
-import { variableRepository } from '../../repositories';
+import { useVariables } from '../../hooks/useVariables';
 import { toast } from '../../store/toastStore';
 import '../../styles/dialogs.css';
 
@@ -21,6 +21,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
   variables,
   onVariablesChange,
 }) => {
+  const { createVariable, deleteVariable, saveAll } = useVariables();
   const [localVariables, setLocalVariables] = useState<Variable[]>([]);
   const [newVarName, setNewVarName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -44,22 +45,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
   const handleAddVariable = async () => {
     if (!newVarName.trim()) return;
 
-    // Format the variable name
-    let formattedName = newVarName.trim().toUpperCase();
-    const isAtFormat = formattedName.startsWith('@') || (!formattedName.startsWith('{{') && !formattedName.includes('{'));
-    if (isAtFormat) {
-      // @VarName format
-      formattedName = formattedName.replace(/^@/, '');
-      formattedName = `@${formattedName}`;
-    } else {
-      // Legacy {{VAR}} format
-      if (!formattedName.startsWith('{{')) {
-        formattedName = `{{${formattedName}`;
-      }
-      if (!formattedName.endsWith('}}')) {
-        formattedName = `${formattedName}}}`;
-      }
-    }
+    const formattedName = formatVariableName(newVarName);
 
     // Check if already exists
     if (localVariables.some(v => v.name === formattedName)) {
@@ -68,7 +54,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
     }
 
     try {
-      const newVar = await variableRepository.create({
+      const newVar = await createVariable({
         presentationId: presentation.id,
         name: formattedName,
         value: '',
@@ -86,7 +72,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
     }
 
     try {
-      const newVar = await variableRepository.create({
+      const newVar = await createVariable({
         presentationId: presentation.id,
         name,
         value: '',
@@ -99,7 +85,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
 
   const handleDeleteVariable = async (id: string) => {
     try {
-      await variableRepository.delete(id);
+      await deleteVariable(id);
       setLocalVariables(prev => prev.filter(v => v.id !== id));
     } catch (error) {
       console.error('Failed to delete variable:', error);
@@ -109,17 +95,8 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Update all variables
-      for (const variable of localVariables) {
-        await variableRepository.update(variable.id, {
-          value: variable.value,
-          valueLang1: variable.valueLang1,
-          valueLang2: variable.valueLang2,
-          valueLang3: variable.valueLang3,
-          valueLang4: variable.valueLang4,
-        });
-      }
-      onVariablesChange(localVariables);
+      const saved = await saveAll(presentation.id, localVariables);
+      onVariablesChange(saved);
       onClose();
     } catch (error) {
       console.error('Failed to save variables:', error);

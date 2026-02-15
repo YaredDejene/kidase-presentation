@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
-import { useAppStore } from '../store/appStore';
+import { usePresentationDataStore } from '../store/presentationDataStore';
 import { appSettingsRepository } from '../repositories';
 import { AppSettings } from '../domain/entities/AppSettings';
 import { toast } from '../store/toastStore';
 
 export function useSettings() {
-  const { appSettings, setAppSettings } = useAppStore();
+  const appSettings = usePresentationDataStore(s => s.appSettings);
+  const setAppSettings = usePresentationDataStore(s => s.setAppSettings);
 
   const saveSettings = useCallback(async (settings: AppSettings): Promise<boolean> => {
     try {

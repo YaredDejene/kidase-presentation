@@ -6,6 +6,7 @@ import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { SlideRow } from './SlideRow';
 import { SlideContentPanel } from './SlideContentPanel';
 import { Modal } from '../common/Modal';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Presentation } from '../../domain/entities/Presentation';
 import '../../styles/editor.css';
 
@@ -36,6 +37,7 @@ export const SlideEditor: React.FC = () => {
   const [presentations, setPresentations] = useState<Presentation[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [confirmDeleteSlideId, setConfirmDeleteSlideId] = useState<string | null>(null);
   const [isPrimary, setIsPrimary] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: listWidth, handleResizeStart } = useResizablePanel(containerRef);
@@ -168,7 +170,7 @@ export const SlideEditor: React.FC = () => {
                     languageMap={currentPresentation.languageMap}
                     onSelect={() => selectSlide(slide.id)}
                     onToggleDisable={() => toggleDisabled(slide.id)}
-                    onDelete={() => deleteSlide(slide.id)}
+                    onDelete={() => setConfirmDeleteSlideId(slide.id)}
                     onDragStart={() => handleDragStart(index)}
                     onDragOver={(e) => handleDragOver(e, index)}
                     onDragEnd={handleDragEnd}
@@ -227,6 +229,18 @@ export const SlideEditor: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Delete slide confirmation */}
+      <ConfirmDialog
+        isOpen={!!confirmDeleteSlideId}
+        title="Delete Slide"
+        message="Are you sure you want to delete this slide?"
+        onConfirm={() => {
+          if (confirmDeleteSlideId) deleteSlide(confirmDeleteSlideId);
+          setConfirmDeleteSlideId(null);
+        }}
+        onCancel={() => setConfirmDeleteSlideId(null)}
+      />
 
       {/* Kidase Settings Dialog */}
       <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Kidase Settings">
