@@ -18,11 +18,20 @@ export interface BootstrapResult {
 }
 
 export class AppBootstrapService {
+  private initPromise: Promise<BootstrapResult> | null = null;
+
   /**
    * Initialize the application: load settings, ensure default template,
    * load reference data, and auto-load the primary presentation.
+   * Guarded against concurrent calls (e.g. React StrictMode double-effect).
    */
   async initialize(): Promise<BootstrapResult> {
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = this.doInitialize();
+    return this.initPromise;
+  }
+
+  private async doInitialize(): Promise<BootstrapResult> {
     const settings = await appSettingsRepository.get();
 
     // Ensure default template exists and is up-to-date
