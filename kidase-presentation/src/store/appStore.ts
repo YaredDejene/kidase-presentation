@@ -14,6 +14,7 @@ interface AppState {
   currentSlides: Slide[];
   currentTemplate: Template | null;
   currentVariables: Variable[];
+  allTemplates: Template[];
 
   // Reference data
   verses: Verse[];
@@ -36,7 +37,7 @@ interface AppState {
   ruleContextMeta: Record<string, unknown> | null; // meta context from last rule evaluation
 
   // Navigation state
-  currentView: 'presentation' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
+  currentView: 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
 
   // Loading state
   isLoading: boolean;
@@ -53,7 +54,8 @@ interface AppState {
   setRuleEvaluationDate: (date: string | null) => void;
   setIsMehella: (value: boolean) => void;
   setRuleContextMeta: (meta: Record<string, unknown> | null) => void;
-  setCurrentView: (view: 'presentation' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings') => void;
+  setAllTemplates: (templates: Template[]) => void;
+  setCurrentView: (view: 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings') => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
 
@@ -84,6 +86,10 @@ interface AppState {
   removeSlide: (id: string) => void;
   reorderSlides: (fromIndex: number, toIndex: number) => void;
   toggleSlideDisabled: (id: string) => void;
+  setSlideTemplateOverride: (slideId: string, templateId: string | null) => void;
+
+  // Template override resolution
+  getTemplateForSlide: (slide: Slide) => Template | null;
 
   // Variable manipulation
   updateVariable: (id: string, value: string) => void;
@@ -106,6 +112,7 @@ export const useAppStore = create<AppState>()(
     currentSlides: [],
     currentTemplate: null,
     currentVariables: [],
+    allTemplates: [],
     verses: [],
     appSettings: defaultAppSettings,
     ruleFilteredSlideIds: null,
@@ -131,6 +138,7 @@ export const useAppStore = create<AppState>()(
     setRuleEvaluationDate: (date) => set({ ruleEvaluationDate: date }),
     setIsMehella: (value) => set({ isMehella: value }),
     setRuleContextMeta: (meta) => set({ ruleContextMeta: meta }),
+    setAllTemplates: (templates) => set({ allTemplates: templates }),
     setCurrentView: (view) => set({ currentView: view }),
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
@@ -246,6 +254,23 @@ export const useAppStore = create<AppState>()(
         slide.id === id ? { ...slide, isDisabled: !slide.isDisabled } : slide
       );
       set({ currentSlides: slides });
+    },
+
+    setSlideTemplateOverride: (slideId, templateId) => {
+      const slides = get().currentSlides.map(slide =>
+        slide.id === slideId
+          ? { ...slide, templateOverrideId: templateId ?? undefined }
+          : slide
+      );
+      set({ currentSlides: slides });
+    },
+
+    getTemplateForSlide: (slide) => {
+      const { allTemplates, currentTemplate } = get();
+      if (slide.templateOverrideId) {
+        return allTemplates.find(t => t.id === slide.templateOverrideId) || currentTemplate;
+      }
+      return currentTemplate;
     },
 
     // Variable manipulation

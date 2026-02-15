@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from './store/appStore';
 import { Sidebar } from './components/layout/Sidebar';
 import { PresentationPage } from './components/presentation/PresentationPage';
+import { SlideEditor } from './components/editor/SlideEditor';
 import { KidaseManager } from './components/manager/KidaseManager';
 import { GitsaweManager } from './components/manager/GitsaweManager';
 import { VersesManager } from './components/manager/VersesManager';
@@ -57,6 +58,10 @@ function App() {
           });
         }
 
+        // Cache all templates for template override resolution
+        const allTemplates = await templateRepository.getAll();
+        useAppStore.getState().setAllTemplates(allTemplates);
+
         // Load reference data (verses)
         const loadedVerses = await verseRepository.getAll();
         setVerses(loadedVerses);
@@ -100,6 +105,7 @@ function App() {
       {/* Main content */}
       <main className="app-main">
         {currentView === 'presentation' && <PresentationPage />}
+        {currentView === 'editor' && <SlideEditor />}
         {currentView === 'kidases' && <KidaseManager />}
         {currentView === 'gitsawe' && <GitsaweManager />}
         {currentView === 'verses' && <VersesManager />}

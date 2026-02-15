@@ -192,6 +192,12 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 10,
+            description: "add_template_override_id_to_slides",
+            sql: "ALTER TABLE slides ADD COLUMN template_override_id TEXT;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

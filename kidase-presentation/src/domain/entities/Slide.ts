@@ -33,6 +33,7 @@ export interface Slide {
   notes?: string;
   isDisabled: boolean;
   isDynamic: boolean;
+  templateOverrideId?: string;
 }
 
 export function createEmptySlide(presentationId: string, order: number): Omit<Slide, 'id'> {

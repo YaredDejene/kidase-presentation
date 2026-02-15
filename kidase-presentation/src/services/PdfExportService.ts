@@ -31,7 +31,8 @@ export class PdfExportService {
     languageMap: LanguageMap,
     options: PdfExportOptions = {},
     onProgress?: (current: number, total: number) => void,
-    meta?: Record<string, unknown> | null
+    meta?: Record<string, unknown> | null,
+    templateMap?: Map<string, Template>
   ): Promise<Blob> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
@@ -52,7 +53,8 @@ export class PdfExportService {
       onProgress?.(i + 1, slides.length);
 
       // Create a temporary container for rendering
-      const container = this.createSlideContainer(slide, template, variables, languageMap, opts, meta ?? undefined);
+      const slideTemplate = templateMap?.get(slide.id) || template;
+      const container = this.createSlideContainer(slide, slideTemplate, variables, languageMap, opts, meta ?? undefined);
       document.body.appendChild(container);
 
       try {

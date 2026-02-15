@@ -22,6 +22,11 @@ export const PresentationView: React.FC = () => {
   const enabledSlides = getEnabledSlides();
   const currentSlide = enabledSlides[currentSlideIndex];
 
+  // Resolve template for current slide (respects template overrides)
+  const resolvedTemplate = currentSlide
+    ? (useAppStore.getState().getTemplateForSlide(currentSlide) || currentTemplate)
+    : currentTemplate;
+
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     switch (event.key) {
       case 'ArrowRight':
@@ -111,7 +116,7 @@ export const PresentationView: React.FC = () => {
     >
       <SlideRenderer
         slide={currentSlide}
-        template={currentTemplate}
+        template={resolvedTemplate!}
         variables={currentVariables}
         languageMap={currentPresentation.languageMap}
         languageSettings={currentPresentation.languageSettings}

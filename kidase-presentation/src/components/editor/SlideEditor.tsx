@@ -11,19 +11,21 @@ export const SlideEditor: React.FC = () => {
     currentTemplate,
     currentPresentation,
     currentVariables,
+    currentSlides,
+    allTemplates,
     ruleFilteredSlideIds,
     ruleContextMeta,
+    getTemplateForSlide,
   } = useAppStore();
 
   const {
-    slides,
-    selectedSlide,
     selectedSlideId,
     selectSlide,
     moveSlide,
     toggleDisabled,
     deleteSlide,
     createSlide,
+    setTemplateOverride,
   } = useSlides();
 
   const { evaluateRules } = useRules();
@@ -39,17 +41,34 @@ export const SlideEditor: React.FC = () => {
   const ruleHiddenIds = useMemo(() => {
     if (ruleFilteredSlideIds === null) return new Set<string>();
     const visibleSet = new Set(ruleFilteredSlideIds);
-    return new Set(slides.filter(s => {
-      // For expanded verse slides (id contains __verse_), check the parent slide ID
-      const originalId = s.id.includes('__verse_') ? s.id.split('__verse_')[0] : s.id;
-      return !visibleSet.has(originalId);
-    }).map(s => s.id));
-  }, [ruleFilteredSlideIds, slides]);
+    return new Set(currentSlides.filter(s => !visibleSet.has(s.id)).map(s => s.id));
+  }, [ruleFilteredSlideIds, currentSlides]);
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [listWidth, setListWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isResizing = useRef(false);
+
+  // Select first slide if none selected
+  useEffect(() => {
+    if (currentSlides.length > 0 && !selectedSlideId) {
+      selectSlide(currentSlides[0].id);
+    }
+  }, [currentSlides, selectedSlideId, selectSlide]);
+
+  // Find the selected slide from raw currentSlides (not expanded)
+  const currentSelectedSlide = useMemo(() => {
+    if (!selectedSlideId) return null;
+    return currentSlides.find(s => s.id === selectedSlideId) || null;
+  }, [selectedSlideId, currentSlides]);
+
+  // Resolve template for the selected slide
+  const resolvedTemplate = useMemo(() => {
+    if (!currentSelectedSlide) return currentTemplate;
+    return getTemplateForSlide(currentSelectedSlide) || currentTemplate;
+  }, [currentSelectedSlide, currentTemplate, getTemplateForSlide]);
+
+  const disabledCount = currentSlides.filter(s => s.isDisabled).length;
 
   const handleDragStart = useCallback((index: number) => {
     setDraggedIndex(index);
@@ -73,6 +92,11 @@ export const SlideEditor: React.FC = () => {
     });
   }, [createSlide]);
 
+  const handleTemplateOverrideChange = useCallback(async (value: string) => {
+    if (!selectedSlideId) return;
+    await setTemplateOverride(selectedSlideId, value || null);
+  }, [selectedSlideId, setTemplateOverride]);
+
   // Resizable panel handlers
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,7 +108,6 @@ export const SlideEditor: React.FC = () => {
       if (!isResizing.current || !containerRef.current) return;
       const containerRect = containerRef.current.getBoundingClientRect();
       const newWidth = e.clientX - containerRect.left;
-      // Constrain between 300px and container width - 350px (for preview)
       const minWidth = 300;
       const maxWidth = containerRect.width - 350;
       setListWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
@@ -105,125 +128,161 @@ export const SlideEditor: React.FC = () => {
   if (!currentPresentation || !currentTemplate) {
     return (
       <div className="editor-empty">
-        <div className="editor-empty-icon">📑</div>
+        <div className="editor-empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </div>
         <h2>No Presentation Loaded</h2>
-        <p>Open or create a presentation to start editing.</p>
+        <p>Select a Kidase from the Kidases page to start editing.</p>
       </div>
     );
   }
 
   return (
-    <div className="editor-container" ref={containerRef}>
-      {/* Slide list */}
-      <div
-        className="editor-slide-list"
-        style={listWidth ? { width: `${listWidth}px`, flex: 'none' } : undefined}
-      >
-        <div className="editor-slide-list-header">
-          <h3>Slides ({slides.length})</h3>
+    <div className="editor-page" ref={containerRef}>
+      {/* Toolbar */}
+      <div className="editor-toolbar">
+        <div className="editor-toolbar-left">
+          <span className="editor-title">{currentPresentation.name}</span>
+          <span className="editor-count">
+            {currentSlides.length} slides{disabledCount > 0 ? ` (${disabledCount} disabled)` : ''}
+          </span>
+        </div>
+        <div className="editor-toolbar-right">
           <button
             onClick={handleAddSlide}
-            className="editor-btn editor-btn-add"
-            title="Add new slide"
+            className="editor-toolbar-btn editor-toolbar-btn-add"
           >
             + Add Slide
           </button>
         </div>
-
-        <div className="editor-slide-table-container">
-          <table className="editor-slide-table">
-            <thead>
-              <tr>
-                <th className="col-order">#</th>
-                <th className="col-content">Content</th>
-                <th className="col-actions"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {slides.map((slide, index) => {
-                const isRuleHidden = ruleHiddenIds.has(slide.id);
-                const isVerse = slide.id.includes('__verse_');
-                return (
-                  <SlideRow
-                    key={slide.id}
-                    slide={slide}
-                    index={index}
-                    isSelected={slide.id === selectedSlideId}
-                    isRuleHidden={isRuleHidden}
-                    isVerseSlide={isVerse}
-                    languageMap={currentPresentation.languageMap}
-                    onSelect={() => {
-                      if (!isRuleHidden) selectSlide(slide.id);
-                    }}
-                    onToggleDisable={() => toggleDisabled(slide.id)}
-                    onDelete={() => deleteSlide(slide.id)}
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
-                    isDragging={draggedIndex === index}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
-
-          {slides.length === 0 && (
-            <div className="editor-no-slides">
-              <p>No slides yet. Click "Add Slide" to create one.</p>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Resize handle */}
-      <div
-        className="editor-resize-handle"
-        onMouseDown={handleResizeStart}
-      />
+      {/* Main content */}
+      <div className="editor-content">
+        {/* Slide list */}
+        <div
+          className="editor-slide-list"
+          style={listWidth ? { width: `${listWidth}px`, flex: 'none' } : undefined}
+        >
+          <div className="editor-slide-table-container">
+            <table className="editor-slide-table">
+              <thead>
+                <tr>
+                  <th className="col-order">#</th>
+                  <th className="col-content">Content</th>
+                  <th className="col-actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentSlides.map((slide, index) => {
+                  const isRuleHidden = ruleHiddenIds.has(slide.id);
+                  return (
+                    <SlideRow
+                      key={slide.id}
+                      slide={slide}
+                      index={index}
+                      isSelected={slide.id === selectedSlideId}
+                      isRuleHidden={isRuleHidden}
+                      isDynamic={slide.isDynamic}
+                      hasTemplateOverride={!!slide.templateOverrideId}
+                      languageMap={currentPresentation.languageMap}
+                      onSelect={() => selectSlide(slide.id)}
+                      onToggleDisable={() => toggleDisabled(slide.id)}
+                      onDelete={() => deleteSlide(slide.id)}
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      isDragging={draggedIndex === index}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
 
-      {/* Preview panel */}
-      <div className="editor-preview-panel">
-        <h3>Preview</h3>
-        {selectedSlide ? (
-          <SlidePreview
-            slide={selectedSlide}
-            template={currentTemplate}
-            variables={currentVariables}
-            languageMap={currentPresentation.languageMap}
-            languageSettings={currentPresentation.languageSettings}
-            isRuleHidden={ruleHiddenIds.has(selectedSlide.id)}
-            meta={ruleContextMeta}
-          />
-        ) : (
-          <div className="editor-preview-empty">
-            <p>Select a slide to preview</p>
+            {currentSlides.length === 0 && (
+              <div className="editor-no-slides">
+                <p>No slides yet. Click "+ Add Slide" to create one.</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
-        {selectedSlide && (
-          <div className="editor-slide-details">
-            <div className="editor-detail-row">
-              <span className="editor-detail-label">Order:</span>
-              <span>{selectedSlide.slideOrder}</span>
+        {/* Resize handle */}
+        <div
+          className="editor-resize-handle"
+          onMouseDown={handleResizeStart}
+        />
+
+        {/* Preview panel */}
+        <div className="editor-preview-panel">
+          {currentSelectedSlide && resolvedTemplate ? (
+            <>
+              <SlidePreview
+                slide={currentSelectedSlide}
+                template={resolvedTemplate}
+                variables={currentVariables}
+                languageMap={currentPresentation.languageMap}
+                languageSettings={currentPresentation.languageSettings}
+                isRuleHidden={ruleHiddenIds.has(currentSelectedSlide.id)}
+                meta={ruleContextMeta}
+              />
+
+              {/* Slide details */}
+              <div className="editor-slide-details">
+                <div className="editor-detail-row">
+                  <span className="editor-detail-label">Order:</span>
+                  <span>{currentSelectedSlide.slideOrder}</span>
+                </div>
+                {currentSelectedSlide.lineId && (
+                  <div className="editor-detail-row">
+                    <span className="editor-detail-label">Line ID:</span>
+                    <span>{currentSelectedSlide.lineId}</span>
+                  </div>
+                )}
+                {currentSelectedSlide.isDynamic && (
+                  <div className="editor-detail-row">
+                    <span className="editor-detail-label">Type:</span>
+                    <span>Dynamic (verse-expanded)</span>
+                  </div>
+                )}
+                {currentSelectedSlide.notes && (
+                  <div className="editor-detail-row">
+                    <span className="editor-detail-label">Notes:</span>
+                    <span className="editor-detail-notes">{currentSelectedSlide.notes}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Template override */}
+              <div className="editor-template-override">
+                <label className="editor-template-override-label">Template Override</label>
+                <select
+                  value={currentSelectedSlide.templateOverrideId || ''}
+                  onChange={(e) => handleTemplateOverrideChange(e.target.value)}
+                  className="editor-template-override-select"
+                >
+                  <option value="">Default ({currentTemplate.name})</option>
+                  {allTemplates
+                    .filter(t => t.id !== currentPresentation.templateId)
+                    .map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <div className="editor-preview-empty">
+              <p>Select a slide to preview</p>
             </div>
-            {selectedSlide.lineId && (
-              <div className="editor-detail-row">
-                <span className="editor-detail-label">Line ID:</span>
-                <span>{selectedSlide.lineId}</span>
-              </div>
-            )}
-            {selectedSlide.notes && (
-              <div className="editor-detail-row">
-                <span className="editor-detail-label">Notes:</span>
-                <span className="editor-detail-notes">{selectedSlide.notes}</span>
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {ruleContextMeta?.gitsawe != null && (
-          <GitsaweContext gitsawe={ruleContextMeta.gitsawe as Record<string, unknown>} />
-        )}
+          {ruleContextMeta?.gitsawe != null && (
+            <GitsaweContext gitsawe={ruleContextMeta.gitsawe as Record<string, unknown>} />
+          )}
+        </div>
       </div>
     </div>
   );

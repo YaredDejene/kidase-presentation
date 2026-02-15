@@ -14,6 +14,7 @@ interface SlideRow {
   notes: string | null;
   is_disabled: number;
   is_dynamic: number;
+  template_override_id: string | null;
 }
 
 export class SlideRepository implements ISlideRepository {
@@ -29,6 +30,7 @@ export class SlideRepository implements ISlideRepository {
       notes: row.notes ?? undefined,
       isDisabled: row.is_disabled === 1,
       isDynamic: row.is_dynamic === 1,
+      templateOverrideId: row.template_override_id ?? undefined,
     };
   }
 
@@ -74,8 +76,8 @@ export class SlideRepository implements ISlideRepository {
 
     await db.execute(
       `INSERT INTO slides
-       (id, presentation_id, slide_order, line_id, title_json, blocks_json, footer_json, notes, is_disabled, is_dynamic)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, presentation_id, slide_order, line_id, title_json, blocks_json, footer_json, notes, is_disabled, is_dynamic, template_override_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         slide.presentationId,
@@ -87,6 +89,7 @@ export class SlideRepository implements ISlideRepository {
         slide.notes ?? null,
         slide.isDisabled ? 1 : 0,
         slide.isDynamic ? 1 : 0,
+        slide.templateOverrideId ?? null,
       ]
     );
 
@@ -114,7 +117,7 @@ export class SlideRepository implements ISlideRepository {
     await db.execute(
       `UPDATE slides
        SET slide_order = ?, line_id = ?, title_json = ?, blocks_json = ?,
-           footer_json = ?, notes = ?, is_disabled = ?, is_dynamic = ?
+           footer_json = ?, notes = ?, is_disabled = ?, is_dynamic = ?, template_override_id = ?
        WHERE id = ?`,
       [
         updated.slideOrder,
@@ -125,6 +128,7 @@ export class SlideRepository implements ISlideRepository {
         updated.notes ?? null,
         updated.isDisabled ? 1 : 0,
         updated.isDynamic ? 1 : 0,
+        updated.templateOverrideId ?? null,
         id,
       ]
     );

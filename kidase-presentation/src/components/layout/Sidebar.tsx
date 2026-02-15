@@ -1,7 +1,7 @@
 import React from 'react';
 import '../../styles/sidebar.css';
 
-type ViewId = 'presentation' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
+type ViewId = 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
 
 interface SidebarProps {
   currentView: ViewId;
@@ -17,6 +17,16 @@ const menuItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
         <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
         <line x1="8" y1="21" x2="16" y2="21" />
         <line x1="12" y1="17" x2="12" y2="21" />
+      </svg>
+    ),
+  },
+  {
+    id: 'editor',
+    label: 'Editor',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
       </svg>
     ),
   },

@@ -8,6 +8,8 @@ interface SlideRowProps {
   isSelected: boolean;
   isRuleHidden?: boolean;
   isVerseSlide?: boolean;
+  isDynamic?: boolean;
+  hasTemplateOverride?: boolean;
   languageMap: LanguageMap;
   onSelect: () => void;
   onToggleDisable: () => void;
@@ -24,6 +26,8 @@ export const SlideRow: React.FC<SlideRowProps> = ({
   isSelected,
   isRuleHidden,
   isVerseSlide,
+  isDynamic,
+  hasTemplateOverride,
   languageMap: _languageMap,
   onSelect,
   onToggleDisable,
@@ -103,6 +107,10 @@ export const SlideRow: React.FC<SlideRowProps> = ({
       </td>
 
       <td className="col-content">
+        <div className="slide-badges">
+          {isDynamic && <span className="slide-badge slide-badge-dynamic">Dynamic</span>}
+          {hasTemplateOverride && <span className="slide-badge slide-badge-override">T</span>}
+        </div>
         {titleText && (
           <div className="slide-title-preview">
             {titleText}

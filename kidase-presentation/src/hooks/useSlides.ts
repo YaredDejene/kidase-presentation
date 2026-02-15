@@ -106,20 +106,13 @@ export function useSlides() {
   }, [currentSlides, removeSlide]);
 
   const moveSlide = useCallback(async (fromIndex: number, toIndex: number): Promise<boolean> => {
-    // Indices come from the expanded slides list; map to base currentSlides indices
-    const fromSlide = expandedSlides[fromIndex];
-    const toSlide = expandedSlides[toIndex];
+    // Indices refer to currentSlides (raw, unexpanded)
+    const fromSlide = currentSlides[fromIndex];
+    const toSlide = currentSlides[toIndex];
     if (!fromSlide || !toSlide) return false;
 
-    // Don't allow moving verse slides
-    if (isVerseSlide(fromSlide.id) || isVerseSlide(toSlide.id)) return false;
-
-    const baseFromIndex = currentSlides.findIndex(s => s.id === fromSlide.id);
-    const baseToIndex = currentSlides.findIndex(s => s.id === toSlide.id);
-    if (baseFromIndex === -1 || baseToIndex === -1) return false;
-
     try {
-      reorderSlides(baseFromIndex, baseToIndex);
+      reorderSlides(fromIndex, toIndex);
 
       // Get updated slides and persist order
       const updatedSlides = useAppStore.getState().currentSlides;
@@ -134,7 +127,7 @@ export function useSlides() {
       console.error('Failed to move slide:', err);
       return false;
     }
-  }, [reorderSlides, expandedSlides, currentSlides]);
+  }, [reorderSlides, currentSlides]);
 
   const toggleDisabled = useCallback(async (id: string): Promise<boolean> => {
     // Verse slides — toggle the parent dynamic slide
@@ -149,6 +142,23 @@ export function useSlides() {
       return false;
     }
   }, [toggleSlideDisabled]);
+
+  const setTemplateOverride = useCallback(async (
+    slideId: string,
+    templateId: string | null
+  ): Promise<boolean> => {
+    const baseId = isVerseSlide(slideId) ? getParentSlideId(slideId) : slideId;
+    try {
+      await slideRepository.update(baseId, {
+        templateOverrideId: templateId ?? undefined,
+      });
+      useAppStore.getState().setSlideTemplateOverride(baseId, templateId);
+      return true;
+    } catch (err) {
+      console.error('Failed to set template override:', err);
+      return false;
+    }
+  }, []);
 
   const refreshSlides = useCallback(async (): Promise<void> => {
     if (!currentPresentation) return;
@@ -177,6 +187,7 @@ export function useSlides() {
     deleteSlide,
     moveSlide,
     toggleDisabled,
+    setTemplateOverride,
     refreshSlides,
   };
 }

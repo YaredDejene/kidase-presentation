@@ -73,6 +73,12 @@ export const PresentationPage: React.FC = () => {
     return displaySlides.find(s => s.id === selectedSlideId) || null;
   }, [selectedSlideId, displaySlides]);
 
+  // Resolve template for selected slide (respects template overrides)
+  const resolvedTemplate = useMemo(() => {
+    if (!selectedSlide || !currentTemplate) return currentTemplate;
+    return useAppStore.getState().getTemplateForSlide(selectedSlide) || currentTemplate;
+  }, [selectedSlide, currentTemplate]);
+
   // Resizable panel
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -114,6 +120,16 @@ export const PresentationPage: React.FC = () => {
     const exportSlides = displaySlides;
     const progress = toast.progress(`Exporting PDF (0/${exportSlides.length})...`);
 
+    // Build template override map for per-slide templates
+    const { allTemplates } = useAppStore.getState();
+    const templateMap = new Map<string, Template>();
+    for (const slide of exportSlides) {
+      if (slide.templateOverrideId) {
+        const override = allTemplates.find(t => t.id === slide.templateOverrideId);
+        if (override) templateMap.set(slide.id, override);
+      }
+    }
+
     try {
       const blob = await pdfExportService.exportToPdf(
         exportSlides,
@@ -125,7 +141,8 @@ export const PresentationPage: React.FC = () => {
           const pct = Math.round((current / total) * 100);
           progress.update(pct, `Exporting slide ${current}/${total}...`);
         },
-        ruleContextMeta
+        ruleContextMeta,
+        templateMap.size > 0 ? templateMap : undefined
       );
 
       const { writeFile } = await import('@tauri-apps/plugin-fs');
@@ -262,7 +279,7 @@ export const PresentationPage: React.FC = () => {
             <>
               <SlidePreview
                 slide={selectedSlide}
-                template={currentTemplate}
+                template={resolvedTemplate!}
                 variables={currentVariables}
                 languageMap={currentPresentation.languageMap}
                 languageSettings={currentPresentation.languageSettings}
