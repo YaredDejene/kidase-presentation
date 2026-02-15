@@ -147,5 +147,3 @@ export const SlideRow: React.FC<SlideRowProps> = ({
     </tr>
   );
 };
-
-export default SlideRow;

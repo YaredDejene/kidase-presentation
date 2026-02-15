@@ -5,7 +5,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import '../../styles/gitsawe-manager.css';
 
 export const GitsaweManager: React.FC = () => {
-  const { records, isLoading, importFromExcel, deleteAll } = useGitsawe();
+  const { gitsawes, isLoading, importFromExcel, deleteAll } = useGitsawe();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
@@ -36,14 +36,14 @@ export const GitsaweManager: React.FC = () => {
         <div className="gitsawe-toolbar-left">
           <span className="gitsawe-title">Gitsawe</span>
           <span className="gitsawe-count">
-            {records.length} {records.length === 1 ? 'record' : 'records'}
+            {gitsawes.length} {gitsawes.length === 1 ? 'record' : 'records'}
           </span>
         </div>
         <div className="gitsawe-toolbar-right">
           <button
             onClick={() => setShowConfirmDelete(true)}
             className="gitsawe-btn gitsawe-btn-delete-all"
-            disabled={records.length === 0 || isDeleting}
+            disabled={gitsawes.length === 0 || isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete All'}
           </button>
@@ -54,7 +54,7 @@ export const GitsaweManager: React.FC = () => {
       </div>
 
       {/* Content */}
-      {records.length === 0 ? (
+      {gitsawes.length === 0 ? (
         <div className="gitsawe-empty">
           <p>No Gitsawe records.</p>
           <p>Import from Excel to get started.</p>
@@ -77,7 +77,7 @@ export const GitsaweManager: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {records.map((g) => (
+              {gitsawes.map((g) => (
                 <tr key={g.id} className="gitsawe-row">
                   <td className="gitsawe-cell-lineid">{g.lineId}</td>
                   <td className="gitsawe-cell-text">{g.messageStPaul || '--'}</td>
@@ -99,7 +99,7 @@ export const GitsaweManager: React.FC = () => {
       <ConfirmDialog
         isOpen={showConfirmDelete}
         title="Delete All Gitsawe Records"
-        message={`Delete all ${records.length} Gitsawe records? This cannot be undone.`}
+        message={`Delete all ${gitsawes.length} Gitsawe records? This cannot be undone.`}
         onConfirm={handleDeleteAllConfirm}
         onCancel={() => setShowConfirmDelete(false)}
       />

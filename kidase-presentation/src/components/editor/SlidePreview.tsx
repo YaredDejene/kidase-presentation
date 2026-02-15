@@ -77,5 +77,3 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
     </div>
   );
 };
-
-export default SlidePreview;

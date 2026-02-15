@@ -30,8 +30,8 @@ export const KidaseManager: React.FC = () => {
       const rowsWithCount = await presentationService.listPresentationsWithCount();
       setRows(rowsWithCount);
     } catch (error) {
-      console.error('Failed to load presentations:', error);
-      toast.error('Failed to load presentations');
+      console.error('Failed to load kidases:', error);
+      toast.error('Failed to load kidases');
     }
   }, []);
 
@@ -49,8 +49,8 @@ export const KidaseManager: React.FC = () => {
       await loadPresentation(id);
       setCurrentView('editor');
     } catch (error) {
-      console.error('Failed to open presentation:', error);
-      toast.error('Failed to open presentation');
+      console.error('Failed to open kidase:', error);
+      toast.error('Failed to open kidase');
     }
   }, [loadPresentation, setCurrentView]);
 
@@ -70,8 +70,8 @@ export const KidaseManager: React.FC = () => {
       await loadPresentations();
       toast.success(`"${name}" deleted`);
     } catch (error) {
-      console.error('Failed to delete presentation:', error);
-      toast.error('Failed to delete presentation');
+      console.error('Failed to delete kidase:', error);
+      toast.error('Failed to delete kidase');
     }
     setDeletingId(null);
   }, [confirmDelete, currentPresentation, clearPresentationData, loadPresentations]);
@@ -115,7 +115,7 @@ export const KidaseManager: React.FC = () => {
         <div className="manager-toolbar-left">
           <span className="manager-title">Kidases</span>
           <span className="manager-count">
-            {rows.length} {rows.length === 1 ? 'presentation' : 'presentations'}
+            {rows.length} {rows.length === 1 ? 'kidase' : 'kidases'}
           </span>
         </div>
         <div className="manager-toolbar-right">
@@ -128,7 +128,7 @@ export const KidaseManager: React.FC = () => {
       {/* Content */}
       {rows.length === 0 ? (
         <div className="manager-empty">
-          <p>No presentations yet.</p>
+          <p>No kidases yet.</p>
           <p>Import from Excel to get started.</p>
         </div>
       ) : (
@@ -185,7 +185,7 @@ export const KidaseManager: React.FC = () => {
 
       <ConfirmDialog
         isOpen={!!confirmDelete}
-        title="Delete Presentation"
+        title="Delete Kidase"
         message={confirmDelete ? `Delete "${confirmDelete.name}" and all its slides? This cannot be undone.` : ''}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDelete(null)}

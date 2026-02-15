@@ -286,7 +286,7 @@ export const PresentationPage: React.FC = () => {
           )}
 
           {ruleContextMeta?.gitsawe != null && (
-            <GitsaweContext gitsawe={ruleContextMeta.gitsawe as Record<string, unknown>} />
+            <GitsaweInfoPanel gitsawe={ruleContextMeta.gitsawe as Record<string, unknown>} />
           )}
         </div>
       </div>
@@ -330,7 +330,7 @@ const gitsaweLabels: Record<string, string> = {
   evangelist: 'Evangelist',
 };
 
-function GitsaweContext({ gitsawe }: { gitsawe: Record<string, unknown> }) {
+function GitsaweInfoPanel({ gitsawe }: { gitsawe: Record<string, unknown> }) {
   const entries = Object.entries(gitsaweLabels)
     .map(([key, label]) => ({ label, value: gitsawe[key] }))
     .filter((e): e is { label: string; value: string | number } => e.value != null && e.value !== '');

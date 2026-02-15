@@ -1,6 +1,10 @@
 /**
  * Presentation Entity
- * Represents a complete presentation with metadata
+ * Represents a complete presentation with metadata.
+ *
+ * "Kidase" is the user-facing term for a Presentation. All liturgical content
+ * (Kidase, Mahlet, Seatat, etc.) is stored as a Presentation entity with a
+ * `type` field indicating its specific liturgical category.
  */
 
 // Simple language map for backward compatibility (name only)

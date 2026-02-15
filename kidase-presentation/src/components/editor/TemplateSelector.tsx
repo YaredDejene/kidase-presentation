@@ -42,5 +42,3 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     </div>
   );
 };
-
-export default TemplateSelector;

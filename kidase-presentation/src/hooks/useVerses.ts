@@ -6,14 +6,14 @@ import { useAppStore } from '../store/appStore';
 import { toast } from '../store/toastStore';
 
 export function useVerses() {
-  const [records, setRecords] = useState<Verse[]>([]);
+  const [verses, setLocalVerses] = useState<Verse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { setVerses: setStoreVerses } = useAppStore();
 
-  const loadRecords = useCallback(async () => {
+  const loadVerses = useCallback(async () => {
     try {
       const all = await verseRepository.getAll();
-      setRecords(all);
+      setLocalVerses(all);
       return all;
     } catch (error) {
       console.error('Failed to load Verse records:', error);
@@ -25,22 +25,22 @@ export function useVerses() {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      await loadRecords();
+      await loadVerses();
       setIsLoading(false);
     };
     init();
-  }, [loadRecords]);
+  }, [loadVerses]);
 
   const importFromExcel = useCallback(async (filePath: string): Promise<boolean> => {
     const templates = await templateRepository.getAll();
-    const dummyTemplateId = templates[0]?.id;
-    if (!dummyTemplateId) {
+    const defaultTemplateId = templates[0]?.id;
+    if (!defaultTemplateId) {
       toast.error('No template available. Please create a template first.');
       return false;
     }
 
     try {
-      const result = await excelImportService.importFromPath(filePath, dummyTemplateId);
+      const result = await excelImportService.importFromPath(filePath, defaultTemplateId);
 
       if (result.verses.length === 0) {
         toast.error('No Verses data found in the Excel file. Make sure there is a "Verses" sheet.');
@@ -56,7 +56,7 @@ export function useVerses() {
       // Create new records
       await verseRepository.createMany(result.verses);
 
-      const loaded = await loadRecords();
+      const loaded = await loadVerses();
       setStoreVerses(loaded);
       toast.success(`Imported ${result.verses.length} Verse records`);
       return true;
@@ -65,14 +65,14 @@ export function useVerses() {
       toast.error('Failed to import: ' + (error as Error).message);
       return false;
     }
-  }, [loadRecords, setStoreVerses]);
+  }, [loadVerses, setStoreVerses]);
 
   const deleteAll = useCallback(async (): Promise<boolean> => {
     try {
-      for (const v of records) {
+      for (const v of verses) {
         await verseRepository.delete(v.id);
       }
-      await loadRecords();
+      await loadVerses();
       setStoreVerses([]);
       toast.success('All Verse records deleted');
       return true;
@@ -81,12 +81,12 @@ export function useVerses() {
       toast.error('Failed to delete Verse records');
       return false;
     }
-  }, [records, loadRecords, setStoreVerses]);
+  }, [verses, loadVerses, setStoreVerses]);
 
   return {
-    records,
+    verses,
     isLoading,
-    loadRecords,
+    loadVerses,
     importFromExcel,
     deleteAll,
   };

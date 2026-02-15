@@ -57,6 +57,8 @@ interface ImportedSlideRow {
   // Display rule (JSON when clause for conditional visibility)
   DisplayRule?: string;
   // Dynamic slide flag
+  // "IsDymanic" is an intentional misspelling preserved for backward compatibility
+  // with Excel files that may have the typo as a column header.
   IsDymanic?: string;
   IsDynamic?: string;
 }

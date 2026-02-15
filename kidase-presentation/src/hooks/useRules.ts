@@ -18,7 +18,7 @@ export function useRules() {
   } = useAppStore();
 
   const [rules, setRules] = useState<RuleDefinition[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load rules for the current presentation
   const loadRules = useCallback(async () => {
@@ -27,14 +27,14 @@ export function useRules() {
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
     try {
       const loaded = await ruleRepository.getByPresentationId(currentPresentation.id);
       setRules(loaded);
     } catch (err) {
       console.error('Failed to load rules:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, [currentPresentation]);
 
@@ -288,7 +288,7 @@ export function useRules() {
 
   return {
     rules,
-    loading,
+    isLoading,
     loadRules,
     createRule,
     updateRule,

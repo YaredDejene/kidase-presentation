@@ -5,7 +5,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import '../../styles/verses-manager.css';
 
 export const VersesManager: React.FC = () => {
-  const { records, isLoading, importFromExcel, deleteAll } = useVerses();
+  const { verses, isLoading, importFromExcel, deleteAll } = useVerses();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
@@ -41,14 +41,14 @@ export const VersesManager: React.FC = () => {
         <div className="verses-toolbar-left">
           <span className="verses-title">Verses</span>
           <span className="verses-count">
-            {records.length} {records.length === 1 ? 'record' : 'records'}
+            {verses.length} {verses.length === 1 ? 'record' : 'records'}
           </span>
         </div>
         <div className="verses-toolbar-right">
           <button
             onClick={() => setShowConfirmDelete(true)}
             className="verses-btn verses-btn-delete-all"
-            disabled={records.length === 0 || isDeleting}
+            disabled={verses.length === 0 || isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete All'}
           </button>
@@ -59,7 +59,7 @@ export const VersesManager: React.FC = () => {
       </div>
 
       {/* Content */}
-      {records.length === 0 ? (
+      {verses.length === 0 ? (
         <div className="verses-empty">
           <p>No Verse records.</p>
           <p>Import from Excel to get started.</p>
@@ -77,7 +77,7 @@ export const VersesManager: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {records.map((v) => (
+              {verses.map((v) => (
                 <tr key={v.id} className="verses-row">
                   <td className="verses-cell-segment">{v.segmentId}</td>
                   <td className="verses-cell-text">{truncate(v.textLang1, 60)}</td>
@@ -94,7 +94,7 @@ export const VersesManager: React.FC = () => {
       <ConfirmDialog
         isOpen={showConfirmDelete}
         title="Delete All Verse Records"
-        message={`Delete all ${records.length} Verse records? This cannot be undone.`}
+        message={`Delete all ${verses.length} Verse records? This cannot be undone.`}
         onConfirm={handleDeleteAllConfirm}
         onCancel={() => setShowConfirmDelete(false)}
       />
