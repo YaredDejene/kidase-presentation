@@ -59,21 +59,17 @@ jobs:
           - name: Windows
             os: windows-latest
             target: x86_64-pc-windows-msvc
-            enabled: true
           # Uncomment when you have an Apple Developer certificate set up.
           # Requires secrets: APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD,
           # APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
           # - name: macOS
           #   os: macos-latest
           #   target: aarch64-apple-darwin
-          #   enabled: true
           # - name: macOS (Intel)
           #   os: macos-latest
           #   target: x86_64-apple-darwin
-          #   enabled: true
 
     runs-on: ${{ matrix.platform.os }}
-    if: ${{ matrix.platform.enabled }}
     steps:
       - uses: actions/checkout@v4
 
