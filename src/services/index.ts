@@ -4,6 +4,8 @@ export { ExcelImportService, excelImportService } from './ExcelImportService';
 export type { ImportResult } from './ExcelImportService';
 export { PdfExportService, pdfExportService } from './PdfExportService';
 export type { PdfExportOptions } from './PdfExportService';
+export { PptxExportService, pptxExportService } from './PptxExportService';
+export type { PptxExportOptions } from './PptxExportService';
 export { PresentationService, presentationService } from './PresentationService';
 export type { LoadedPresentation } from './PresentationService';
 

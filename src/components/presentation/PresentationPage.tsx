@@ -12,6 +12,7 @@ import { Template } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
 import { LanguageMap } from '../../domain/entities/Presentation';
 import { pdfExportService } from '../../services/PdfExportService';
+import { pptxExportService } from '../../services/PptxExportService';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from '../../store/toastStore';
 import '../../styles/presentation-page.css';
@@ -44,6 +45,8 @@ export const PresentationPage: React.FC = () => {
 
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { width: listWidth, handleResizeStart } = useResizablePanel(containerRef);
 
@@ -102,6 +105,18 @@ export const PresentationPage: React.FC = () => {
     return getLanguageSettingsForSlide(selectedSlide);
   }, [selectedSlide, currentPresentation, getLanguageSettingsForSlide]);
 
+  // Close export dropdown on outside click
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showExportMenu]);
+
   const handleExportPdf = async () => {
     if (!currentPresentation || !currentTemplate) return;
 
@@ -155,6 +170,58 @@ export const PresentationPage: React.FC = () => {
     }
   };
 
+  const handleExportPptx = async () => {
+    if (!currentPresentation || !currentTemplate) return;
+
+    const filePath = await save({
+      filters: [{ name: 'PPTX', extensions: ['pptx'] }],
+      defaultPath: `${currentPresentation.name}.pptx`,
+    });
+
+    if (!filePath) return;
+
+    const exportSlides = displaySlides;
+    const progress = toast.progress(t('exportingPptx', { total: exportSlides.length }));
+
+    const store = useAppStore.getState();
+    const templateMap = new Map<string, Template>();
+    const variablesMap = new Map<string, Variable[]>();
+    const languageMapMap = new Map<string, LanguageMap>();
+
+    for (const slide of exportSlides) {
+      const tmpl = store.getTemplateForSlide(slide);
+      if (tmpl) templateMap.set(slide.id, tmpl);
+      variablesMap.set(slide.id, store.getVariablesForSlide(slide));
+      languageMapMap.set(slide.id, store.getLanguageMapForSlide(slide));
+    }
+
+    try {
+      const blob = await pptxExportService.exportToPptx(
+        exportSlides,
+        currentTemplate,
+        currentVariables,
+        currentPresentation.languageMap,
+        {},
+        (current, total) => {
+          const pct = Math.round((current / total) * 100);
+          progress.update(pct, t('exportingSlide', { current, total }));
+        },
+        ruleContextMeta,
+        templateMap.size > 0 ? templateMap : undefined,
+        variablesMap.size > 0 ? variablesMap : undefined,
+        languageMapMap.size > 0 ? languageMapMap : undefined
+      );
+
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      const arrayBuffer = await blob.arrayBuffer();
+      await writeFile(filePath, new Uint8Array(arrayBuffer));
+      progress.done(t('pptxExportedSuccess'));
+    } catch (error) {
+      console.error('PPTX export failed:', error);
+      progress.fail(t('failedToExportPptx', { message: (error as Error).message }));
+    }
+  };
+
   if (!currentPresentation || !currentTemplate) {
     return (
       <div className="pres-page-empty">
@@ -193,12 +260,27 @@ export const PresentationPage: React.FC = () => {
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
           </button>
-          <button
-            onClick={handleExportPdf}
-            className="pres-page-btn pres-page-btn-export"
-          >
-            {t('exportPdf')}
-          </button>
+          <div className="pres-page-export-dropdown" ref={exportMenuRef}>
+            <button
+              onClick={() => setShowExportMenu(prev => !prev)}
+              className="pres-page-btn pres-page-btn-export"
+            >
+              {t('exportPdf')}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 6 }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {showExportMenu && (
+              <div className="pres-page-export-menu">
+                <button onClick={() => { setShowExportMenu(false); handleExportPdf(); }}>
+                  {t('exportPdf')}
+                </button>
+                <button onClick={() => { setShowExportMenu(false); handleExportPptx(); }}>
+                  {t('exportPptx')}
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={startPresentation}
             disabled={displaySlides.length === 0}
