@@ -15,6 +15,8 @@ import { SettingsPage } from './components/settings/SettingsPage';
 import { PresentationView } from './components/presentation/PresentationView';
 import { appBootstrapService } from './services/AppBootstrapService';
 import { ToastContainer } from './components/common/Toast';
+import { UpdateBanner } from './components/common/UpdateBanner';
+import { useUpdater } from './hooks/useUpdater';
 import './styles/global.css';
 import './styles/app.css';
 
@@ -24,6 +26,7 @@ function App() {
   const isPresenting = usePresentationModeStore(s => s.isPresenting);
   const { setAppSettings, setAllTemplates, setVerses, loadPresentationData } = usePresentationDataStore();
   const [isLoading, setIsLoading] = useState(true);
+  const { updateAvailable, updateVersion, installing, installUpdate, dismissUpdate } = useUpdater();
 
   useEffect(() => {
     const loadData = async () => {
@@ -55,6 +58,15 @@ function App() {
 
   return (
     <div className="app-layout">
+      {updateAvailable && (
+        <UpdateBanner
+          version={updateVersion}
+          installing={installing}
+          onInstall={installUpdate}
+          onDismiss={dismissUpdate}
+        />
+      )}
+
       {/* Sidebar navigation */}
       <Sidebar
         currentView={currentView}

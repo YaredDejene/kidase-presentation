@@ -25,5 +25,8 @@
   "pdf": "PDF",
   "about": "ስለ",
   "version": "ስሪት",
-  "appName": "ቅዳሴ ፕሬዘንቴሽን"
+  "appName": "ቅዳሴ ፕሬዘንቴሽን",
+  "updateAvailable": "ስሪት {{version}} ይገኛል",
+  "installUpdate": "ጫን እና እንደገና ክፈት",
+  "updating": "በመጫን ላይ..."
 }

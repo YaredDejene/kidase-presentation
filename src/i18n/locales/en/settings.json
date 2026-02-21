@@ -25,5 +25,8 @@
   "pdf": "PDF",
   "about": "About",
   "version": "Version",
-  "appName": "Kidase Presentation"
+  "appName": "Kidase Presentation",
+  "updateAvailable": "Version {{version}} is available",
+  "installUpdate": "Install & Restart",
+  "updating": "Installing..."
 }
