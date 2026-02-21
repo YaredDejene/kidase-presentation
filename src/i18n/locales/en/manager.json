@@ -15,6 +15,7 @@
   "failedToImport": "Failed to import: {{message}}",
   "deletedName": "\"{{name}}\" deleted",
   "importExcel": "Import Excel",
+  "primary": "Primary",
 
   "gitsawe": "Gitsawe",
   "recordCount": "{{count}} record",
