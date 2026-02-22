@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { TemplateDefinition } from '../../domain/entities/Template';
 
 const DESIGN_WIDTH = 1920;
@@ -21,10 +20,8 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
   definition: def,
   width = 480,
 }) => {
-  const { t } = useTranslation('editor');
   const scale = width / DESIGN_WIDTH;
-  const height = (width / DESIGN_WIDTH) * DESIGN_HEIGHT;
-  const s = (v: number) => v * scale;
+  const height = width * (DESIGN_HEIGHT / DESIGN_WIDTH);
 
   return (
     <div
@@ -32,63 +29,136 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
         width: `${width}px`,
         height: `${height}px`,
         backgroundColor: def.background.color,
-        padding: `${s(def.margins.top)}px ${s(def.margins.right)}px ${s(def.margins.bottom)}px ${s(def.margins.left)}px`,
+        padding: `${def.margins.top * scale}px ${def.margins.right * scale}px ${def.margins.bottom * scale}px ${def.margins.left * scale}px`,
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        borderRadius: '4px',
-        border: '1px solid #333',
+        border: '2px solid #333',
       }}
     >
       {/* Title */}
       {def.title.show && (
         <div
           style={{
-            fontSize: `${s(def.title.fontSize)}px`,
+            fontSize: `${def.title.fontSize * scale}px`,
             color: def.title.color,
             textAlign: def.title.alignment,
             fontWeight: 'bold',
+            marginBottom: `${2 * scale}px`,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             flexShrink: 0,
-            marginBottom: `${s(def.layout.gap)}px`,
           }}
         >
-          {t('titlePreview')}
+          Title Preview
         </div>
       )}
 
       {/* Language blocks */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          justifyContent: 'center',
-          gap: `${s(def.layout.gap)}px`,
-          overflow: 'hidden',
-        }}
-      >
-        {def.languages.map((lang, index) => (
+      {(() => {
+        const vAlign = def.layout.verticalAlign ?? 'center';
+        const justifyMap = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
+        const justify = justifyMap[vAlign];
+
+        return def.layout.columns > 1 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: `${def.layout.gap * scale}px`, overflow: 'hidden' }}>
+            {/* Header row: first language spans full width when rows > 1 */}
+            {def.layout.rows > 1 && def.languages[0] && (
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: justify,
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: `${def.languages[0].fontSize * scale}px`,
+                    fontFamily: def.languages[0].fontFamily,
+                    color: def.languages[0].color,
+                    textAlign: def.languages[0].alignment,
+                    lineHeight: def.languages[0].lineHeight,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {PLACEHOLDER_TEXTS[0]}
+                </div>
+              </div>
+            )}
+            {/* Column grid for remaining languages */}
+            <div
+              style={{
+                display: 'flex',
+                flex: 1,
+                gap: `${def.layout.gap * scale}px`,
+                overflow: 'hidden',
+              }}
+            >
+              {(def.layout.rows > 1 ? def.languages.slice(1) : def.languages).map((lang, index) => (
+                <div
+                  key={lang.slot}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: justify,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: `${lang.fontSize * scale}px`,
+                      fontFamily: lang.fontFamily,
+                      color: lang.color,
+                      textAlign: lang.alignment,
+                      lineHeight: lang.lineHeight,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {PLACEHOLDER_TEXTS[(def.layout.rows > 1 ? index + 1 : index) % PLACEHOLDER_TEXTS.length]}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
           <div
-            key={lang.slot}
             style={{
-              fontSize: `${s(lang.fontSize)}px`,
-              fontFamily: lang.fontFamily,
-              color: lang.color,
-              textAlign: lang.alignment,
-              lineHeight: lang.lineHeight,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              justifyContent: justify,
+              gap: `${def.layout.gap * scale}px`,
               overflow: 'hidden',
             }}
           >
-            {PLACEHOLDER_TEXTS[index % PLACEHOLDER_TEXTS.length]}
-          </div>
-        ))}
-      </div>
+          {def.languages.map((lang, index) => (
+            <div
+              key={lang.slot}
+              style={{
+                fontSize: `${lang.fontSize * scale}px`,
+                fontFamily: lang.fontFamily,
+                color: lang.color,
+                textAlign: lang.alignment,
+                lineHeight: lang.lineHeight,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                overflow: 'hidden',
+              }}
+            >
+              {PLACEHOLDER_TEXTS[index % PLACEHOLDER_TEXTS.length]}
+            </div>
+          ))}
+        </div>
+        );
+      })()}
     </div>
   );
 };

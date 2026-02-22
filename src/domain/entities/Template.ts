@@ -10,6 +10,7 @@ export interface TemplateDefinition {
     columns: number;
     rows: number;
     gap: number;
+    verticalAlign: 'top' | 'center' | 'bottom';
   };
   title: {
     show: boolean;
@@ -22,7 +23,7 @@ export interface TemplateDefinition {
     fontSize: number;
     fontFamily: string;
     color: string;
-    alignment: 'left' | 'center' | 'right';
+    alignment: 'left' | 'center' | 'right' | 'justify';
     lineHeight: number;
   }[];
   background: {

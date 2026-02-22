@@ -15,7 +15,7 @@ const FONT_FAMILIES = [
   'Helvetica, sans-serif',
 ];
 
-const ALIGNMENTS = ['left', 'center', 'right'] as const;
+const ALIGNMENTS = ['left', 'center', 'right', 'justify'] as const;
 
 interface TemplateEditorDialogProps {
   isOpen: boolean;
@@ -85,84 +85,48 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
   if (!templateDef) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('editTemplate')}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('editTemplate')} className="modal-content--wide">
       <div className="dialog-content">
-        {/* Live Preview */}
-        <div className="template-preview-wrapper">
-          <TemplatePreview definition={templateDef} />
-        </div>
-
-        {/* Name */}
-        <div className="form-group">
-          <label className="form-label">{t('templateName')}</label>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="form-input"
-            placeholder={t('enterTemplateName')}
-          />
-        </div>
-
-        {/* Background */}
-        <div className="template-section">
-          <div className="template-section-header">{t('background')}</div>
-          <div className="template-row">
-            <span className="template-row-label">{t('color')}</span>
-            <input
-              type="color"
-              value={templateDef.background.color}
-              onChange={e => updateTemplateField(['background', 'color'], e.target.value)}
-              className="template-color-input"
-            />
-            <span style={{ color: '#888', fontSize: '13px' }}>{templateDef.background.color}</span>
-          </div>
-        </div>
-
-        {/* Title Settings */}
-        <div className="template-section">
-          <div className="template-section-header">{t('title')}</div>
-          <div className="template-lang-grid">
-            <div className="template-field">
-              <label className="template-field-label">{t('fontSize')}</label>
+        <div className="template-editor-layout">
+          {/* Form Fields (left) */}
+          <div className="template-editor-form">
+            {/* Name */}
+            <div className="form-group">
+              <label className="form-label">{t('templateName')}</label>
               <input
-                type="number"
-                value={templateDef.title.fontSize}
-                onChange={e => updateTemplateField(['title', 'fontSize'], parseInt(e.target.value))}
-                className="template-field-input"
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="form-input"
+                placeholder={t('enterTemplateName')}
               />
             </div>
-            <div className="template-field">
-              <label className="template-field-label">{t('color')}</label>
-              <input
-                type="color"
-                value={templateDef.title.color}
-                onChange={e => updateTemplateField(['title', 'color'], e.target.value)}
-                className="template-color-input"
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* Language Styles */}
-        <div className="template-section">
-          <div className="template-section-header">{t('languageStyles')}</div>
-          {templateDef.languages.map((lang, index) => (
-            <div key={lang.slot} className="template-lang-editor">
-              <div className="template-lang-header">
-                <span
-                  className="template-lang-color"
-                  style={{ backgroundColor: lang.color }}
+            {/* Background */}
+            <div className="template-section">
+              <div className="template-section-header">{t('background')}</div>
+              <div className="template-row">
+                <span className="template-row-label">{t('color')}</span>
+                <input
+                  type="color"
+                  value={templateDef.background.color}
+                  onChange={e => updateTemplateField(['background', 'color'], e.target.value)}
+                  className="template-color-input"
                 />
-                <span className="template-lang-title">{lang.slot}</span>
+                <span style={{ color: '#888', fontSize: '13px' }}>{templateDef.background.color}</span>
               </div>
+            </div>
+
+            {/* Title Settings */}
+            <div className="template-section">
+              <div className="template-section-header">{t('title')}</div>
               <div className="template-lang-grid">
                 <div className="template-field">
                   <label className="template-field-label">{t('fontSize')}</label>
                   <input
                     type="number"
-                    value={lang.fontSize}
-                    onChange={e => updateLanguageStyle(index, 'fontSize', parseInt(e.target.value))}
+                    value={templateDef.title.fontSize}
+                    onChange={e => updateTemplateField(['title', 'fontSize'], parseInt(e.target.value))}
                     className="template-field-input"
                   />
                 </div>
@@ -170,109 +134,151 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                   <label className="template-field-label">{t('color')}</label>
                   <input
                     type="color"
-                    value={lang.color}
-                    onChange={e => updateLanguageStyle(index, 'color', e.target.value)}
+                    value={templateDef.title.color}
+                    onChange={e => updateTemplateField(['title', 'color'], e.target.value)}
                     className="template-color-input"
                   />
                 </div>
-                <div className="template-field">
-                  <label className="template-field-label">{t('fontFamily')}</label>
-                  <select
-                    value={lang.fontFamily}
-                    onChange={e => updateLanguageStyle(index, 'fontFamily', e.target.value)}
-                    className="template-field-input"
-                  >
-                    {FONT_FAMILIES.map(font => (
-                      <option key={font} value={font}>{font.split(',')[0]}</option>
-                    ))}
-                  </select>
+              </div>
+            </div>
+
+            {/* Language Styles */}
+            <div className="template-section">
+              <div className="template-section-header">{t('languageStyles')}</div>
+              {templateDef.languages.map((lang, index) => (
+                <div key={lang.slot} className="template-lang-editor">
+                  <div className="template-lang-header">
+                    <span
+                      className="template-lang-color"
+                      style={{ backgroundColor: lang.color }}
+                    />
+                    <span className="template-lang-title">{lang.slot}</span>
+                  </div>
+                  <div className="template-lang-grid">
+                    <div className="template-field">
+                      <label className="template-field-label">{t('fontSize')}</label>
+                      <input
+                        type="number"
+                        value={lang.fontSize}
+                        onChange={e => updateLanguageStyle(index, 'fontSize', parseInt(e.target.value))}
+                        className="template-field-input"
+                      />
+                    </div>
+                    <div className="template-field">
+                      <label className="template-field-label">{t('color')}</label>
+                      <input
+                        type="color"
+                        value={lang.color}
+                        onChange={e => updateLanguageStyle(index, 'color', e.target.value)}
+                        className="template-color-input"
+                      />
+                    </div>
+                    <div className="template-field">
+                      <label className="template-field-label">{t('fontFamily')}</label>
+                      <select
+                        value={lang.fontFamily}
+                        onChange={e => updateLanguageStyle(index, 'fontFamily', e.target.value)}
+                        className="template-field-input"
+                      >
+                        {FONT_FAMILIES.map(font => (
+                          <option key={font} value={font}>{font.split(',')[0]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="template-field">
+                      <label className="template-field-label">{t('alignment')}</label>
+                      <select
+                        value={lang.alignment}
+                        onChange={e => updateLanguageStyle(index, 'alignment', e.target.value)}
+                        className="template-field-input"
+                      >
+                        {ALIGNMENTS.map(align => (
+                          <option key={align} value={align}>{align}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="template-field">
+                      <label className="template-field-label">{t('lineHeight')}</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={lang.lineHeight}
+                        onChange={e => updateLanguageStyle(index, 'lineHeight', parseFloat(e.target.value))}
+                        className="template-field-input"
+                      />
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Margins */}
+            <div className="template-section">
+              <div className="template-section-header">{t('margins')}</div>
+              <div className="template-lang-grid">
                 <div className="template-field">
-                  <label className="template-field-label">{t('alignment')}</label>
-                  <select
-                    value={lang.alignment}
-                    onChange={e => updateLanguageStyle(index, 'alignment', e.target.value)}
-                    className="template-field-input"
-                  >
-                    {ALIGNMENTS.map(align => (
-                      <option key={align} value={align}>{align}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="template-field">
-                  <label className="template-field-label">{t('lineHeight')}</label>
+                  <label className="template-field-label">{t('top')}</label>
                   <input
                     type="number"
-                    step="0.1"
-                    value={lang.lineHeight}
-                    onChange={e => updateLanguageStyle(index, 'lineHeight', parseFloat(e.target.value))}
+                    value={templateDef.margins.top}
+                    onChange={e => updateTemplateField(['margins', 'top'], parseInt(e.target.value))}
+                    className="template-field-input"
+                  />
+                </div>
+                <div className="template-field">
+                  <label className="template-field-label">{t('right')}</label>
+                  <input
+                    type="number"
+                    value={templateDef.margins.right}
+                    onChange={e => updateTemplateField(['margins', 'right'], parseInt(e.target.value))}
+                    className="template-field-input"
+                  />
+                </div>
+                <div className="template-field">
+                  <label className="template-field-label">{t('bottom')}</label>
+                  <input
+                    type="number"
+                    value={templateDef.margins.bottom}
+                    onChange={e => updateTemplateField(['margins', 'bottom'], parseInt(e.target.value))}
+                    className="template-field-input"
+                  />
+                </div>
+                <div className="template-field">
+                  <label className="template-field-label">{t('left')}</label>
+                  <input
+                    type="number"
+                    value={templateDef.margins.left}
+                    onChange={e => updateTemplateField(['margins', 'left'], parseInt(e.target.value))}
                     className="template-field-input"
                   />
                 </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Margins */}
-        <div className="template-section">
-          <div className="template-section-header">{t('margins')}</div>
-          <div className="template-lang-grid">
-            <div className="template-field">
-              <label className="template-field-label">{t('top')}</label>
-              <input
-                type="number"
-                value={templateDef.margins.top}
-                onChange={e => updateTemplateField(['margins', 'top'], parseInt(e.target.value))}
-                className="template-field-input"
-              />
+            {/* Layout */}
+            <div className="template-section">
+              <div className="template-section-header">{t('layout')}</div>
+              <div className="template-row">
+                <span className="template-row-label">{t('gapBetweenLanguages')}</span>
+                <input
+                  type="number"
+                  value={templateDef.layout.gap}
+                  onChange={e => updateTemplateField(['layout', 'gap'], parseInt(e.target.value))}
+                  className="template-number-input"
+                />
+                <span style={{ color: '#888', fontSize: '13px' }}>px</span>
+              </div>
             </div>
-            <div className="template-field">
-              <label className="template-field-label">{t('right')}</label>
-              <input
-                type="number"
-                value={templateDef.margins.right}
-                onChange={e => updateTemplateField(['margins', 'right'], parseInt(e.target.value))}
-                className="template-field-input"
-              />
-            </div>
-            <div className="template-field">
-              <label className="template-field-label">{t('bottom')}</label>
-              <input
-                type="number"
-                value={templateDef.margins.bottom}
-                onChange={e => updateTemplateField(['margins', 'bottom'], parseInt(e.target.value))}
-                className="template-field-input"
-              />
-            </div>
-            <div className="template-field">
-              <label className="template-field-label">{t('left')}</label>
-              <input
-                type="number"
-                value={templateDef.margins.left}
-                onChange={e => updateTemplateField(['margins', 'left'], parseInt(e.target.value))}
-                className="template-field-input"
-              />
-            </div>
+
+          </div>
+
+          {/* Live Preview (right) */}
+          <div className="template-editor-preview">
+            <TemplatePreview definition={templateDef} />
           </div>
         </div>
 
-        {/* Layout */}
-        <div className="template-section">
-          <div className="template-section-header">{t('layout')}</div>
-          <div className="template-row">
-            <span className="template-row-label">{t('gapBetweenLanguages')}</span>
-            <input
-              type="number"
-              value={templateDef.layout.gap}
-              onChange={e => updateTemplateField(['layout', 'gap'], parseInt(e.target.value))}
-              className="template-number-input"
-            />
-            <span style={{ color: '#888', fontSize: '13px' }}>px</span>
-          </div>
-        </div>
-
-        {/* Actions */}
+        {/* Actions - outside the scrollable layout */}
         <div className="dialog-actions">
           <button onClick={onClose} className="btn-cancel">
             {t('common:cancel')}

@@ -26,6 +26,12 @@
   position: relative;
 }
 
+.modal-content.modal-content--wide {
+  width: 1100px;
+  max-width: 95vw;
+  height: 80vh;
+}
+
 .modal-title {
   font-size: 15px;
   font-weight: 600;
@@ -405,6 +411,29 @@
 .lang-size {
   font-size: 13px;
   color: #666;
+}
+
+/* Template Editor Side-by-Side Layout */
+.template-editor-layout {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.template-editor-form {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.template-editor-preview {
+  flex-shrink: 0;
+  width: 480px;
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
 }
 
 /* Template Preview */

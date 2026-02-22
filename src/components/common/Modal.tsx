@@ -4,6 +4,7 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  className?: string;
   children: React.ReactNode;
 }
 
@@ -11,12 +12,12 @@ interface ModalProps {
  * Modal - Reusable modal dialog component
  * TODO: Implement accessible modal with overlay and focus management
  */
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, className, children }) => {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-content${className ? ` ${className}` : ''}`} onClick={(e) => e.stopPropagation()}>
         {title && <h2 className="modal-title">{title}</h2>}
         <button className="modal-close" onClick={onClose}>×</button>
         <div className="modal-body">
