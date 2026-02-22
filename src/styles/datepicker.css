@@ -189,3 +189,111 @@
 .dp-today-btn:hover {
   background-color: #2a3a2a;
 }
+
+/* react-day-picker (Gregorian mode) overrides */
+.dp-dropdown--gregorian {
+  width: 280px;
+}
+
+.dp-rdp {
+  --rdp-accent-color: #4a4a8a;
+  --rdp-accent-background-color: #4a4a8a;
+  --rdp-day-height: 36px;
+  --rdp-day-width: 36px;
+  color: #ccc;
+  font-size: 13px;
+  position: relative;
+}
+
+.dp-rdp-months {
+  position: relative;
+}
+
+.dp-rdp-month {
+  width: 100%;
+}
+
+/* Nav: position prev/next buttons on either side of the caption */
+.dp-rdp-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.dp-rdp-nav-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #aaa;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+  pointer-events: auto;
+}
+
+.dp-rdp-nav-btn:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.dp-rdp-chevron {
+  fill: currentColor;
+  width: 14px;
+  height: 14px;
+}
+
+/* Caption */
+.dp-rdp-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  margin-bottom: 10px;
+}
+
+.dp-rdp-caption-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ddd;
+}
+
+/* Grid */
+.dp-rdp-grid {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.dp-rdp-grid th,
+.dp-rdp-grid td {
+  padding: 0;
+  text-align: center;
+}
+
+.dp-rdp-weekdays {
+  /* inherits dp-weekday styling */
+}
+
+.dp-rdp-week {
+  /* table row */
+}
+
+.dp-rdp-day {
+  padding: 1px;
+}
+
+.dp-rdp-day .dp-day {
+  width: var(--rdp-day-width);
+  height: var(--rdp-day-height);
+  aspect-ratio: auto;
+  margin: 0 auto;
+}
