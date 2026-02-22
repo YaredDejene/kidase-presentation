@@ -16,6 +16,7 @@ const FONT_FAMILIES = [
 ];
 
 const ALIGNMENTS = ['left', 'center', 'right', 'justify'] as const;
+const VERTICAL_ALIGNS = ['top', 'center', 'bottom'] as const;
 
 interface TemplateEditorDialogProps {
   isOpen: boolean;
@@ -258,7 +259,43 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
             {/* Layout */}
             <div className="template-section">
               <div className="template-section-header">{t('layout')}</div>
-              <div className="template-row">
+              <div className="template-lang-grid">
+                <div className="template-field">
+                  <label className="template-field-label">{t('columns')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={4}
+                    value={templateDef.layout.columns}
+                    onChange={e => updateTemplateField(['layout', 'columns'], Math.min(4, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="template-field-input"
+                  />
+                </div>
+                <div className="template-field">
+                  <label className="template-field-label">{t('rows')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={2}
+                    value={templateDef.layout.rows}
+                    onChange={e => updateTemplateField(['layout', 'rows'], Math.min(2, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="template-field-input"
+                  />
+                </div>
+                <div className="template-field">
+                  <label className="template-field-label">{t('verticalAlign')}</label>
+                  <select
+                    value={templateDef.layout.verticalAlign ?? 'center'}
+                    onChange={e => updateTemplateField(['layout', 'verticalAlign'], e.target.value)}
+                    className="template-field-input"
+                  >
+                    {VERTICAL_ALIGNS.map(align => (
+                      <option key={align} value={align}>{align}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="template-row" style={{ marginTop: 12 }}>
                 <span className="template-row-label">{t('gapBetweenLanguages')}</span>
                 <input
                   type="number"

@@ -5,6 +5,8 @@ import { Variable } from '../../domain/entities/Variable';
 import { LanguageMap, LanguageSettings, LangSlot, LANG_SLOTS } from '../../domain/entities/Presentation';
 import { placeholderService } from '../../services/PlaceholderService';
 
+const VERTICAL_ALIGN_TO_JUSTIFY = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
+
 interface SlideRendererProps {
   slide: Slide;
   template: Template;
@@ -249,6 +251,54 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
     );
   };
 
+  const renderLayoutContent = () => {
+    const justify = VERTICAL_ALIGN_TO_JUSTIFY[def.layout.verticalAlign ?? 'center'];
+
+    if (def.layout.columns > 1) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: `${def.layout.gap * scale}px`, overflow: 'hidden' }}>
+          {/* Header row: first language spans full width when rows > 1 */}
+          {def.layout.rows > 1 && enabledLanguages[0] && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: justify, overflow: 'hidden' }}>
+              {renderLanguageContent(enabledLanguages[0].slot, enabledLanguages[0])}
+            </div>
+          )}
+          {/* Column grid for remaining languages */}
+          <div
+            style={{
+              display: 'flex',
+              flex: 1,
+              gap: `${def.layout.gap * scale}px`,
+              overflow: 'hidden',
+            }}
+          >
+            {(def.layout.rows > 1 ? enabledLanguages.slice(1) : enabledLanguages).map((langDef) => (
+              <div key={langDef.slot} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: justify }}>
+                {renderLanguageContent(langDef.slot, langDef)}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          justifyContent: justify,
+          gap: `${def.layout.gap * scale}px`,
+        }}
+      >
+        {enabledLanguages.map((langDef) =>
+          renderLanguageContent(langDef.slot, langDef)
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -264,51 +314,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
     >
       {renderTitle()}
 
-      {(() => {
-        const vAlign = def.layout.verticalAlign ?? 'center';
-        const justifyMap = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
-        const justify = justifyMap[vAlign];
-
-        return def.layout.columns > 1 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: `${def.layout.gap * scale}px`, overflow: 'hidden' }}>
-            {/* Header row: first language spans full width when rows > 1 */}
-            {def.layout.rows > 1 && enabledLanguages[0] && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: justify, overflow: 'hidden' }}>
-                {renderLanguageContent(enabledLanguages[0].slot, enabledLanguages[0])}
-              </div>
-            )}
-            {/* Column grid for remaining languages */}
-            <div
-              style={{
-                display: 'flex',
-                flex: 1,
-                gap: `${def.layout.gap * scale}px`,
-                overflow: 'hidden',
-              }}
-            >
-              {(def.layout.rows > 1 ? enabledLanguages.slice(1) : enabledLanguages).map((langDef) => (
-                <div key={langDef.slot} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: justify }}>
-                  {renderLanguageContent(langDef.slot, langDef)}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              flex: 1,
-              justifyContent: justify,
-              gap: `${def.layout.gap * scale}px`,
-            }}
-          >
-            {enabledLanguages.map((langDef) =>
-              renderLanguageContent(langDef.slot, langDef)
-            )}
-          </div>
-        );
-      })()}
+      {renderLayoutContent()}
 
       {renderFooter()}
     </div>

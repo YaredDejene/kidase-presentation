@@ -342,35 +342,11 @@
   transform: translateX(20px);
 }
 
-/* Template Preview */
-.template-preview {
-  margin-top: 20px;
-}
-
-.template-preview h4 {
-  font-size: 13px;
-  font-weight: 600;
-  color: #888;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #333;
-}
-
 .template-info {
   background-color: #252525;
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 20px;
-}
-
-.color-swatch {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  margin-right: 8px;
-  vertical-align: middle;
-  border: 1px solid #444;
 }
 
 .template-languages {
