@@ -44,14 +44,14 @@ export const SettingsPage: React.FC = () => {
     setIsSaving(true);
     const success = await saveSettings(localSettings);
     if (success) {
+      // Apply locale change if it differs from current
+      if (localSettings.locale !== locale) {
+        await changeLocale(localSettings.locale);
+      }
       setHasChanges(false);
       toast.success(t('settingsSaved'));
     }
     setIsSaving(false);
-  };
-
-  const handleLocaleChange = async (newLocale: 'en' | 'am') => {
-    await changeLocale(newLocale);
   };
 
   const handleCreateBackup = async () => {
@@ -156,8 +156,8 @@ export const SettingsPage: React.FC = () => {
             <span className="setting-hint">{t('languageHint')}</span>
           </div>
           <select
-            value={locale}
-            onChange={e => handleLocaleChange(e.target.value as 'en' | 'am')}
+            value={localSettings.locale}
+            onChange={e => updateSetting('locale', e.target.value as 'en' | 'am')}
             className="setting-select"
           >
             <option value="en">{t('english')}</option>
@@ -195,24 +195,6 @@ export const SettingsPage: React.FC = () => {
             <option value="auto">{t('autoDetect')}</option>
             <option value="primary">{t('primaryMonitor')}</option>
             <option value="secondary">{t('secondaryMonitor')}</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Export */}
-      <div className="settings-section">
-        <h2 className="settings-section-title">{t('exportSection')}</h2>
-        <div className="setting-row">
-          <div className="setting-label">
-            <span>{t('defaultExportFormat')}</span>
-            <span className="setting-hint">{t('defaultExportFormatHint')}</span>
-          </div>
-          <select
-            value={localSettings.defaultExportFormat}
-            onChange={e => updateSetting('defaultExportFormat', e.target.value as 'pdf' | 'pptx')}
-            className="setting-select"
-          >
-            <option value="pdf">{t('pdf')}</option>
           </select>
         </div>
       </div>

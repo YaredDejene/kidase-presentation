@@ -104,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <nav className="sidebar">
-      <div className="sidebar-logo">KP</div>
+      <div className="sidebar-logo">ቅ</div>
       <div className="sidebar-menu">
         {menuItems.map(item => (
           <button

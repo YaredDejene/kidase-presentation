@@ -15,6 +15,7 @@ import { pdfExportService } from '../../services/PdfExportService';
 import { pptxExportService } from '../../services/PptxExportService';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from '../../store/toastStore';
+import { toEC, monthNames } from 'kenat';
 import '../../styles/presentation-page.css';
 
 export const PresentationPage: React.FC = () => {
@@ -414,8 +415,25 @@ const gitsaweLabelKeys: Record<string, string> = {
   evangelist: 'gitsaweEvangelist',
 };
 
+function useGitsaweDateLabel(): string {
+  const { i18n } = useTranslation();
+  const { ruleEvaluationDate } = useAppStore();
+  return useMemo(() => {
+    const date = ruleEvaluationDate
+      ? new Date(ruleEvaluationDate + 'T12:00:00')
+      : new Date();
+    if (i18n.language === 'am') {
+      const ec = toEC(date.getFullYear(), date.getMonth() + 1, date.getDate());
+      const ethMonths: string[] = (monthNames as any).amharic;
+      return `${ethMonths[ec.month - 1]} ${ec.day}`;
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }, [i18n.language, ruleEvaluationDate]);
+}
+
 function GitsaweInfoPanel({ gitsawe }: { gitsawe: Record<string, unknown> }) {
   const { t } = useTranslation('presentation');
+  const dateLabel = useGitsaweDateLabel();
 
   const entries = Object.entries(gitsaweLabelKeys)
     .map(([key, labelKey]) => ({ label: t(labelKey), value: gitsawe[key] }))
@@ -425,7 +443,7 @@ function GitsaweInfoPanel({ gitsawe }: { gitsawe: Record<string, unknown> }) {
 
   return (
     <div className="pres-page-gitsawe">
-      <div className="pres-page-gitsawe-header">{t('currentGitsawe')}</div>
+      <div className="pres-page-gitsawe-header">{t('currentGitsawe')} ({dateLabel})</div>
       <div className="pres-page-gitsawe-grid">
         {entries.map(({ label, value }) => (
           <div className="pres-page-gitsawe-row" key={label}>

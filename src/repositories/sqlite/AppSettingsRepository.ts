@@ -18,9 +18,6 @@ export class AppSettingsRepository {
         case 'theme':
           settings.theme = row.value as 'dark' | 'light';
           break;
-        case 'defaultExportFormat':
-          settings.defaultExportFormat = row.value as 'pdf' | 'pptx';
-          break;
         case 'showSlideNumbers':
           settings.showSlideNumbers = row.value === 'true';
           break;
