@@ -9,6 +9,8 @@ export type { PptxExportOptions } from './PptxExportService';
 export { PresentationService, presentationService } from './PresentationService';
 export type { LoadedPresentation } from './PresentationService';
 
+export { BackupService, backupService } from './BackupService';
+export type { BackupData } from './BackupService';
 export { AppBootstrapService, appBootstrapService } from './AppBootstrapService';
 export type { BootstrapResult } from './AppBootstrapService';
 

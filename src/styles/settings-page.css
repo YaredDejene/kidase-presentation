@@ -78,3 +78,45 @@
   font-size: 13px;
   color: #888;
 }
+
+.settings-section-toggle {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.settings-section-toggle:hover {
+  color: #aaa;
+}
+
+.settings-chevron {
+  font-size: 11px;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+.settings-chevron.open {
+  transform: rotate(90deg);
+}
+
+.setting-action-btn {
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: #ddd;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.setting-action-btn:hover {
+  background: #3a3a3a;
+}
+
+.setting-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
