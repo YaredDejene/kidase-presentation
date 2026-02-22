@@ -1,6 +1,7 @@
 import { Presentation } from '../domain/entities/Presentation';
 import { Slide } from '../domain/entities/Slide';
-import { Template, createDefaultTemplate } from '../domain/entities/Template';
+import { Template, TemplateDefinition } from '../domain/entities/Template';
+import templateSeeds from '../data/template-seeds.json';
 import { Variable } from '../domain/entities/Variable';
 import {
   presentationRepository,
@@ -282,10 +283,11 @@ export class PresentationService {
     const templates = await templateRepository.getAll();
 
     if (templates.length === 0) {
+      const seed = templateSeeds[0];
       return templateRepository.create({
-        name: 'Default Template',
-        maxLangCount: 4,
-        definitionJson: createDefaultTemplate(),
+        name: seed.name,
+        maxLangCount: seed.maxLangCount,
+        definitionJson: seed.definitionJson as unknown as TemplateDefinition,
       });
     }
 

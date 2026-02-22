@@ -1,5 +1,5 @@
 import { AppSettings } from '../domain/entities/AppSettings';
-import { Template, createDefaultTemplate } from '../domain/entities/Template';
+import { Template, TemplateDefinition } from '../domain/entities/Template';
 import { Verse } from '../domain/entities/Verse';
 import { LoadedPresentation } from './PresentationService';
 import {
@@ -9,6 +9,7 @@ import {
   presentationRepository,
 } from '../repositories';
 import { presentationService } from './PresentationService';
+import templateSeeds from '../data/template-seeds.json';
 
 export interface BootstrapResult {
   settings: AppSettings;
@@ -34,21 +35,16 @@ export class AppBootstrapService {
   private async doInitialize(): Promise<BootstrapResult> {
     const settings = await appSettingsRepository.get();
 
-    // Ensure default template exists and is up-to-date
-    const loadedTemplates = await templateRepository.getAll();
-    const defaultDef = createDefaultTemplate();
-    const existingDefault = loadedTemplates.find(t => t.name === 'Default Template');
-
-    if (existingDefault) {
-      await templateRepository.update(existingDefault.id, {
-        definitionJson: defaultDef,
-      });
-    } else {
-      await templateRepository.create({
-        name: 'Default Template',
-        maxLangCount: 4,
-        definitionJson: defaultDef,
-      });
+    // Seed templates: insert if missing, never overwrite existing
+    for (const seed of templateSeeds) {
+      const existing = await templateRepository.getByName(seed.name);
+      if (!existing) {
+        await templateRepository.create({
+          name: seed.name,
+          maxLangCount: seed.maxLangCount,
+          definitionJson: seed.definitionJson as unknown as TemplateDefinition,
+        });
+      }
     }
 
     const templates = await templateRepository.getAll();

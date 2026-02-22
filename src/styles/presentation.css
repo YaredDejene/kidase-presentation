@@ -30,26 +30,38 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-.presentation-nav-hint {
+.presentation-nav-zone {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.presentation-nav-zone-left {
+  left: 0;
+  justify-content: flex-start;
+  padding-left: 20px;
+}
+
+.presentation-nav-zone-right {
+  right: 0;
+  justify-content: flex-end;
+  padding-right: 20px;
+}
+
+.presentation-nav-hint {
   color: rgba(255, 255, 255, 0);
   font-size: 48px;
   pointer-events: none;
   transition: color 0.3s ease;
 }
 
-.presentation-nav-hint-left {
-  left: 20px;
-}
-
-.presentation-nav-hint-right {
-  right: 20px;
-}
-
-.presentation-view:hover .presentation-nav-hint {
-  color: rgba(255, 255, 255, 0.2);
+.presentation-nav-zone:hover .presentation-nav-hint {
+  color: rgba(255, 255, 255, 0.3);
 }
 
 /* Presenter Controls */

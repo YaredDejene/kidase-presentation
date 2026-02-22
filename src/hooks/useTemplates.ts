@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { templateRepository } from '../repositories';
-import { Template, TemplateDefinition, createDefaultTemplate } from '../domain/entities/Template';
+import { Template, TemplateDefinition } from '../domain/entities/Template';
+import templateSeeds from '../data/template-seeds.json';
 
 export function useTemplates() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -33,7 +34,7 @@ export function useTemplates() {
       const template = await templateRepository.create({
         name,
         maxLangCount,
-        definitionJson: definition || createDefaultTemplate(),
+        definitionJson: definition || templateSeeds[0].definitionJson as unknown as TemplateDefinition,
       });
 
       setTemplates(prev => [...prev, template]);
@@ -111,10 +112,11 @@ export function useTemplates() {
     const existing = await templateRepository.getAll();
 
     if (existing.length === 0) {
+      const seed = templateSeeds[0];
       const defaultTemplate = await templateRepository.create({
-        name: 'Default Template',
-        maxLangCount: 4,
-        definitionJson: createDefaultTemplate(),
+        name: seed.name,
+        maxLangCount: seed.maxLangCount,
+        definitionJson: seed.definitionJson as unknown as TemplateDefinition,
       });
       setTemplates([defaultTemplate]);
       return defaultTemplate;

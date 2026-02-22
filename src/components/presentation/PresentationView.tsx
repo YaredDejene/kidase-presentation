@@ -142,12 +142,12 @@ export const PresentationView: React.FC = () => {
         </div>
       )}
 
-      {/* Navigation hints (visible on hover) */}
-      <div className="presentation-nav-hint presentation-nav-hint-left">
-        &#9664;
+      {/* Navigation hover zones */}
+      <div className="presentation-nav-zone presentation-nav-zone-left">
+        <div className="presentation-nav-hint">&#9664;</div>
       </div>
-      <div className="presentation-nav-hint presentation-nav-hint-right">
-        &#9654;
+      <div className="presentation-nav-zone presentation-nav-zone-right">
+        <div className="presentation-nav-hint">&#9654;</div>
       </div>
     </div>
   );
