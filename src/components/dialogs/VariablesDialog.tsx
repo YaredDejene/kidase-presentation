@@ -151,7 +151,7 @@ export const VariablesDialog: React.FC<VariablesDialogProps> = ({
               {localVariables.map(variable => {
                 const isAtVar = variable.name.startsWith('@');
                 return (
-                  <div key={variable.id} className="variable-row" style={isAtVar ? { flexDirection: 'column', alignItems: 'stretch' } : undefined}>
+                  <div key={variable.id} className={`variable-row${isAtVar ? ' variable-row--multilang' : ''}`}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span className="variable-name">{variable.name}</span>
                       <button

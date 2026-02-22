@@ -3,6 +3,11 @@ import { templateRepository } from '../repositories';
 import { Template, TemplateDefinition } from '../domain/entities/Template';
 import templateSeeds from '../data/template-seeds.json';
 
+/** Cast seed definitionJson (untyped JSON) to TemplateDefinition */
+function seedDefinition(index: number): TemplateDefinition {
+  return templateSeeds[index].definitionJson as TemplateDefinition;
+}
+
 export function useTemplates() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +39,7 @@ export function useTemplates() {
       const template = await templateRepository.create({
         name,
         maxLangCount,
-        definitionJson: definition || templateSeeds[0].definitionJson as unknown as TemplateDefinition,
+        definitionJson: definition || seedDefinition(0),
       });
 
       setTemplates(prev => [...prev, template]);

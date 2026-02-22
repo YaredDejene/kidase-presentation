@@ -83,17 +83,6 @@ export class PresentationService {
     return this.saveImportResult(result);
   }
 
-  /**
-   * Import presentation from Excel buffer
-   */
-  async importFromExcelBuffer(
-    buffer: ArrayBuffer,
-    templateId: string
-  ): Promise<LoadedPresentation> {
-    const result = await excelImportService.importFromArrayBuffer(buffer, templateId);
-    return this.saveImportResult(result);
-  }
-
   private async saveImportResult(result: ImportResult): Promise<LoadedPresentation> {
     // Create presentation
     const presentation = await presentationRepository.create(result.presentation);
@@ -151,49 +140,7 @@ export class PresentationService {
     templateId: string,
   ): Promise<LoadedPresentation> {
     const result = await excelImportService.importFromPath(filePath, templateId);
-
-    // Create presentation
-    const presentation = await presentationRepository.create(result.presentation);
-
-    // Create slides
-    const slidesWithId = result.slides.map(s => ({
-      ...s,
-      presentationId: presentation.id,
-    }));
-    const slides = await slideRepository.createMany(slidesWithId);
-
-    // Create variables
-    const variablesWithId = result.variables.map(v => ({
-      ...v,
-      presentationId: presentation.id,
-    }));
-    const variables = await variableRepository.createMany(variablesWithId);
-
-    // Create display rules linked to slides
-    for (const displayRule of result.displayRules) {
-      const slide = slides[displayRule.slideIndex];
-      if (!slide) continue;
-
-      const ruleDef = createRuleDefinition(
-        displayRule.name,
-        'slide',
-        displayRule.ruleJson,
-        {
-          presentationId: presentation.id,
-          slideId: slide.id,
-          isEnabled: true,
-        },
-      );
-      await ruleRepository.create(ruleDef);
-    }
-
-    // Get template
-    const template = await templateRepository.getById(presentation.templateId);
-    if (!template) {
-      throw new Error(`Template ${presentation.templateId} not found`);
-    }
-
-    return { presentation, slides, template, variables };
+    return this.saveImportResult(result);
   }
 
   /**
@@ -287,7 +234,7 @@ export class PresentationService {
       return templateRepository.create({
         name: seed.name,
         maxLangCount: seed.maxLangCount,
-        definitionJson: seed.definitionJson as unknown as TemplateDefinition,
+        definitionJson: seed.definitionJson as TemplateDefinition,
       });
     }
 

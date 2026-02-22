@@ -36,16 +36,6 @@ export interface Slide {
   templateOverrideId?: string;
 }
 
-export function createEmptySlide(presentationId: string, order: number): Omit<Slide, 'id'> {
-  return {
-    presentationId,
-    slideOrder: order,
-    blocksJson: [{}],
-    isDisabled: false,
-    isDynamic: false,
-  };
-}
-
 export function getSlidePreviewText(slide: Slide): string {
   const blocks = slide.blocksJson || [];
   for (const block of blocks) {

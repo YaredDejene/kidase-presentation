@@ -14,7 +14,7 @@ function parseDate(value: string | null): Date {
   return new Date(y, m - 1, d);
 }
 
-function formatDate(date: Date): string {
+function toISODateString(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
@@ -51,7 +51,7 @@ export const GregorianDatePicker: React.FC<DatePickerProps> = ({ value, onChange
     if (isSameDay(day, today)) {
       onChange(null);
     } else {
-      onChange(formatDate(day));
+      onChange(toISODateString(day));
     }
     setIsOpen(false);
   }, [onChange, today]);

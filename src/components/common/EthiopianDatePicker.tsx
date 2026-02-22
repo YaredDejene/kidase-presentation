@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MonthGrid, toEC, monthNames } from 'kenat';
+import { MonthGrid, toEC } from 'kenat';
+import { formatEthiopianDate } from '../../domain/formatting';
+import type { EthiopianDay } from '../../types/kenat';
 import '../../styles/datepicker.css';
 
 interface DatePickerProps {
@@ -86,7 +88,7 @@ export const EthiopianDatePicker: React.FC<DatePickerProps> = ({ value, onChange
     }
   }, [viewMonth]);
 
-  const handleSelectDay = useCallback((day: any) => {
+  const handleSelectDay = useCallback((day: EthiopianDay) => {
     if (!day) return;
     const g = day.gregorian;
     // Check if this is today
@@ -108,9 +110,8 @@ export const EthiopianDatePicker: React.FC<DatePickerProps> = ({ value, onChange
   }, [onChange]);
 
   // Display text in trigger
-  const ethMonths: string[] = (monthNames as any).amharic;
   const displayText = value
-    ? `${ethMonths[selectedEC.month - 1]} ${selectedEC.day}, ${selectedEC.year}`
+    ? formatEthiopianDate(selected)
     : t('today');
 
   return (
@@ -159,7 +160,7 @@ export const EthiopianDatePicker: React.FC<DatePickerProps> = ({ value, onChange
           </div>
 
           <div className="dp-days">
-            {grid.days.map((day: any, i: number) => {
+            {grid.days.map((day: EthiopianDay | null, i: number) => {
               if (day === null) {
                 return <span key={i} className="dp-day dp-day--other" />;
               }

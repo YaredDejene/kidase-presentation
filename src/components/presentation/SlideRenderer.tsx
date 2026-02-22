@@ -4,6 +4,7 @@ import { Template, TemplateDefinition } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
 import { LanguageMap, LanguageSettings, LangSlot, LANG_SLOTS } from '../../domain/entities/Presentation';
 import { placeholderService } from '../../services/PlaceholderService';
+import { computeFontScale } from '../../domain/formatting';
 
 const VERTICAL_ALIGN_TO_JUSTIFY = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
 
@@ -33,10 +34,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
     if (languageSettings) {
       // Use languageSettings for order and enabled status
       return LANG_SLOTS
-        .filter(slot => languageSettings[slot]?.enabled)
+        .filter(slot => languageSettings[slot]?.enabled && def.languages.some(l => l.slot === slot))
         .map(slot => ({
           ...def.languages.find(l => l.slot === slot)!,
-          order: languageSettings[slot]!.order,
+          order: languageSettings[slot]?.order ?? 0,
         }))
         .sort((a, b) => a.order - b.order);
     }
@@ -56,29 +57,20 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
     const block = slide.blocksJson[0] || {};
     const processedBlock = getProcessedBlock(block);
 
-    // Count total characters across enabled languages only
     let totalChars = 0;
-    let langCount = 0;
 
     for (const langDef of enabledLanguages) {
       const text = processedBlock[langDef.slot];
-      if (text) {
-        totalChars += text.length;
-        langCount++;
-      }
+      if (text) totalChars += text.length;
     }
 
-    // Also count title if present
     if (slide.titleJson) {
       const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables, metaContext);
       const titleText = processedTitle.Lang1 || processedTitle.Lang2 ||
                        processedTitle.Lang3 || processedTitle.Lang4;
-      if (titleText) {
-        totalChars += titleText.length;
-      }
+      if (titleText) totalChars += titleText.length;
     }
 
-    // Count footer content
     if (slide.footerJson) {
       if (slide.footerJson.title) {
         const footerTitle = slide.footerJson.title.Lang1 || slide.footerJson.title.Lang2 ||
@@ -92,26 +84,7 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
       }
     }
 
-    // Dynamic scaling based on content length
-    // These thresholds are tuned for typical liturgical text
-    // More aggressive scaling to fill the slide
-    if (totalChars < 100) {
-      return 2.0; // Very short - huge fonts
-    } else if (totalChars < 200) {
-      return 1.6; // Short - extra large fonts
-    } else if (totalChars < 350) {
-      return 1.35; // Medium-short - large fonts
-    } else if (totalChars < 500) {
-      return 1.15; // Medium - slightly large
-    } else if (totalChars < 700) {
-      return 1.0; // Medium-long - base size
-    } else if (totalChars < 1000) {
-      return 0.85; // Long - slightly smaller
-    } else if (totalChars < 1400) {
-      return 0.7; // Very long - smaller
-    } else {
-      return 0.55; // Extra long - much smaller
-    }
+    return computeFontScale(totalChars);
   }, [slide, enabledLanguages, variables]);
 
   const renderLanguageContent = (

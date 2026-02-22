@@ -68,7 +68,7 @@ export const SettingsPage: React.FC = () => {
       await writeTextFile(filePath, JSON.stringify(backup, null, 2));
       toast.success(t('backupCreated'));
     } catch (error) {
-      toast.error(t('backupFailed', { message: (error as Error).message }));
+      toast.error(t('backupFailed', { message: error instanceof Error ? error.message : String(error) }));
     } finally {
       setIsBackingUp(false);
     }
@@ -100,7 +100,7 @@ export const SettingsPage: React.FC = () => {
       setPendingRestoreData(data);
       setShowRestoreConfirm(true);
     } catch (error) {
-      toast.error(t('restoreFailed', { message: (error as Error).message }));
+      toast.error(t('restoreFailed', { message: error instanceof Error ? error.message : String(error) }));
     }
   };
 
@@ -114,7 +114,7 @@ export const SettingsPage: React.FC = () => {
       toast.success(t('restoreSuccess'));
       setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
-      const msg = (error as Error).message;
+      const msg = error instanceof Error ? error.message : String(error);
       if (msg === 'INCOMPATIBLE_VERSION') {
         toast.error(t('incompatibleBackup'));
       } else {

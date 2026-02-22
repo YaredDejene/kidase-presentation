@@ -23,8 +23,7 @@ export function useSlides() {
 
   const expandedSlides = useMemo(
     () => getExpandedSlides(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentSlides, verses, ruleContextMeta]
+    [currentSlides, verses, ruleContextMeta, getExpandedSlides]
   );
   const selectedSlide = expandedSlides.find(s => s.id === selectedSlideId) || null;
   const enabledSlides = expandedSlides.filter(s => !s.isDisabled);

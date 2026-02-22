@@ -1,21 +1,16 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../../store/appStore';
 import { useRules } from '../../hooks/useRules';
 import { useTemplates } from '../../hooks/useTemplates';
+import { useExport } from '../../hooks/useExport';
 import { useSecondaryKidase } from '../../hooks/useSecondaryKidase';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { SlidePreview } from '../editor/SlidePreview';
 import { PresentationSettingsDialog } from '../dialogs/PresentationSettingsDialog';
+import { GitsaweInfoPanel } from './GitsaweInfoPanel';
 import { getSlidePreviewText, getSlideTitle } from '../../domain/entities/Slide';
-import { Template } from '../../domain/entities/Template';
 import { Variable } from '../../domain/entities/Variable';
-import { LanguageMap } from '../../domain/entities/Presentation';
-import { pdfExportService } from '../../services/PdfExportService';
-import { pptxExportService } from '../../services/PptxExportService';
-import { save } from '@tauri-apps/plugin-dialog';
-import { toast } from '../../store/toastStore';
-import { toEC, monthNames } from 'kenat';
 import '../../styles/presentation-page.css';
 
 export const PresentationPage: React.FC = () => {
@@ -106,6 +101,8 @@ export const PresentationPage: React.FC = () => {
     return getLanguageSettingsForSlide(selectedSlide);
   }, [selectedSlide, currentPresentation, getLanguageSettingsForSlide]);
 
+  const { handleExportPdf, handleExportPptx } = useExport(displaySlides);
+
   // Close export dropdown on outside click
   useEffect(() => {
     if (!showExportMenu) return;
@@ -118,110 +115,26 @@ export const PresentationPage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showExportMenu]);
 
-  const handleExportPdf = async () => {
-    if (!currentPresentation || !currentTemplate) return;
-
-    const filePath = await save({
-      filters: [{ name: 'PDF', extensions: ['pdf'] }],
-      defaultPath: `${currentPresentation.name}.pdf`,
-    });
-
-    if (!filePath) return;
-
-    const exportSlides = displaySlides;
-    const progress = toast.progress(t('exportingPdf', { total: exportSlides.length }));
-
-    // Build per-slide maps for templates, variables, and language maps
-    const store = useAppStore.getState();
-    const templateMap = new Map<string, Template>();
-    const variablesMap = new Map<string, Variable[]>();
-    const languageMapMap = new Map<string, LanguageMap>();
-
-    for (const slide of exportSlides) {
-      const tmpl = store.getTemplateForSlide(slide);
-      if (tmpl) templateMap.set(slide.id, tmpl);
-      variablesMap.set(slide.id, store.getVariablesForSlide(slide));
-      languageMapMap.set(slide.id, store.getLanguageMapForSlide(slide));
+  const handleSettingsClose = useCallback(() => {
+    setShowSettings(false);
+    if (currentPresentation) {
+      const updatedTemplate = getTemplateById(currentPresentation.templateId);
+      if (updatedTemplate) setCurrentTemplate(updatedTemplate);
     }
+  }, [currentPresentation, getTemplateById, setCurrentTemplate]);
 
-    try {
-      const blob = await pdfExportService.exportToPdf(
-        exportSlides,
-        currentTemplate,
-        currentVariables,
-        currentPresentation.languageMap,
-        {},
-        (current, total) => {
-          const pct = Math.round((current / total) * 100);
-          progress.update(pct, t('exportingSlide', { current, total }));
-        },
-        ruleContextMeta,
-        templateMap.size > 0 ? templateMap : undefined,
-        variablesMap.size > 0 ? variablesMap : undefined,
-        languageMapMap.size > 0 ? languageMapMap : undefined
-      );
+  const handleVariablesChange = useCallback(
+    (vars: Variable[]) => setCurrentVariables(vars),
+    [setCurrentVariables]
+  );
 
-      const { writeFile } = await import('@tauri-apps/plugin-fs');
-      const arrayBuffer = await blob.arrayBuffer();
-      await writeFile(filePath, new Uint8Array(arrayBuffer));
-      progress.done(t('pdfExportedSuccess'));
-    } catch (error) {
-      console.error('Export failed:', error);
-      progress.fail(t('failedToExportPdf', { message: (error as Error).message }));
-    }
-  };
-
-  const handleExportPptx = async () => {
-    if (!currentPresentation || !currentTemplate) return;
-
-    const filePath = await save({
-      filters: [{ name: 'PPTX', extensions: ['pptx'] }],
-      defaultPath: `${currentPresentation.name}.pptx`,
-    });
-
-    if (!filePath) return;
-
-    const exportSlides = displaySlides;
-    const progress = toast.progress(t('exportingPptx', { total: exportSlides.length }));
-
-    const store = useAppStore.getState();
-    const templateMap = new Map<string, Template>();
-    const variablesMap = new Map<string, Variable[]>();
-    const languageMapMap = new Map<string, LanguageMap>();
-
-    for (const slide of exportSlides) {
-      const tmpl = store.getTemplateForSlide(slide);
-      if (tmpl) templateMap.set(slide.id, tmpl);
-      variablesMap.set(slide.id, store.getVariablesForSlide(slide));
-      languageMapMap.set(slide.id, store.getLanguageMapForSlide(slide));
-    }
-
-    try {
-      const blob = await pptxExportService.exportToPptx(
-        exportSlides,
-        currentTemplate,
-        currentVariables,
-        currentPresentation.languageMap,
-        {},
-        (current, total) => {
-          const pct = Math.round((current / total) * 100);
-          progress.update(pct, t('exportingSlide', { current, total }));
-        },
-        ruleContextMeta,
-        templateMap.size > 0 ? templateMap : undefined,
-        variablesMap.size > 0 ? variablesMap : undefined,
-        languageMapMap.size > 0 ? languageMapMap : undefined
-      );
-
-      const { writeFile } = await import('@tauri-apps/plugin-fs');
-      const arrayBuffer = await blob.arrayBuffer();
-      await writeFile(filePath, new Uint8Array(arrayBuffer));
-      progress.done(t('pptxExportedSuccess'));
-    } catch (error) {
-      console.error('PPTX export failed:', error);
-      progress.fail(t('failedToExportPptx', { message: (error as Error).message }));
-    }
-  };
+  const handleTemplateChange = useCallback(
+    (templateId: string) => {
+      const newTemplate = getTemplateById(templateId);
+      if (newTemplate) setCurrentTemplate(newTemplate);
+    },
+    [getTemplateById, setCurrentTemplate]
+  );
 
   if (!currentPresentation || !currentTemplate) {
     return (
@@ -379,79 +292,16 @@ export const PresentationPage: React.FC = () => {
       {/* Presentation Settings Dialog */}
       <PresentationSettingsDialog
         isOpen={showSettings}
-        onClose={() => {
-          setShowSettings(false);
-          if (currentPresentation) {
-            const updatedTemplate = getTemplateById(currentPresentation.templateId);
-            if (updatedTemplate) setCurrentTemplate(updatedTemplate);
-          }
-        }}
+        onClose={handleSettingsClose}
         presentation={currentPresentation}
         variables={currentVariables}
         slides={currentSlides}
         template={currentTemplate}
         templates={templates}
         onPresentationChange={setCurrentPresentation}
-        onVariablesChange={(vars: Variable[]) => setCurrentVariables(vars)}
-        onTemplateChange={(templateId: string) => {
-          const newTemplate = getTemplateById(templateId);
-          if (newTemplate) setCurrentTemplate(newTemplate);
-        }}
+        onVariablesChange={handleVariablesChange}
+        onTemplateChange={handleTemplateChange}
       />
     </div>
   );
 };
-
-const gitsaweLabelKeys: Record<string, string> = {
-  lineId: 'gitsaweLineId',
-  kidaseType: 'gitsaweKidaseType',
-  gitsaweType: 'gitsaweGitsaweType',
-  messageStPaul: 'gitsaweStPaul',
-  messageApostle: 'gitsaweApostle',
-  messageBookOfActs: 'gitsaweBookOfActs',
-  messageApostleEvangelist: 'gitsaweApostleEvangelist',
-  misbak: 'gitsaweMisbak',
-  wengel: 'gitsaweWengel',
-  evangelist: 'gitsaweEvangelist',
-};
-
-function useGitsaweDateLabel(): string {
-  const { i18n } = useTranslation();
-  const { ruleEvaluationDate } = useAppStore();
-  return useMemo(() => {
-    const date = ruleEvaluationDate
-      ? new Date(ruleEvaluationDate + 'T12:00:00')
-      : new Date();
-    if (i18n.language === 'am') {
-      const ec = toEC(date.getFullYear(), date.getMonth() + 1, date.getDate());
-      const ethMonths: string[] = (monthNames as any).amharic;
-      return `${ethMonths[ec.month - 1]} ${ec.day}`;
-    }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }, [i18n.language, ruleEvaluationDate]);
-}
-
-function GitsaweInfoPanel({ gitsawe }: { gitsawe: Record<string, unknown> }) {
-  const { t } = useTranslation('presentation');
-  const dateLabel = useGitsaweDateLabel();
-
-  const entries = Object.entries(gitsaweLabelKeys)
-    .map(([key, labelKey]) => ({ label: t(labelKey), value: gitsawe[key] }))
-    .filter((e): e is { label: string; value: string | number } => e.value != null && e.value !== '');
-
-  if (entries.length === 0) return null;
-
-  return (
-    <div className="pres-page-gitsawe">
-      <div className="pres-page-gitsawe-header">{t('currentGitsawe')} ({dateLabel})</div>
-      <div className="pres-page-gitsawe-grid">
-        {entries.map(({ label, value }) => (
-          <div className="pres-page-gitsawe-row" key={label}>
-            <span className="pres-page-gitsawe-label">{label}:</span>
-            <span>{String(value)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

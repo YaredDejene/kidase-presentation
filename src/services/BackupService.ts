@@ -85,8 +85,8 @@ class BackupServiceImpl {
     } catch (error) {
       try {
         await db.execute('ROLLBACK');
-      } catch {
-        // rollback may fail if transaction wasn't started
+      } catch (rollbackErr) {
+        console.warn('Rollback failed:', rollbackErr);
       }
       throw error;
     } finally {

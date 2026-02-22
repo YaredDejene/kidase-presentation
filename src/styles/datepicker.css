@@ -279,14 +279,6 @@
   text-align: center;
 }
 
-.dp-rdp-weekdays {
-  /* inherits dp-weekday styling */
-}
-
-.dp-rdp-week {
-  /* table row */
-}
-
 .dp-rdp-day {
   padding: 1px;
 }

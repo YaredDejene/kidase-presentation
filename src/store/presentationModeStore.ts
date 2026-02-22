@@ -42,14 +42,18 @@ export const usePresentationModeStore = create<PresentationModeState>()((set, ge
     const slides = computeMergedSlides();
     if (slides.length > 0) {
       set({ isPresenting: true, currentSlideIndex: 0 });
-      document.documentElement.requestFullscreen?.().catch(() => {});
+      document.documentElement.requestFullscreen?.().catch((err) => {
+        console.warn('Failed to enter fullscreen:', err);
+      });
     }
   },
 
   stopPresentation: () => {
     set({ isPresenting: false, currentSlideIndex: 0 });
     if (document.fullscreenElement) {
-      document.exitFullscreen?.().catch(() => {});
+      document.exitFullscreen?.().catch((err) => {
+        console.warn('Failed to exit fullscreen:', err);
+      });
     }
   },
 

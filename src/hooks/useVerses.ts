@@ -57,7 +57,7 @@ export function useVerses() {
       return true;
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error(t('failedToImport', { message: (error as Error).message }));
+      toast.error(t('failedToImport', { message: error instanceof Error ? error.message : String(error) }));
       return false;
     }
   }, [loadVerses, setStoreVerses, t]);

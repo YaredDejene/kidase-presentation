@@ -59,7 +59,8 @@ export class OperatorRegistry {
       if (typeof a !== 'string' || typeof b !== 'string') return false;
       try {
         return new RegExp(b).test(a);
-      } catch {
+      } catch (err) {
+        console.warn('Invalid $regex pattern:', b, err);
         return false;
       }
     });

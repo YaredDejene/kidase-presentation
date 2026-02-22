@@ -19,7 +19,7 @@ interface SlideRowProps {
   isDragging: boolean;
 }
 
-export const SlideRow: React.FC<SlideRowProps> = ({
+export const SlideRow: React.FC<SlideRowProps> = React.memo(({
   slide,
   index,
   isSelected,
@@ -148,4 +148,4 @@ export const SlideRow: React.FC<SlideRowProps> = ({
       </td>
     </tr>
   );
-};
+});

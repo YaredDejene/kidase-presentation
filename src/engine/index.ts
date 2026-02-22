@@ -2,25 +2,8 @@ import { RuleEngine } from './engine';
 
 // Core classes
 export { RuleEngine } from './engine';
-export { OperatorRegistry } from './operators';
-export { RefResolver } from './resolver';
-export { RuleNormalizer } from './normalizer';
-export { RuleValidator } from './validator';
-export { RuleEvaluator } from './evaluator';
-export { ExpressionEvaluator } from './expressions';
-export { ASTCache } from './cache';
 export { buildContext } from './contextBuilder';
 export type { BuildContextArgs } from './contextBuilder';
-
-// Error classes
-export {
-  RuleEngineError,
-  ValidationError,
-  NormalizationError,
-  ResolutionError,
-  EvaluationError,
-  UnknownOperatorError,
-} from './errors';
 
 // Types
 export type {

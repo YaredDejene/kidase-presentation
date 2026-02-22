@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import { useNavigationStore } from './store/navigationStore';
@@ -20,12 +20,60 @@ import { useUpdater } from './hooks/useUpdater';
 import './styles/global.css';
 import './styles/app.css';
 
+// Error Boundary
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('Application error:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', height: '100vh', color: '#ccc',
+          backgroundColor: '#0a0a0a', gap: '16px', padding: '40px',
+          textAlign: 'center',
+        }}>
+          <h1 style={{ color: '#ef4444', fontSize: '24px' }}>Something went wrong</h1>
+          <p style={{ maxWidth: '500px', color: '#888' }}>
+            {this.state.error?.message || 'An unexpected error occurred.'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 24px', backgroundColor: '#4a4a8a', border: 'none',
+              borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '14px',
+            }}
+          >
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   const { t } = useTranslation();
   const { currentView, setCurrentView } = useNavigationStore();
   const isPresenting = usePresentationModeStore(s => s.isPresenting);
   const { setAppSettings, setAllTemplates, setVerses, loadPresentationData } = usePresentationDataStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const { updateAvailable, updateVersion, installing, installUpdate, dismissUpdate } = useUpdater();
 
   useEffect(() => {
@@ -40,6 +88,7 @@ function App() {
         if (settings.locale) await i18n.changeLanguage(settings.locale);
       } catch (error) {
         console.error('Failed to initialize app:', error);
+        setBootstrapError(error instanceof Error ? error.message : String(error));
       }
       setIsLoading(false);
     };
@@ -52,6 +101,29 @@ function App() {
     return (
       <div className="app-loading">
         {t('loading')}
+      </div>
+    );
+  }
+
+  if (bootstrapError) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', height: '100vh', color: '#ccc',
+        backgroundColor: '#0a0a0a', gap: '16px', padding: '40px',
+        textAlign: 'center',
+      }}>
+        <h1 style={{ color: '#ef4444', fontSize: '24px' }}>Failed to start</h1>
+        <p style={{ maxWidth: '500px', color: '#888' }}>{bootstrapError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '10px 24px', backgroundColor: '#4a4a8a', border: 'none',
+            borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '14px',
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -92,4 +164,12 @@ function App() {
   );
 }
 
-export default App;
+function AppWithBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default AppWithBoundary;

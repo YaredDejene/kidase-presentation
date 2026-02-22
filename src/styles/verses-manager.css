@@ -145,19 +145,6 @@
   white-space: nowrap;
 }
 
-.verses-cell-order {
-  color: #aaa;
-  white-space: nowrap;
-}
-
-.verses-cell-title {
-  color: #ccc;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .verses-cell-text {
   color: #aaa;
   max-width: 300px;
@@ -166,7 +153,3 @@
   white-space: nowrap;
 }
 
-.verses-cell-date {
-  color: #888;
-  white-space: nowrap;
-}
