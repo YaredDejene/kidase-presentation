@@ -70,11 +70,8 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Setting version to $VERSION"
-          # package.json
-          jq --arg v "$VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
-          # tauri.conf.json
-          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json && mv tmp.json src-tauri/tauri.conf.json
-          # Cargo.toml — sed replace the version line
+          node -e "const f='package.json';const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='$VERSION';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
+          node -e "const f='src-tauri/tauri.conf.json';const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='$VERSION';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
           sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml && rm -f src-tauri/Cargo.toml.bak
 
       - name: Build Tauri app
