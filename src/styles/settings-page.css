@@ -58,6 +58,7 @@
 .settings-save-bar {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
   padding-top: 16px;
   margin-top: 8px;

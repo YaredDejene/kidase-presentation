@@ -184,6 +184,19 @@ export const SettingsPage: React.FC = () => {
 
         <div className="setting-row">
           <div className="setting-label">
+            <span>{t('showSidebarLabels')}</span>
+            <span className="setting-hint">{t('showSidebarLabelsHint')}</span>
+          </div>
+          <button
+            className={`toggle-switch ${localSettings.showSidebarLabels ? 'active' : ''}`}
+            onClick={() => updateSetting('showSidebarLabels', !localSettings.showSidebarLabels)}
+          >
+            <span className="toggle-knob"></span>
+          </button>
+        </div>
+
+        <div className="setting-row">
+          <div className="setting-label">
             <span>{t('presentationDisplay')}</span>
             <span className="setting-hint">{t('presentationDisplayHint')}</span>
           </div>

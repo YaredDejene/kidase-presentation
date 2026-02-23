@@ -11,6 +11,8 @@
   "amharic": "አማርኛ (Amharic)",
   "showSlideNumbers": "Show Slide Numbers",
   "showSlideNumbersHint": "Display slide counter during presentation",
+  "showSidebarLabels": "የጎን ማውጫ ጽሑፍ አሳይ",
+  "showSidebarLabelsHint": "ከጎን ማውጫ አዶዎች ስር ጽሑፍ አሳይ",
   "presentationDisplay": "Presentation Display",
   "presentationDisplayHint": "Which display to use for presentations",
   "autoDetect": "Auto-detect",

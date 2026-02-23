@@ -58,7 +58,7 @@
   width: 100%;
   padding: 8px 4px;
   border: none;
-  border-radius: 8px;
+  /* border-radius: 8px; */
   background: transparent;
   color: #777;
   cursor: pointer;
@@ -82,14 +82,21 @@
 }
 
 .sidebar-item--active {
-  background-color: #2a2a5a;
   color: #FFD700;
-  box-shadow: inset 1px 0 0 #FFD700;
 }
 
 .sidebar-item--active:hover {
-  background-color: #2a2a5a;
   color: #FFD700;
+}
+
+.sidebar-active-indicator {
+  position: absolute;
+  left: -8px;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background-color: #FFD700;
 }
 
 .sidebar-item-icon {
@@ -104,4 +111,14 @@
   font-weight: 500;
   text-align: center;
   line-height: 1.2;
+}
+
+/* Compact mode (labels hidden) */
+.sidebar--compact {
+  width: 52px;
+  min-width: 52px;
+}
+
+.sidebar--compact .sidebar-item {
+  padding: 10px 4px;
 }

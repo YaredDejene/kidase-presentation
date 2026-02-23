@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getVersion } from '@tauri-apps/api/app';
+import { usePresentationDataStore } from '../../store/presentationDataStore';
 import '../../styles/sidebar.css';
 
 type ViewId = 'presentation' | 'editor' | 'kidases' | 'gitsawe' | 'verses' | 'templates' | 'settings';
@@ -97,26 +98,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { t } = useTranslation('sidebar');
   const [version, setVersion] = useState('');
+  const showLabels = usePresentationDataStore(s => s.appSettings.showSidebarLabels);
 
   useEffect(() => {
     getVersion().then(v => setVersion(v)).catch(() => {});
   }, []);
 
   return (
-    <nav className="sidebar">
+    <nav className={`sidebar ${!showLabels ? 'sidebar--compact' : ''}`}>
       <div className="sidebar-logo">ቅ</div>
       <div className="sidebar-menu">
-        {menuItems.map(item => (
-          <button
-            key={item.id}
-            className={`sidebar-item ${currentView === item.id ? 'sidebar-item--active' : ''}`}
-            onClick={() => onViewChange(item.id)}
-            title={t(item.labelKey)}
-          >
-            <span className="sidebar-item-icon">{item.icon}</span>
-            <span className="sidebar-item-label">{t(item.labelKey)}</span>
-          </button>
-        ))}
+        {menuItems.map(item => {
+          const isActive = currentView === item.id;
+          return (
+            <button
+              key={item.id}
+              className={`sidebar-item ${isActive ? 'sidebar-item--active' : ''}`}
+              onClick={() => onViewChange(item.id)}
+              title={t(item.labelKey)}
+            >
+              {isActive && <span className="sidebar-active-indicator" />}
+              <span className="sidebar-item-icon">{item.icon}</span>
+              {showLabels && <span className="sidebar-item-label">{t(item.labelKey)}</span>}
+            </button>
+          );
+        })}
       </div>
       {version && <div className="sidebar-version">v{version}</div>}
     </nav>

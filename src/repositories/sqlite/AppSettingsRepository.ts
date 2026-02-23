@@ -21,6 +21,9 @@ export class AppSettingsRepository {
         case 'showSlideNumbers':
           settings.showSlideNumbers = row.value === 'true';
           break;
+        case 'showSidebarLabels':
+          settings.showSidebarLabels = row.value === 'true';
+          break;
         case 'presentationDisplay':
           settings.presentationDisplay = row.value as 'primary' | 'secondary' | 'auto';
           break;
