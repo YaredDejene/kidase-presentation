@@ -265,182 +265,36 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
       </div>
 
       <div className="dialog-content">
-        {/* General Tab */}
         {activeTab === 'general' && (
-          <div className="tab-content">
-            <div className="form-group">
-              <label className="form-label">{t('presentationDate')}</label>
-              <DatePicker
-                value={ruleEvaluationDate}
-                onChange={setRuleEvaluationDate}
-              />
-              <p className="form-hint">
-                {t('dateHint')}
-              </p>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">{t('template')}</label>
-              <select
-                value={selectedTemplateId}
-                onChange={e => setSelectedTemplateId(e.target.value)}
-                className="form-select"
-              >
-                {templates.map(tmpl => (
-                  <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <div className="setting-row">
-                <div className="setting-label">
-                  <span>{t('mehella')}</span>
-                  <span className="setting-hint">{t('mehellaHint')}</span>
-                </div>
-                <button
-                  className={`toggle-switch ${isMehella ? 'active' : ''}`}
-                  onClick={() => setIsMehella(!isMehella)}
-                >
-                  <span className="toggle-knob" />
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">{t('statistics')}</label>
-              <div className="stats-grid">
-                <div className="stat-item">
-                  <span className="stat-value">{slides.length}</span>
-                  <span className="stat-label">{t('totalSlides')}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{slides.filter(s => !s.isDisabled && (ruleFilteredSlideIds === null || ruleFilteredSlideIds.includes(s.id))).length}</span>
-                  <span className="stat-label">{t('activeSlides')}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{detectedPlaceholders.length}</span>
-                  <span className="stat-label">{t('placeholders')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <GeneralTab
+            ruleEvaluationDate={ruleEvaluationDate}
+            onDateChange={setRuleEvaluationDate}
+            selectedTemplateId={selectedTemplateId}
+            onTemplateIdChange={setSelectedTemplateId}
+            templates={templates}
+            isMehella={isMehella}
+            onMehellaToggle={() => setIsMehella(!isMehella)}
+            totalSlides={slides.length}
+            activeSlides={slides.filter(s => !s.isDisabled && (ruleFilteredSlideIds === null || ruleFilteredSlideIds.includes(s.id))).length}
+            placeholderCount={detectedPlaceholders.length}
+          />
         )}
 
-        {/* Languages Tab */}
         {activeTab === 'languages' && (
-          <div className="tab-content">
-            <p className="tab-hint">
-              {t('languageReorderHint')}
-            </p>
-
-            <div className="languages-list">
-              {sortedLanguages.map((lang, index) => (
-                <div
-                  key={lang.slot}
-                  className={`language-row ${!lang.enabled ? 'disabled' : ''}`}
-                >
-                  <div className="language-reorder-btns">
-                    <button
-                      className="reorder-btn"
-                      onClick={() => moveLanguage(index, 'up')}
-                      disabled={index === 0}
-                      title={t('moveUp')}
-                    >
-                      ▲
-                    </button>
-                    <button
-                      className="reorder-btn"
-                      onClick={() => moveLanguage(index, 'down')}
-                      disabled={index === sortedLanguages.length - 1}
-                      title={t('moveDown')}
-                    >
-                      ▼
-                    </button>
-                  </div>
-                  <span className="language-order-num">{index + 1}</span>
-                  <input
-                    type="text"
-                    className="language-name-input"
-                    value={lang.name}
-                    onChange={(e) => handleLanguageNameChange(lang.slot, e.target.value)}
-                    placeholder={t('languageNamePlaceholder')}
-                  />
-                  <button
-                    className={`toggle-switch ${lang.enabled ? 'active' : ''}`}
-                    onClick={() => handleLanguageToggle(lang.slot)}
-                    title={lang.enabled ? t('disable') : t('enable')}
-                  >
-                    <span className="toggle-knob" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <p className="tab-note">
-              {t('disabledLanguagesNote')}
-            </p>
-          </div>
+          <LanguagesTab
+            sortedLanguages={sortedLanguages}
+            onMoveLanguage={moveLanguage}
+            onToggle={handleLanguageToggle}
+            onNameChange={handleLanguageNameChange}
+          />
         )}
 
-        {/* Placeholders Tab */}
         {activeTab === 'placeholders' && (
-          <div className="tab-content">
-            <p className="tab-hint">
-              {t('placeholderDetectionHint')}
-            </p>
-
-            {localVariables.length > 0 ? (
-              <div className="placeholders-list">
-                {localVariables.map(variable => {
-                  const isAtVar = variable.name.startsWith('@');
-                  return (
-                    <div key={variable.name} className="placeholder-row" style={isAtVar ? { flexDirection: 'column', alignItems: 'stretch' } : undefined}>
-                      <div className="placeholder-name">
-                        {variable.name.replace(/[{}@]/g, '')}
-                      </div>
-                      {isAtVar ? (
-                        <div className="placeholder-lang-inputs">
-                          {LANG_SLOTS.map(slot => {
-                            const langName = presentation.languageMap[slot];
-                            if (!langName) return null;
-                            const fieldKey = LANG_VALUE_FIELD_MAP[slot];
-                            return (
-                              <div key={slot} className="placeholder-lang-row">
-                                <span className="placeholder-lang-label">{langName}</span>
-                                <input
-                                  type="text"
-                                  value={(variable[fieldKey] as string) || ''}
-                                  onChange={e => handleVariableChange(variable.name, e.target.value, slot)}
-                                  className="placeholder-input"
-                                  placeholder={t('valueForLang', { lang: langName })}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <input
-                          type="text"
-                          value={variable.value}
-                          onChange={e => handleVariableChange(variable.name, e.target.value)}
-                          className="placeholder-input"
-                          placeholder={t('enterValue')}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="tab-empty">
-                <p>{t('noPlaceholders')}</p>
-                <p className="tab-hint">
-                  {t('placeholderUsageHint')}
-                </p>
-              </div>
-            )}
-          </div>
+          <PlaceholdersTab
+            localVariables={localVariables}
+            languageMap={presentation.languageMap}
+            onVariableChange={handleVariableChange}
+          />
         )}
 
         {/* Actions */}
@@ -456,3 +310,202 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     </Modal>
   );
 };
+
+/* ── Tab Sub-Components ───────────────────────────────────────────── */
+
+interface GeneralTabProps {
+  ruleEvaluationDate: string | null;
+  onDateChange: (date: string | null) => void;
+  selectedTemplateId: string;
+  onTemplateIdChange: (id: string) => void;
+  templates: Template[];
+  isMehella: boolean;
+  onMehellaToggle: () => void;
+  totalSlides: number;
+  activeSlides: number;
+  placeholderCount: number;
+}
+
+function GeneralTab({
+  ruleEvaluationDate, onDateChange, selectedTemplateId, onTemplateIdChange,
+  templates, isMehella, onMehellaToggle, totalSlides, activeSlides, placeholderCount,
+}: GeneralTabProps) {
+  const { t } = useTranslation('dialogs');
+  return (
+    <div className="tab-content">
+      <div className="form-group">
+        <label className="form-label">{t('presentationDate')}</label>
+        <DatePicker value={ruleEvaluationDate} onChange={onDateChange} />
+        <p className="form-hint">{t('dateHint')}</p>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">{t('template')}</label>
+        <select
+          value={selectedTemplateId}
+          onChange={e => onTemplateIdChange(e.target.value)}
+          className="form-select"
+        >
+          {templates.map(tmpl => (
+            <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-group">
+        <div className="setting-row">
+          <div className="setting-label">
+            <span>{t('mehella')}</span>
+            <span className="setting-hint">{t('mehellaHint')}</span>
+          </div>
+          <button
+            className={`toggle-switch ${isMehella ? 'active' : ''}`}
+            onClick={onMehellaToggle}
+          >
+            <span className="toggle-knob" />
+          </button>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">{t('statistics')}</label>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <span className="stat-value">{totalSlides}</span>
+            <span className="stat-label">{t('totalSlides')}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">{activeSlides}</span>
+            <span className="stat-label">{t('activeSlides')}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">{placeholderCount}</span>
+            <span className="stat-label">{t('placeholders')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface LanguagesTabProps {
+  sortedLanguages: LanguageConfig[];
+  onMoveLanguage: (fromIndex: number, direction: 'up' | 'down') => void;
+  onToggle: (slot: string) => void;
+  onNameChange: (slot: string, name: string) => void;
+}
+
+function LanguagesTab({ sortedLanguages, onMoveLanguage, onToggle, onNameChange }: LanguagesTabProps) {
+  const { t } = useTranslation('dialogs');
+  return (
+    <div className="tab-content">
+      <p className="tab-hint">{t('languageReorderHint')}</p>
+
+      <div className="languages-list">
+        {sortedLanguages.map((lang, index) => (
+          <div key={lang.slot} className={`language-row ${!lang.enabled ? 'disabled' : ''}`}>
+            <div className="language-reorder-btns">
+              <button
+                className="reorder-btn"
+                onClick={() => onMoveLanguage(index, 'up')}
+                disabled={index === 0}
+                title={t('moveUp')}
+              >
+                ▲
+              </button>
+              <button
+                className="reorder-btn"
+                onClick={() => onMoveLanguage(index, 'down')}
+                disabled={index === sortedLanguages.length - 1}
+                title={t('moveDown')}
+              >
+                ▼
+              </button>
+            </div>
+            <span className="language-order-num">{index + 1}</span>
+            <input
+              type="text"
+              className="language-name-input"
+              value={lang.name}
+              onChange={e => onNameChange(lang.slot, e.target.value)}
+              placeholder={t('languageNamePlaceholder')}
+            />
+            <button
+              className={`toggle-switch ${lang.enabled ? 'active' : ''}`}
+              onClick={() => onToggle(lang.slot)}
+              title={lang.enabled ? t('disable') : t('enable')}
+            >
+              <span className="toggle-knob" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <p className="tab-note">{t('disabledLanguagesNote')}</p>
+    </div>
+  );
+}
+
+interface PlaceholdersTabProps {
+  localVariables: Variable[];
+  languageMap: LanguageMap;
+  onVariableChange: (name: string, value: string, langSlot?: LangSlot) => void;
+}
+
+function PlaceholdersTab({ localVariables, languageMap, onVariableChange }: PlaceholdersTabProps) {
+  const { t } = useTranslation('dialogs');
+  return (
+    <div className="tab-content">
+      <p className="tab-hint">{t('placeholderDetectionHint')}</p>
+
+      {localVariables.length > 0 ? (
+        <div className="placeholders-list">
+          {localVariables.map(variable => {
+            const isAtVar = variable.name.startsWith('@');
+            return (
+              <div key={variable.name} className={`placeholder-row${isAtVar ? ' placeholder-row--multilang' : ''}`}>
+                <div className="placeholder-name">
+                  {variable.name.replace(/[{}@]/g, '')}
+                </div>
+                {isAtVar ? (
+                  <div className="placeholder-lang-inputs">
+                    {LANG_SLOTS.map(slot => {
+                      const langName = languageMap[slot];
+                      if (!langName) return null;
+                      const fieldKey = LANG_VALUE_FIELD_MAP[slot];
+                      return (
+                        <div key={slot} className="placeholder-lang-row">
+                          <span className="placeholder-lang-label">{langName}</span>
+                          <input
+                            type="text"
+                            value={(variable[fieldKey] as string) || ''}
+                            onChange={e => onVariableChange(variable.name, e.target.value, slot)}
+                            className="placeholder-input"
+                            placeholder={t('valueForLang', { lang: langName })}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={variable.value}
+                    onChange={e => onVariableChange(variable.name, e.target.value)}
+                    className="placeholder-input"
+                    placeholder={t('enterValue')}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="tab-empty">
+          <p>{t('noPlaceholders')}</p>
+          <p className="tab-hint">{t('placeholderUsageHint')}</p>
+        </div>
+      )}
+    </div>
+  );
+}

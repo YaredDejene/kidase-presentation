@@ -147,13 +147,22 @@ export const KidaseManager: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ presentation: p, slideCount }) => (
+              {[...rows].sort((a, b) => {
+                if (a.presentation.id === currentPresentation?.id) return -1;
+                if (b.presentation.id === currentPresentation?.id) return 1;
+                return 0;
+              }).map(({ presentation: p, slideCount }) => (
                 <tr
                   key={p.id}
-                  className={`manager-row ${currentPresentation?.id === p.id ? 'manager-row--active' : ''}`}
+                  className="manager-row"
                   onClick={() => handleOpenPresentation(p.id)}
                 >
-                  <td className="manager-cell-name">{p.name}</td>
+                  <td className="manager-cell-name">
+                    {p.name}
+                    {currentPresentation?.id === p.id && (
+                      <span className="manager-primary-badge">{t('primary')}</span>
+                    )}
+                  </td>
                   <td>{p.type}</td>
                   <td>{slideCount}</td>
                   <td className="manager-cell-langs">{getLanguages(p)}</td>

@@ -13,3 +13,4 @@ export { useVerses } from './useVerses';
 export { useVariables } from './useVariables';
 export { useSecondaryKidase } from './useSecondaryKidase';
 export { useResizablePanel } from './useResizablePanel';
+export { useUpdater } from './useUpdater';

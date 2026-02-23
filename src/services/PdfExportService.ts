@@ -5,6 +5,7 @@ import { Template, TemplateDefinition } from '../domain/entities/Template';
 import { Variable } from '../domain/entities/Variable';
 import { LanguageMap, LangSlot } from '../domain/entities/Presentation';
 import { placeholderService } from './PlaceholderService';
+import { computeFontScale } from '../domain/formatting';
 
 export interface PdfExportOptions {
   width?: number;
@@ -151,14 +152,7 @@ export class PdfExportService {
       }
     }
 
-    if (totalChars < 100) return 2.0;
-    if (totalChars < 200) return 1.6;
-    if (totalChars < 350) return 1.35;
-    if (totalChars < 500) return 1.15;
-    if (totalChars < 700) return 1.0;
-    if (totalChars < 1000) return 0.85;
-    if (totalChars < 1400) return 0.7;
-    return 0.55;
+    return computeFontScale(totalChars);
   }
 
   private createSlideContainer(

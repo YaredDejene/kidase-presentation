@@ -18,11 +18,11 @@ export class AppSettingsRepository {
         case 'theme':
           settings.theme = row.value as 'dark' | 'light';
           break;
-        case 'defaultExportFormat':
-          settings.defaultExportFormat = row.value as 'pdf' | 'pptx';
-          break;
         case 'showSlideNumbers':
           settings.showSlideNumbers = row.value === 'true';
+          break;
+        case 'showSidebarLabels':
+          settings.showSidebarLabels = row.value === 'true';
           break;
         case 'presentationDisplay':
           settings.presentationDisplay = row.value as 'primary' | 'secondary' | 'auto';

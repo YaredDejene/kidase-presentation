@@ -1,0 +1,59 @@
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #2a2a5a;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  gap: 12px;
+}
+
+.update-banner-text {
+  flex: 1;
+}
+
+.update-banner-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.update-banner-install {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 4px;
+  background: #c9a84c;
+  color: #1a1a2e;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.update-banner-install:hover:not(:disabled) {
+  background: #d4b85c;
+}
+
+.update-banner-install:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.update-banner-dismiss {
+  padding: 4px 12px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.update-banner-dismiss:hover:not(:disabled) {
+  border-color: #888;
+  color: #ddd;
+}
+
+.update-banner-dismiss:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

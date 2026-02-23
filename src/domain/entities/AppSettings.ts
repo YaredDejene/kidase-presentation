@@ -1,15 +1,15 @@
 export interface AppSettings {
   theme: 'dark' | 'light';
-  defaultExportFormat: 'pdf' | 'pptx';
   showSlideNumbers: boolean;
+  showSidebarLabels: boolean;
   presentationDisplay: 'primary' | 'secondary' | 'auto';
   locale: 'en' | 'am';
 }
 
 export const defaultAppSettings: AppSettings = {
   theme: 'dark',
-  defaultExportFormat: 'pdf',
   showSlideNumbers: true,
+  showSidebarLabels: true,
   presentationDisplay: 'auto',
   locale: 'en',
 };

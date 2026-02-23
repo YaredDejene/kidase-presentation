@@ -1,9 +1,49 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import { ruleRepository, gitsaweRepository } from '../repositories';
-import { ruleEngine, buildContext } from '../engine';
+import { ruleEngine, buildContext, BuildContextArgs } from '../engine';
 import type { RuleDefinition } from '../domain/entities/RuleDefinition';
-import type { RuleEntry, EvaluationResult } from '../engine/types';
+import type { Slide } from '../domain/entities/Slide';
+import type { RuleEntry, RuleContext, EvaluationResult } from '../engine/types';
+
+/** Evaluate a set of rules against slides and collect results + hidden slide IDs */
+function evaluateRulesForSlides(
+  enabledRules: RuleDefinition[],
+  slides: Slide[],
+  baseContext: RuleContext,
+  buildCtxArgs: Omit<BuildContextArgs, 'slide'>,
+): { results: EvaluationResult[]; hiddenSlideIds: Set<string> } {
+  const results: EvaluationResult[] = [];
+  const hiddenSlideIds = new Set<string>();
+
+  for (const ruleDef of enabledRules) {
+    try {
+      const ruleEntry: RuleEntry = JSON.parse(ruleDef.ruleJson);
+
+      if (ruleDef.scope === 'slide') {
+        const targetSlides = ruleDef.slideId
+          ? slides.filter(s => s.id === ruleDef.slideId)
+          : slides;
+
+        for (const slide of targetSlides) {
+          const slideContext = buildContext({ ...buildCtxArgs, slide });
+          const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
+          results.push(result);
+          if (result.outcome.visible === false) {
+            hiddenSlideIds.add(slide.id);
+          }
+        }
+      } else {
+        const result = ruleEngine.evaluateRule(ruleEntry, baseContext);
+        results.push(result);
+      }
+    } catch (err) {
+      console.error(`Failed to evaluate rule ${ruleDef.id}:`, err);
+    }
+  }
+
+  return { results, hiddenSlideIds };
+}
 
 export function useRules() {
   const {
@@ -109,8 +149,8 @@ export function useRules() {
     const allGitsawes = await gitsaweRepository.getAll();
     const gitsaweRules = (await ruleRepository.getEnabled()).filter(r => r.scope === 'gitsawe');
 
-    // Always build context (needed for gitsawe selection and placeholder resolution)
-    const context = buildContext({
+    // Shared context-building args
+    const baseCtxArgs: Omit<BuildContextArgs, 'slide'> = {
       presentation: currentPresentation,
       variables: currentVariables,
       appSettings,
@@ -118,7 +158,10 @@ export function useRules() {
       gitsaweRules,
       overrideDate,
       extra: { isMehella },
-    });
+    };
+
+    // Always build context (needed for gitsawe selection and placeholder resolution)
+    const context = buildContext(baseCtxArgs);
 
     // Store meta in app store for placeholder resolution
     setRuleContextMeta(context.meta);
@@ -130,132 +173,34 @@ export function useRules() {
       return [];
     }
 
-    const results: EvaluationResult[] = [];
-    const hiddenSlideIds = new Set<string>();
-
-    for (const ruleDef of enabledRules) {
-      try {
-        const ruleEntry: RuleEntry = JSON.parse(ruleDef.ruleJson);
-
-        // Evaluate per-slide if scope is slide, otherwise once
-        if (ruleDef.scope === 'slide') {
-          if (ruleDef.slideId) {
-            // Rule is linked to a specific slide
-            const targetSlide = currentSlides.find(s => s.id === ruleDef.slideId);
-            if (targetSlide) {
-              const slideContext = buildContext({
-                presentation: currentPresentation,
-                slide: targetSlide,
-                variables: currentVariables,
-                appSettings,
-                gitsawes: allGitsawes,
-                gitsaweRules,
-                overrideDate,
-                extra: { isMehella },
-              });
-              const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
-              results.push(result);
-
-              if (result.outcome.visible === false) {
-                hiddenSlideIds.add(targetSlide.id);
-              }
-            }
-          } else {
-            // Rule applies to all slides
-            for (const slide of currentSlides) {
-              const slideContext = buildContext({
-                presentation: currentPresentation,
-                slide,
-                variables: currentVariables,
-                appSettings,
-                gitsawes: allGitsawes,
-                gitsaweRules,
-                overrideDate,
-                extra: { isMehella },
-              });
-              const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
-              results.push(result);
-
-              if (result.outcome.visible === false) {
-                hiddenSlideIds.add(slide.id);
-              }
-            }
-          }
-        } else {
-          const result = ruleEngine.evaluateRule(ruleEntry, context);
-          results.push(result);
-        }
-      } catch (err) {
-        console.error(`Failed to evaluate rule ${ruleDef.id}:`, err);
-      }
-    }
+    // Evaluate primary presentation rules
+    const primary = evaluateRulesForSlides(enabledRules, currentSlides, context, baseCtxArgs);
 
     // Evaluate secondary presentation rules (if secondary is loaded)
     const { secondaryPresentation, secondarySlides, secondaryVariables } = useAppStore.getState();
+    const allHiddenIds = new Set(primary.hiddenSlideIds);
+    const allResults = [...primary.results];
+
     if (secondaryPresentation && secondarySlides.length > 0) {
       try {
         const secRules = await ruleRepository.getByPresentationId(secondaryPresentation.id);
         const enabledSecRules = secRules.filter(r => r.isEnabled);
 
-        for (const ruleDef of enabledSecRules) {
-          try {
-            const ruleEntry: RuleEntry = JSON.parse(ruleDef.ruleJson);
+        if (enabledSecRules.length > 0) {
+          const secCtxArgs: Omit<BuildContextArgs, 'slide'> = {
+            presentation: secondaryPresentation,
+            variables: secondaryVariables,
+            appSettings,
+            gitsawes: allGitsawes,
+            gitsaweRules,
+            overrideDate,
+            extra: { isMehella },
+          };
+          const secContext = buildContext(secCtxArgs);
+          const secondary = evaluateRulesForSlides(enabledSecRules, secondarySlides, secContext, secCtxArgs);
 
-            if (ruleDef.scope === 'slide') {
-              if (ruleDef.slideId) {
-                const targetSlide = secondarySlides.find(s => s.id === ruleDef.slideId);
-                if (targetSlide) {
-                  const slideContext = buildContext({
-                    presentation: secondaryPresentation,
-                    slide: targetSlide,
-                    variables: secondaryVariables,
-                    appSettings,
-                    gitsawes: allGitsawes,
-                    gitsaweRules,
-                    overrideDate,
-                    extra: { isMehella },
-                  });
-                  const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
-                  results.push(result);
-                  if (result.outcome.visible === false) {
-                    hiddenSlideIds.add(targetSlide.id);
-                  }
-                }
-              } else {
-                for (const slide of secondarySlides) {
-                  const slideContext = buildContext({
-                    presentation: secondaryPresentation,
-                    slide,
-                    variables: secondaryVariables,
-                    appSettings,
-                    gitsawes: allGitsawes,
-                    gitsaweRules,
-                    overrideDate,
-                    extra: { isMehella },
-                  });
-                  const result = ruleEngine.evaluateRule(ruleEntry, slideContext);
-                  results.push(result);
-                  if (result.outcome.visible === false) {
-                    hiddenSlideIds.add(slide.id);
-                  }
-                }
-              }
-            } else {
-              const secContext = buildContext({
-                presentation: secondaryPresentation,
-                variables: secondaryVariables,
-                appSettings,
-                gitsawes: allGitsawes,
-                gitsaweRules,
-                overrideDate,
-                extra: { isMehella },
-              });
-              const result = ruleEngine.evaluateRule(ruleEntry, secContext);
-              results.push(result);
-            }
-          } catch (err) {
-            console.error(`Failed to evaluate secondary rule ${ruleDef.id}:`, err);
-          }
+          allResults.push(...secondary.results);
+          secondary.hiddenSlideIds.forEach(id => allHiddenIds.add(id));
         }
       } catch (err) {
         console.error('Failed to load secondary rules:', err);
@@ -264,16 +209,16 @@ export function useRules() {
 
     // Compute filtered slide IDs (slides not hidden by rules)
     const allSlides = [...currentSlides, ...secondarySlides];
-    if (hiddenSlideIds.size > 0) {
+    if (allHiddenIds.size > 0) {
       const visibleIds = allSlides
-        .filter(s => !hiddenSlideIds.has(s.id))
+        .filter(s => !allHiddenIds.has(s.id))
         .map(s => s.id);
       setRuleFilteredSlideIds(visibleIds);
     } else {
       setRuleFilteredSlideIds(null);
     }
 
-    return results;
+    return allResults;
   }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, isMehella, setRuleFilteredSlideIds, setRuleContextMeta]);
 
   // Validate a rule JSON string

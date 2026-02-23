@@ -159,8 +159,8 @@ function getCurrentGitsawe(
         if (result.matched) {
           return record;
         }
-      } catch {
-        // Skip malformed rules
+      } catch (err) {
+        console.warn(`Skipping malformed rule "${ruleDef.name}":`, err);
       }
     }
   }

@@ -26,26 +26,6 @@ export const COMMON_VARIABLES = [
   '{{BISHOP_NAME}}',
 ];
 
-export function createVariable(
-  presentationId: string,
-  name: string,
-  value: string = '',
-  valueLang1: string = '',
-  valueLang2: string = '',
-  valueLang3: string = '',
-  valueLang4: string = '',
-): Omit<Variable, 'id'> {
-  return {
-    presentationId,
-    name,
-    value,
-    valueLang1: valueLang1 || undefined,
-    valueLang2: valueLang2 || undefined,
-    valueLang3: valueLang3 || undefined,
-    valueLang4: valueLang4 || undefined,
-  };
-}
-
 /**
  * Normalize a user-entered variable name into the canonical format.
  * Returns `@NAME` for at-variables, `{{NAME}}` for legacy brace variables.
@@ -62,10 +42,3 @@ export function formatVariableName(input: string): string {
   return name;
 }
 
-export function isValidVariableName(name: string): boolean {
-  return /^\{\{[A-Z_]+\}\}$/.test(name);
-}
-
-export function isAtVariable(name: string): boolean {
-  return /^@[A-Z_]+$/.test(name);
-}

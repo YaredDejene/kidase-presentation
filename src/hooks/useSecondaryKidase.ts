@@ -50,5 +50,5 @@ export function useSecondaryKidase(evaluateRules: () => void) {
       console.error('Failed to load secondary kidase:', err);
       clearSecondaryData();
     });
-  }, [ruleContextMeta, currentPresentation]);
+  }, [ruleContextMeta, currentPresentation, secondaryPresentation, loadSecondaryData, clearSecondaryData, evaluateRules]);
 }

@@ -448,7 +448,7 @@ export class ExcelImportService {
           };
         } catch (err) {
           warnings.push(
-            `Gitsawe row ${index + 2}: Invalid SelectionRule JSON, skipping rule. Error: ${(err as Error).message}`
+            `Gitsawe row ${index + 2}: Invalid SelectionRule JSON, skipping rule. Error: ${err instanceof Error ? err.message : String(err)}`
           );
         }
       }
@@ -512,7 +512,7 @@ export class ExcelImportService {
         });
       } catch (err) {
         warnings.push(
-          `Row ${index + 2}: Invalid DisplayRule JSON, skipping rule. Error: ${(err as Error).message}`
+          `Row ${index + 2}: Invalid DisplayRule JSON, skipping rule. Error: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     });
@@ -520,50 +520,6 @@ export class ExcelImportService {
     return rules;
   }
 
-  /**
-   * Generate a sample Excel template for users
-   */
-  generateTemplate(): ArrayBuffer {
-    const workbook = XLSX.utils.book_new();
-
-    // Metadata sheet
-    const metadataData = [
-      ['PresentationName', 'My Liturgy'],
-      ['PresentationType', 'Kidase'],
-      ['IsPrimary', 'No'],
-      ['Lang1Name', "Ge'ez"],
-      ['Lang2Name', 'Amharic'],
-      ['Lang3Name', 'English'],
-      ['Lang4Name', ''],
-    ];
-    const metadataSheet = XLSX.utils.aoa_to_sheet(metadataData);
-    XLSX.utils.book_append_sheet(workbook, metadataSheet, 'Metadata');
-
-    // Content sheet
-    const contentHeaders = [
-      'LineID', 'Title_Lang1', 'Title_Lang2', 'Title_Lang3', 'Title_Lang4',
-      'Lang1', 'Lang2', 'Lang3', 'Lang4', 'Notes', 'DisplayRule'
-    ];
-    const contentData = [
-      contentHeaders,
-      ['1', 'ቅዳሴ', 'ቅዳሴ', 'Divine Liturgy', '', 'ብስመ አብ...', 'በአብ ስም...', 'In the name of...', '', 'Opening', ''],
-      ['2', '', '', '', '', 'ቅዱስ ቅዱስ ቅዱስ', 'ቅዱስ ቅዱስ ቅዱስ', 'Holy Holy Holy', '', 'Weekday only', '{"meta.dayOfWeek":{"$in":["Mon","Tue","Wed","Thu","Fri"]}}'],
-    ];
-    const contentSheet = XLSX.utils.aoa_to_sheet(contentData);
-    XLSX.utils.book_append_sheet(workbook, contentSheet, 'Content');
-
-    // Variables sheet
-    const variableHeaders = ['VariableName', 'Variable_Lang1', 'Variable_Lang2', 'Variable_Lang3', 'Variable_Lang4'];
-    const variableData = [
-      variableHeaders,
-      ['CHURCH_NAME', 'ደብረ ሰላም', 'ደብረ ሰላም', 'Debre Selam', ''],
-      ['PRIEST_NAME', 'Priest Geez', 'Priest Amharic', 'Priest Name', ''],
-    ];
-    const variablesSheet = XLSX.utils.aoa_to_sheet(variableData);
-    XLSX.utils.book_append_sheet(workbook, variablesSheet, 'Variables');
-
-    return XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-  }
 }
 
 export const excelImportService = new ExcelImportService();
