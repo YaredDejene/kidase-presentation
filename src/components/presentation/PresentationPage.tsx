@@ -58,19 +58,6 @@ export const PresentationPage: React.FC = () => {
     console.log('ruleContextMeta:', ruleContextMeta);
   }, [ruleContextMeta]);
 
-  // F5 to start presentation from selected slide
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F5' && displaySlides.length > 0) {
-        e.preventDefault();
-        const idx = selectedSlideId ? displaySlides.findIndex(s => s.id === selectedSlideId) : 0;
-        startPresentation(idx >= 0 ? idx : 0);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [displaySlides, selectedSlideId, startPresentation]);
-
   // Load secondary kidase based on gitsawe.kidaseType
   useSecondaryKidase(evaluateRules);
 
@@ -92,6 +79,19 @@ export const PresentationPage: React.FC = () => {
       setSelectedSlideId(null);
     }
   }, [displaySlides]);
+
+  // F5 to start presentation from selected slide
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F5' && displaySlides.length > 0) {
+        e.preventDefault();
+        const idx = selectedSlideId ? displaySlides.findIndex(s => s.id === selectedSlideId) : 0;
+        startPresentation(idx >= 0 ? idx : 0);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displaySlides, selectedSlideId, startPresentation]);
 
   const selectedSlide = useMemo(() => {
     if (!selectedSlideId) return null;
