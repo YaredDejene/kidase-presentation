@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePresentationModeStore } from '../../store/presentationModeStore';
 import { usePresentationDataStore } from '../../store/presentationDataStore';
 import { useRuleStore } from '../../store/ruleStore';
@@ -27,6 +27,19 @@ export const PresentationView: React.FC = () => {
   } = usePresentationDataStore();
 
   const ruleContextMeta = useRuleStore(s => s.ruleContextMeta);
+
+  // Scale fonts/margins proportionally to viewport vs 1920×1080 design size
+  const [scale, setScale] = useState(() =>
+    Math.min(window.innerWidth / 1920, window.innerHeight / 1080)
+  );
+
+  useEffect(() => {
+    const updateScale = () => {
+      setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    };
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   const enabledSlides = getMergedEnabledSlides();
   const currentSlide = enabledSlides[currentSlideIndex];
@@ -149,6 +162,7 @@ export const PresentationView: React.FC = () => {
         variables={resolvedVariables}
         languageMap={resolvedLanguageMap}
         languageSettings={resolvedLanguageSettings}
+        scale={scale}
         meta={ruleContextMeta}
       />
 
