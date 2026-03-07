@@ -136,6 +136,38 @@ describe('$diff clause', () => {
     expect(engine.evaluateRule(rule, makeContext()).matched).toBe(true);
   });
 
+  it('computes exact day difference with $eq', () => {
+    const rule: RuleEntry = {
+      id: 'diff-days-eq',
+      when: {
+        $diff: {
+          from: '2026-02-01',
+          to: '2026-02-08',
+          unit: 'days',
+          $eq: 7,
+        },
+      },
+      then: { visible: true },
+    };
+    expect(engine.evaluateRule(rule, makeContext()).matched).toBe(true);
+  });
+
+  it('returns false when exact day difference does not match $eq', () => {
+    const rule: RuleEntry = {
+      id: 'diff-days-eq-mismatch',
+      when: {
+        $diff: {
+          from: '2026-02-01',
+          to: '2026-02-10',
+          unit: 'days',
+          $eq: 7,
+        },
+      },
+      then: { visible: true },
+    };
+    expect(engine.evaluateRule(rule, makeContext()).matched).toBe(false);
+  });
+
   it('returns false when difference exceeds threshold', () => {
     const rule: RuleEntry = {
       id: 'diff-too-far',

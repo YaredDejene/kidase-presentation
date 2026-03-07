@@ -204,6 +204,15 @@ pub fn run() {
             sql: "ALTER TABLE presentations ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 1;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 12,
+            description: "add_name_and_additional_info_to_gitsawes",
+            sql: r#"
+                ALTER TABLE gitsawes ADD COLUMN name TEXT;
+                ALTER TABLE gitsawes ADD COLUMN additional_info TEXT;
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

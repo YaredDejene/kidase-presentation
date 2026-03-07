@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Slide } from '../domain/entities/Slide';
 import { getMergedEnabledSlides } from '../domain/slideFiltering';
 import { usePresentationDataStore } from './presentationDataStore';
@@ -8,7 +9,7 @@ interface PresentationModeState {
   isPresenting: boolean;
   currentSlideIndex: number;
 
-  startPresentation: () => void;
+  startPresentation: (startIndex?: number) => void;
   stopPresentation: () => void;
   nextSlide: () => void;
   previousSlide: () => void;
@@ -38,11 +39,12 @@ export const usePresentationModeStore = create<PresentationModeState>()((set, ge
   isPresenting: false,
   currentSlideIndex: 0,
 
-  startPresentation: () => {
+  startPresentation: (startIndex?: number) => {
     const slides = computeMergedSlides();
     if (slides.length > 0) {
-      set({ isPresenting: true, currentSlideIndex: 0 });
-      document.documentElement.requestFullscreen?.().catch((err) => {
+      const index = Math.min(Math.max(startIndex ?? 0, 0), slides.length - 1);
+      set({ isPresenting: true, currentSlideIndex: index });
+      getCurrentWindow().setFullscreen(true).catch((err) => {
         console.warn('Failed to enter fullscreen:', err);
       });
     }
@@ -50,11 +52,9 @@ export const usePresentationModeStore = create<PresentationModeState>()((set, ge
 
   stopPresentation: () => {
     set({ isPresenting: false, currentSlideIndex: 0 });
-    if (document.fullscreenElement) {
-      document.exitFullscreen?.().catch((err) => {
-        console.warn('Failed to exit fullscreen:', err);
-      });
-    }
+    getCurrentWindow().setFullscreen(false).catch((err) => {
+      console.warn('Failed to exit fullscreen:', err);
+    });
   },
 
   nextSlide: () => {

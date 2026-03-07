@@ -18,8 +18,8 @@ export function useUpdater() {
           setUpdateVersion(update.version);
           setUpdateAvailable(true);
         }
-      } catch (e) {
-        console.error('Failed to check for updates:', e);
+      } catch {
+        // Updater may fail when no build exists for this platform (e.g. macOS unsigned)
       }
     })();
 

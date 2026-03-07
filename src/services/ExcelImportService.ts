@@ -66,6 +66,8 @@ interface ImportedSlideRow {
 
 interface ImportedGitsaweRow {
   LineId?: string;
+  Name?: string;
+  AdditionalInfo?: string;
   Message_StPaul?: string;
   Message_Apostle?: string;
   Message_BookOfActs?: string;
@@ -419,6 +421,8 @@ export class ExcelImportService {
 
       const gitsawe: Omit<Gitsawe, 'id' | 'createdAt'> = {
         lineId,
+        name: row.Name?.trim() || undefined,
+        additionalInfo: row.AdditionalInfo?.trim() || undefined,
         messageStPaul: row.Message_StPaul?.trim() || undefined,
         messageApostle: row.Message_Apostle?.trim() || undefined,
         messageBookOfActs: row.Message_BookOfActs?.trim() || undefined,

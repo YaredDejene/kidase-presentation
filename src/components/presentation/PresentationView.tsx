@@ -104,16 +104,33 @@ export const PresentationView: React.FC = () => {
     }
   }, [isPresenting, handleKeyDown]);
 
-  // Handle fullscreen changes
+  // Handle fullscreen changes via Tauri window events
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && isPresenting) {
-        stopPresentation();
+    if (!isPresenting) return;
+
+    let cancelled = false;
+    const checkFullscreen = async () => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const unlisten = await getCurrentWindow().onResized(async () => {
+        const isFs = await getCurrentWindow().isFullscreen();
+        if (!isFs && !cancelled) {
+          stopPresentation();
+        }
+      });
+      if (cancelled) {
+        unlisten();
+      } else {
+        return unlisten;
       }
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    let unlistenFn: (() => void) | undefined;
+    checkFullscreen().then((fn) => { unlistenFn = fn; });
+
+    return () => {
+      cancelled = true;
+      unlistenFn?.();
+    };
   }, [isPresenting, stopPresentation]);
 
   if (!isPresenting || !currentSlide || !currentTemplate || !currentPresentation) {
