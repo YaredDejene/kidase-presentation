@@ -14,6 +14,8 @@ const gitsaweLabelKeys: Record<string, string> = {
   misbak: 'gitsaweMisbak',
   wengel: 'gitsaweWengel',
   evangelist: 'gitsaweEvangelist',
+  name: 'gitsaweName',
+  additionalInfo: 'gitsaweAdditionalInfo',
 };
 
 export function useGitsaweDateLabel(): string {

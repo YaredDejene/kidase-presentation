@@ -75,6 +75,26 @@ describe('$between operator', () => {
     const ctx = makeContext({ meta: { date: '2026-06-15' } });
     expect(engine.evaluateRule(rule, ctx).matched).toBe(true);
   });
+
+  it('works with MM-DD strings (value within range)', () => {
+    const rule: RuleEntry = {
+      id: 'between-mmdd',
+      when: { 'meta.ethMonthDay': { $between: ['04-01', '04-30'] } },
+      then: { visible: true },
+    };
+    const ctx = makeContext({ meta: { ethMonthDay: '04-12' } });
+    expect(engine.evaluateRule(rule, ctx).matched).toBe(true);
+  });
+
+  it('does not match when MM-DD value is outside range', () => {
+    const rule: RuleEntry = {
+      id: 'between-mmdd-out',
+      when: { 'meta.ethMonthDay': { $between: ['04-01', '04-30'] } },
+      then: { visible: true },
+    };
+    const ctx = makeContext({ meta: { ethMonthDay: '05-15' } });
+    expect(engine.evaluateRule(rule, ctx).matched).toBe(false);
+  });
 });
 
 describe('$not + $between (opposite of between)', () => {
