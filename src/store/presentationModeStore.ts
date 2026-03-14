@@ -4,12 +4,15 @@ import { Slide } from '../domain/entities/Slide';
 import { getMergedEnabledSlides } from '../domain/slideFiltering';
 import { usePresentationDataStore } from './presentationDataStore';
 import { useRuleStore } from './ruleStore';
+import { monitorService } from '../services/MonitorService';
+import { audienceWindowService } from '../services/AudienceWindowService';
 
 interface PresentationModeState {
   isPresenting: boolean;
+  isPresenterMode: boolean; // true = dual-monitor (presenter + audience), false = single-window fullscreen
   currentSlideIndex: number;
 
-  startPresentation: (startIndex?: number) => void;
+  startPresentation: (startIndex?: number) => Promise<void> | void;
   stopPresentation: () => void;
   nextSlide: () => void;
   previousSlide: () => void;
@@ -37,13 +40,51 @@ function computeMergedSlides(): Slide[] {
 
 export const usePresentationModeStore = create<PresentationModeState>()((set, get) => ({
   isPresenting: false,
+  isPresenterMode: false,
   currentSlideIndex: 0,
 
-  startPresentation: (startIndex?: number) => {
+  startPresentation: async (startIndex?: number) => {
     const slides = computeMergedSlides();
-    if (slides.length > 0) {
-      const index = Math.min(Math.max(startIndex ?? 0, 0), slides.length - 1);
-      set({ isPresenting: true, currentSlideIndex: index });
+    if (slides.length === 0) return;
+
+    const index = Math.min(Math.max(startIndex ?? 0, 0), slides.length - 1);
+
+    // Check setting: should we use presenter view?
+    const { appSettings } = usePresentationDataStore.getState();
+    const usePresenterView = appSettings.presentationDisplay === 'presenterView';
+
+    if (usePresenterView) {
+      // Check for external monitors
+      const externalMonitor = await monitorService.getExternalMonitor();
+
+      if (externalMonitor) {
+        // Dual-monitor: audience window on external, presenter view (fullscreen) on main
+        try {
+          await audienceWindowService.openAudienceWindow(externalMonitor);
+          set({ isPresenting: true, isPresenterMode: true, currentSlideIndex: index });
+          // Main window goes fullscreen too for presenter view
+          getCurrentWindow().setFullscreen(true).catch((e) => {
+            console.warn('Failed to enter fullscreen for presenter:', e);
+          });
+          // Send initial slide index to audience
+          await audienceWindowService.emitSlideChange(index);
+        } catch (err) {
+          console.error('Failed to open audience window, falling back to single-window:', err);
+          set({ isPresenting: true, isPresenterMode: false, currentSlideIndex: index });
+          getCurrentWindow().setFullscreen(true).catch((e) => {
+            console.warn('Failed to enter fullscreen:', e);
+          });
+        }
+      } else {
+        // No external monitor — fall back to single-window fullscreen
+        set({ isPresenting: true, isPresenterMode: false, currentSlideIndex: index });
+        getCurrentWindow().setFullscreen(true).catch((err) => {
+          console.warn('Failed to enter fullscreen:', err);
+        });
+      }
+    } else {
+      // 'currentWindow' mode: single-window fullscreen (original behavior)
+      set({ isPresenting: true, isPresenterMode: false, currentSlideIndex: index });
       getCurrentWindow().setFullscreen(true).catch((err) => {
         console.warn('Failed to enter fullscreen:', err);
       });
@@ -51,10 +92,19 @@ export const usePresentationModeStore = create<PresentationModeState>()((set, ge
   },
 
   stopPresentation: () => {
-    set({ isPresenting: false, currentSlideIndex: 0 });
+    const { isPresenterMode } = get();
+    set({ isPresenting: false, isPresenterMode: false, currentSlideIndex: 0 });
+
+    // Always exit fullscreen on main window
     getCurrentWindow().setFullscreen(false).catch((err) => {
       console.warn('Failed to exit fullscreen:', err);
     });
+
+    if (isPresenterMode) {
+      // Close audience window
+      audienceWindowService.emitPresentationStop().catch(() => {});
+      audienceWindowService.closeAudienceWindow().catch(() => {});
+    }
   },
 
   nextSlide: () => {

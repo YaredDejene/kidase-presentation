@@ -202,12 +202,11 @@ export const SettingsPage: React.FC = () => {
           </div>
           <select
             value={localSettings.presentationDisplay}
-            onChange={e => updateSetting('presentationDisplay', e.target.value as 'primary' | 'secondary' | 'auto')}
+            onChange={e => updateSetting('presentationDisplay', e.target.value as 'currentWindow' | 'presenterView')}
             className="setting-select"
           >
-            <option value="auto">{t('autoDetect')}</option>
-            <option value="primary">{t('primaryMonitor')}</option>
-            <option value="secondary">{t('secondaryMonitor')}</option>
+            <option value="currentWindow">{t('currentWindow')}</option>
+            <option value="presenterView">{t('presenterView')}</option>
           </select>
         </div>
       </div>

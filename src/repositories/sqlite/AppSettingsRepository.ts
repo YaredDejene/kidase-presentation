@@ -24,9 +24,17 @@ export class AppSettingsRepository {
         case 'showSidebarLabels':
           settings.showSidebarLabels = row.value === 'true';
           break;
-        case 'presentationDisplay':
-          settings.presentationDisplay = row.value as 'primary' | 'secondary' | 'auto';
+        case 'presentationDisplay': {
+          // Migrate old values
+          const val = row.value;
+          if (val === 'currentWindow' || val === 'presenterView') {
+            settings.presentationDisplay = val;
+          } else {
+            // Old values: 'primary'/'secondary'/'auto' → map to new
+            settings.presentationDisplay = (val === 'auto' || val === 'secondary') ? 'presenterView' : 'currentWindow';
+          }
           break;
+        }
       }
     }
 
