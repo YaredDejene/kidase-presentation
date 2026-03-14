@@ -20,6 +20,15 @@ export interface LoadedPresentation {
   variables: Variable[];
 }
 
+export interface ImportConflict {
+  existingPresentation: Presentation;
+  importResult: ImportResult;
+}
+
+export type ImportOutcome =
+  | { status: 'created'; loaded: LoadedPresentation }
+  | { status: 'conflict'; conflict: ImportConflict };
+
 export class PresentationService {
   /**
    * Load a complete presentation with all related data
@@ -141,6 +150,81 @@ export class PresentationService {
   ): Promise<LoadedPresentation> {
     const result = await excelImportService.importFromPath(filePath, templateId);
     return this.saveImportResult(result);
+  }
+
+  /**
+   * Parse Excel and check for name conflicts before saving.
+   * Returns 'conflict' if a presentation with the same name exists,
+   * otherwise saves and returns 'created'.
+   */
+  async prepareImportFromPath(
+    filePath: string,
+    templateId: string
+  ): Promise<ImportOutcome> {
+    const result = await excelImportService.importFromPath(filePath, templateId);
+
+    const existing = await presentationRepository.getByName(result.presentation.name);
+    if (existing) {
+      return { status: 'conflict', conflict: { existingPresentation: existing, importResult: result } };
+    }
+
+    const loaded = await this.saveImportResult(result);
+    return { status: 'created', loaded };
+  }
+
+  /**
+   * Replace an existing presentation's data with new import data.
+   * Preserves the presentation ID and createdAt.
+   */
+  async replacePresentation(
+    existingId: string,
+    importResult: ImportResult
+  ): Promise<LoadedPresentation> {
+    // Delete old child data
+    await Promise.all([
+      slideRepository.deleteByPresentationId(existingId),
+      variableRepository.deleteByPresentationId(existingId),
+      ruleRepository.deleteByPresentationId(existingId),
+    ]);
+
+    // Update existing presentation metadata
+    const updated = await presentationRepository.update(existingId, {
+      name: importResult.presentation.name,
+      type: importResult.presentation.type,
+      templateId: importResult.presentation.templateId,
+      languageMap: importResult.presentation.languageMap,
+      isPrimary: importResult.presentation.isPrimary,
+    });
+
+    // Create new slides
+    const slidesWithId = importResult.slides.map(s => ({
+      ...s,
+      presentationId: existingId,
+    }));
+    const slides = await slideRepository.createMany(slidesWithId);
+
+    // Create new variables
+    const variablesWithId = importResult.variables.map(v => ({
+      ...v,
+      presentationId: existingId,
+    }));
+    const variables = await variableRepository.createMany(variablesWithId);
+
+    // Create display rules
+    for (const displayRule of importResult.displayRules) {
+      const slide = slides[displayRule.slideIndex];
+      if (!slide) continue;
+      const ruleDef = createRuleDefinition(
+        displayRule.name, 'slide', displayRule.ruleJson,
+        { presentationId: existingId, slideId: slide.id, isEnabled: true }
+      );
+      await ruleRepository.create(ruleDef);
+    }
+
+    const template = await templateRepository.getById(updated.templateId);
+    if (!template) throw new Error(`Template ${updated.templateId} not found`);
+
+    return { presentation: updated, slides, template, variables };
   }
 
   /**
