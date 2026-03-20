@@ -35,7 +35,7 @@ export class AppBootstrapService {
   private async doInitialize(): Promise<BootstrapResult> {
     const settings = await appSettingsRepository.get();
 
-    // Seed templates: insert if missing, never overwrite existing
+    // Seed templates: insert if missing, update definition if seed changed
     for (const seed of templateSeeds) {
       const existing = await templateRepository.getByName(seed.name);
       if (!existing) {
@@ -44,6 +44,15 @@ export class AppBootstrapService {
           maxLangCount: seed.maxLangCount,
           definitionJson: seed.definitionJson as unknown as TemplateDefinition,
         });
+      } else {
+        // Update definition if the seed has changed
+        const seedDef = JSON.stringify(seed.definitionJson);
+        const existingDef = JSON.stringify(existing.definitionJson);
+        if (seedDef !== existingDef) {
+          await templateRepository.update(existing.id, {
+            definitionJson: seed.definitionJson as unknown as TemplateDefinition,
+          });
+        }
       }
     }
 
