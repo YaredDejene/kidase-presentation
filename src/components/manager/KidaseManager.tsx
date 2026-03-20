@@ -22,6 +22,11 @@ export const KidaseManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [importConflict, setImportConflict] = useState<{
+    existingName: string;
+    existingId: string;
+    importResult: import('../../services/ExcelImportService').ImportResult;
+  } | null>(null);
 
   const { currentPresentation, setCurrentView, clearPresentationData } = useAppStore();
   const { loadPresentation } = usePresentation();
@@ -92,14 +97,37 @@ export const KidaseManager: React.FC = () => {
     }
 
     try {
-      const loaded = await presentationService.importFromPath(filePath, defaultTemplate.id);
-      await loadPresentations();
-      toast.success(t('importedName', { name: loaded.presentation.name }));
+      const outcome = await presentationService.prepareImportFromPath(filePath, defaultTemplate.id);
+      if (outcome.status === 'created') {
+        await loadPresentations();
+        toast.success(t('importedName', { name: outcome.loaded.presentation.name }));
+      } else {
+        setImportConflict({
+          existingName: outcome.conflict.existingPresentation.name,
+          existingId: outcome.conflict.existingPresentation.id,
+          importResult: outcome.conflict.importResult,
+        });
+      }
     } catch (error) {
       console.error('Import failed:', error);
       toast.error(t('failedToImport', { message: (error as Error).message }));
     }
   }, [templates, loadPresentations, t]);
+
+  const handleImportReplace = useCallback(async () => {
+    if (!importConflict) return;
+    const { existingId, importResult } = importConflict;
+    setImportConflict(null);
+    try {
+      const loaded = await presentationService.replacePresentation(existingId, importResult);
+      await loadPresentations();
+      toast.success(t('replacedName', { name: loaded.presentation.name }));
+    } catch (error) {
+      console.error('Replace failed:', error);
+      toast.error(t('failedToImport', { message: (error as Error).message }));
+    }
+  }, [importConflict, loadPresentations, t]);
+
 
   const getLanguages = (p: Presentation) => {
     const langs = Object.values(p.languageMap).filter(Boolean);
@@ -201,6 +229,23 @@ export const KidaseManager: React.FC = () => {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      {importConflict && (
+        <div className="modal-overlay" onClick={() => setImportConflict(null)}>
+          <div className="confirm-dialog" onClick={e => e.stopPropagation()}>
+            <h3 className="confirm-dialog-title">{t('importConflictTitle')}</h3>
+            <p className="confirm-dialog-message">{t('importConflictMessage', { name: importConflict.existingName })}</p>
+            <div className="confirm-dialog-actions">
+              <button className="btn-cancel" onClick={() => setImportConflict(null)}>
+                {t('common:cancel')}
+              </button>
+              <button className="btn-confirm-delete" onClick={handleImportReplace}>
+                {t('replace')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

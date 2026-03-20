@@ -75,6 +75,26 @@ describe('$between operator', () => {
     const ctx = makeContext({ meta: { date: '2026-06-15' } });
     expect(engine.evaluateRule(rule, ctx).matched).toBe(true);
   });
+
+  it('works with MM-DD strings (value within range)', () => {
+    const rule: RuleEntry = {
+      id: 'between-mmdd',
+      when: { 'meta.ethMonthDay': { $between: ['04-01', '04-30'] } },
+      then: { visible: true },
+    };
+    const ctx = makeContext({ meta: { ethMonthDay: '04-12' } });
+    expect(engine.evaluateRule(rule, ctx).matched).toBe(true);
+  });
+
+  it('does not match when MM-DD value is outside range', () => {
+    const rule: RuleEntry = {
+      id: 'between-mmdd-out',
+      when: { 'meta.ethMonthDay': { $between: ['04-01', '04-30'] } },
+      then: { visible: true },
+    };
+    const ctx = makeContext({ meta: { ethMonthDay: '05-15' } });
+    expect(engine.evaluateRule(rule, ctx).matched).toBe(false);
+  });
 });
 
 describe('$not + $between (opposite of between)', () => {
@@ -134,6 +154,38 @@ describe('$diff clause', () => {
       then: { visible: true },
     };
     expect(engine.evaluateRule(rule, makeContext()).matched).toBe(true);
+  });
+
+  it('computes exact day difference with $eq', () => {
+    const rule: RuleEntry = {
+      id: 'diff-days-eq',
+      when: {
+        $diff: {
+          from: '2026-02-01',
+          to: '2026-02-08',
+          unit: 'days',
+          $eq: 7,
+        },
+      },
+      then: { visible: true },
+    };
+    expect(engine.evaluateRule(rule, makeContext()).matched).toBe(true);
+  });
+
+  it('returns false when exact day difference does not match $eq', () => {
+    const rule: RuleEntry = {
+      id: 'diff-days-eq-mismatch',
+      when: {
+        $diff: {
+          from: '2026-02-01',
+          to: '2026-02-10',
+          unit: 'days',
+          $eq: 7,
+        },
+      },
+      then: { visible: true },
+    };
+    expect(engine.evaluateRule(rule, makeContext()).matched).toBe(false);
   });
 
   it('returns false when difference exceeds threshold', () => {

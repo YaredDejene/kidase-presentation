@@ -1,6 +1,8 @@
 export interface Gitsawe {
   id: string;
   lineId: string;
+  name?: string;
+  additionalInfo?: string;
   messageStPaul?: string;
   messageApostle?: string;
   messageBookOfActs?: string;

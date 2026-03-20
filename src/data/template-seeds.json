@@ -16,7 +16,7 @@
           "fontSize": 62,
           "fontFamily": "Nyala, serif",
           "color": "#FFFFFF",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.15
         },
         {
@@ -24,7 +24,7 @@
           "fontSize": 46,
           "fontFamily": "Nyala, serif",
           "color": "#FFFF00",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.15
         },
         {
@@ -32,7 +32,7 @@
           "fontSize": 46,
           "fontFamily": "Nyala, serif",
           "color": "#00FF00",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.15
         },
         {
@@ -40,7 +40,7 @@
           "fontSize": 46,
           "fontFamily": "Nyala, serif",
           "color": "#00BFFF",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.15
         }
       ],
@@ -66,7 +66,7 @@
           "fontSize": 56,
           "fontFamily": "Nyala, serif",
           "color": "#FFFFFF",
-          "alignment": "center",
+          "alignment": "justify",
           "lineHeight": 1.2
         },
         {
@@ -74,7 +74,7 @@
           "fontSize": 42,
           "fontFamily": "Nyala, serif",
           "color": "#FFFF00",
-          "alignment": "center",
+          "alignment": "justify",
           "lineHeight": 1.2
         },
         {
@@ -82,7 +82,7 @@
           "fontSize": 42,
           "fontFamily": "Nyala, serif",
           "color": "#00FF00",
-          "alignment": "center",
+          "alignment": "justify",
           "lineHeight": 1.2
         },
         {
@@ -90,7 +90,7 @@
           "fontSize": 42,
           "fontFamily": "Nyala, serif",
           "color": "#00BFFF",
-          "alignment": "center",
+          "alignment": "justify",
           "lineHeight": 1.2
         }
       ],
@@ -116,7 +116,7 @@
           "fontSize": 54,
           "fontFamily": "Nyala, serif",
           "color": "#FFFFFF",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.2
         },
         {
@@ -124,7 +124,7 @@
           "fontSize": 54,
           "fontFamily": "Nyala, serif",
           "color": "#FFFF00",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.2
         },
         {
@@ -132,7 +132,7 @@
           "fontSize": 54,
           "fontFamily": "Nyala, serif",
           "color": "#00FF00",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.2
         },
         {
@@ -140,7 +140,7 @@
           "fontSize": 54,
           "fontFamily": "Nyala, serif",
           "color": "#00BFFF",
-          "alignment": "left",
+          "alignment": "justify",
           "lineHeight": 1.2
         }
       ],

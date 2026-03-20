@@ -6,6 +6,8 @@ import { IGitsaweRepository } from '../../domain/interfaces/IGitsaweRepository';
 interface GitsaweRow {
   id: string;
   line_id: string;
+  name: string | null;
+  additional_info: string | null;
   message_st_paul: string | null;
   message_apostle: string | null;
   message_book_of_acts: string | null;
@@ -24,6 +26,8 @@ export class GitsaweRepository implements IGitsaweRepository {
     return {
       id: row.id,
       lineId: row.line_id,
+      name: row.name ?? undefined,
+      additionalInfo: row.additional_info ?? undefined,
       messageStPaul: row.message_st_paul ?? undefined,
       messageApostle: row.message_apostle ?? undefined,
       messageBookOfActs: row.message_book_of_acts ?? undefined,
@@ -72,13 +76,15 @@ export class GitsaweRepository implements IGitsaweRepository {
 
     await db.execute(
       `INSERT INTO gitsawes
-       (id, line_id, message_st_paul, message_apostle, message_book_of_acts,
+       (id, line_id, name, additional_info, message_st_paul, message_apostle, message_book_of_acts,
         misbak, wengel, kidase_type, evangelist, message_apostle_evangelist,
         gitsawe_type, priority, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         gitsawe.lineId,
+        gitsawe.name ?? null,
+        gitsawe.additionalInfo ?? null,
         gitsawe.messageStPaul ?? null,
         gitsawe.messageApostle ?? null,
         gitsawe.messageBookOfActs ?? null,
@@ -114,12 +120,14 @@ export class GitsaweRepository implements IGitsaweRepository {
 
     await db.execute(
       `UPDATE gitsawes
-       SET line_id = ?, message_st_paul = ?, message_apostle = ?, message_book_of_acts = ?,
+       SET line_id = ?, name = ?, additional_info = ?, message_st_paul = ?, message_apostle = ?, message_book_of_acts = ?,
            misbak = ?, wengel = ?, kidase_type = ?, evangelist = ?,
            message_apostle_evangelist = ?, gitsawe_type = ?, priority = ?
        WHERE id = ?`,
       [
         updated.lineId,
+        updated.name ?? null,
+        updated.additionalInfo ?? null,
         updated.messageStPaul ?? null,
         updated.messageApostle ?? null,
         updated.messageBookOfActs ?? null,

@@ -14,15 +14,27 @@ export function formatDate(iso: string): string {
  * Dynamic font scale factor based on total content character count.
  * Shared between SlideRenderer (live preview) and export services (PDF/PPTX).
  */
+const FONT_SCALE_POINTS: [number, number][] = [
+  [0, 2.2], [80, 2.2], [120, 2.0], [160, 1.85], [200, 1.7],
+  [260, 1.55], [320, 1.4], [400, 1.28], [480, 1.16], [560, 1.06],
+  [650, 0.97], [750, 0.88], [870, 0.8], [1000, 0.73], [1200, 0.65],
+  [1400, 0.58],
+];
+
 export function computeFontScale(totalChars: number): number {
-  if (totalChars < 100) return 2.0;
-  if (totalChars < 200) return 1.6;
-  if (totalChars < 350) return 1.35;
-  if (totalChars < 500) return 1.15;
-  if (totalChars < 700) return 1.0;
-  if (totalChars < 1000) return 0.85;
-  if (totalChars < 1400) return 0.7;
-  return 0.55;
+  if (totalChars <= 0) return 2.2;
+  if (totalChars >= 1400) return 0.5;
+
+  for (let i = 1; i < FONT_SCALE_POINTS.length; i++) {
+    if (totalChars <= FONT_SCALE_POINTS[i][0]) {
+      const [x0, y0] = FONT_SCALE_POINTS[i - 1];
+      const [x1, y1] = FONT_SCALE_POINTS[i];
+      const t = (totalChars - x0) / (x1 - x0);
+      return y0 + t * (y1 - y0);
+    }
+  }
+
+  return 0.5;
 }
 
 /**

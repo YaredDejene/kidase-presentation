@@ -53,6 +53,11 @@ export const PresentationPage: React.FC = () => {
     }
   }, [evaluateRules, currentPresentation]);
 
+  // Log context meta when it changes
+  useEffect(() => {
+    console.log('ruleContextMeta:', ruleContextMeta);
+  }, [ruleContextMeta]);
+
   // Load secondary kidase based on gitsawe.kidaseType
   useSecondaryKidase(evaluateRules);
 
@@ -74,6 +79,19 @@ export const PresentationPage: React.FC = () => {
       setSelectedSlideId(null);
     }
   }, [displaySlides]);
+
+  // F5 to start presentation from selected slide
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F5' && displaySlides.length > 0) {
+        e.preventDefault();
+        const idx = selectedSlideId ? displaySlides.findIndex(s => s.id === selectedSlideId) : 0;
+        startPresentation(idx >= 0 ? idx : 0);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displaySlides, selectedSlideId, startPresentation]);
 
   const selectedSlide = useMemo(() => {
     if (!selectedSlideId) return null;
@@ -196,7 +214,10 @@ export const PresentationPage: React.FC = () => {
             )}
           </div>
           <button
-            onClick={startPresentation}
+            onClick={() => {
+              const idx = selectedSlideId ? displaySlides.findIndex(s => s.id === selectedSlideId) : 0;
+              startPresentation(idx >= 0 ? idx : 0);
+            }}
             disabled={displaySlides.length === 0}
             className="pres-page-btn pres-page-btn-present"
           >

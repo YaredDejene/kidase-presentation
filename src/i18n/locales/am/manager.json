@@ -14,6 +14,10 @@
   "importedName": "Imported \"{{name}}\"",
   "failedToImport": "Failed to import: {{message}}",
   "deletedName": "\"{{name}}\" deleted",
+  "importConflictTitle": "ቅዳሴው ቀደም ሲል አለ",
+  "importConflictMessage": "\"{{name}}\" የሚል ቅዳሴ ቀደም ሲል አለ። ምን ማድረግ ይፈልጋሉ?",
+  "replace": "ቀይር",
+  "replacedName": "\"{{name}}\" ተቀይሯል",
   "importExcel": "Import Excel",
   "primary": "ዋና",
 
@@ -26,6 +30,7 @@
   "deleting": "Deleting...",
   "deleteAll": "Delete All",
   "lineId": "Line ID",
+  "additionalInfo": "ተጨማሪ መረጃ",
   "messageStPaul": "Message StPaul",
   "messageApostle": "Message Apostle",
   "messageBookOfActs": "Message BookOfActs",

@@ -6,6 +6,7 @@ import { Variable } from '../domain/entities/Variable';
 import { Gitsawe } from '../domain/entities/Gitsawe';
 import { Verse } from '../domain/entities/Verse';
 import { placeholderService } from './PlaceholderService';
+import { templateRepository } from '../repositories';
 
 interface ImportMetadata {
   presentationName: string;
@@ -66,6 +67,8 @@ interface ImportedSlideRow {
 
 interface ImportedGitsaweRow {
   LineId?: string;
+  Name?: string;
+  AdditionalInfo?: string;
   Message_StPaul?: string;
   Message_Apostle?: string;
   Message_BookOfActs?: string;
@@ -125,7 +128,15 @@ export class ExcelImportService {
     templateId: string
   ): Promise<ImportResult> {
     const workbook = XLSX.read(buffer, { type: 'array' });
-    return this.parseWorkbook(workbook, templateId);
+
+    // Pre-fetch all templates for LayoutOverride name→ID resolution
+    const allTemplates = await templateRepository.getAll();
+    const templateNameMap = new Map<string, string>();
+    for (const tmpl of allTemplates) {
+      templateNameMap.set(tmpl.name.toLowerCase(), tmpl.id);
+    }
+
+    return this.parseWorkbook(workbook, templateId, templateNameMap);
   }
 
   async importFromFile(file: File, templateId: string): Promise<ImportResult> {
@@ -166,7 +177,7 @@ export class ExcelImportService {
     return { verses, warnings };
   }
 
-  private parseWorkbook(workbook: XLSX.WorkBook, templateId: string): ImportResult {
+  private parseWorkbook(workbook: XLSX.WorkBook, templateId: string, templateNameMap: Map<string, string>): ImportResult {
     const warnings: string[] = [];
 
     // Read metadata sheet
@@ -206,18 +217,29 @@ export class ExcelImportService {
     if (metadata.lang3Name) languageMap.Lang3 = metadata.lang3Name;
     if (metadata.lang4Name) languageMap.Lang4 = metadata.lang4Name;
 
+    // Resolve metadata template name to ID if provided
+    let resolvedTemplateId = templateId;
+    if (metadata.templateName) {
+      const metaTemplateId = templateNameMap.get(metadata.templateName.toLowerCase());
+      if (metaTemplateId) {
+        resolvedTemplateId = metaTemplateId;
+      } else {
+        warnings.push(`Metadata TemplateName "${metadata.templateName}" not found, using selected template`);
+      }
+    }
+
     // Build presentation
     const presentation: Omit<Presentation, 'id' | 'createdAt'> = {
       name: metadata.presentationName,
       type: metadata.presentationType,
-      templateId: templateId,
+      templateId: resolvedTemplateId,
       languageMap: languageMap,
       isPrimary: metadata.isPrimary,
       isActive: false,
     };
 
     // Build slides
-    const slides = this.parseSlides(rows);
+    const slides = this.parseSlides(rows, templateNameMap, warnings);
 
     // Read variables sheet (optional)
     const variablesSheet =
@@ -295,7 +317,7 @@ export class ExcelImportService {
     };
   }
 
-  private parseSlides(rows: ImportedSlideRow[]): Omit<Slide, 'id'>[] {
+  private parseSlides(rows: ImportedSlideRow[], templateNameMap: Map<string, string>, warnings: string[]): Omit<Slide, 'id'>[] {
     return rows.map((row, index) => {
       // Parse title
       const title: SlideTitle = {};
@@ -347,6 +369,18 @@ export class ExcelImportService {
         ? ['yes', 'true', '1'].includes(isDynamicRaw.trim().toLowerCase())
         : false;
 
+      // Resolve LayoutOverride name to template ID
+      let templateOverrideId: string | undefined;
+      if (row.LayoutOverride) {
+        const overrideName = row.LayoutOverride.trim();
+        const resolvedId = templateNameMap.get(overrideName.toLowerCase());
+        if (resolvedId) {
+          templateOverrideId = resolvedId;
+        } else {
+          warnings.push(`Row ${index + 2}: LayoutOverride "${overrideName}" not found, ignoring`);
+        }
+      }
+
       return {
         presentationId: '', // Will be set after presentation is created
         slideOrder: index + 1,
@@ -357,6 +391,7 @@ export class ExcelImportService {
         notes: row.Notes,
         isDisabled: false,
         isDynamic,
+        templateOverrideId,
       };
     });
   }
@@ -419,6 +454,8 @@ export class ExcelImportService {
 
       const gitsawe: Omit<Gitsawe, 'id' | 'createdAt'> = {
         lineId,
+        name: row.Name?.trim() || undefined,
+        additionalInfo: row.AdditionalInfo?.trim() || undefined,
         messageStPaul: row.Message_StPaul?.trim() || undefined,
         messageApostle: row.Message_Apostle?.trim() || undefined,
         messageBookOfActs: row.Message_BookOfActs?.trim() || undefined,

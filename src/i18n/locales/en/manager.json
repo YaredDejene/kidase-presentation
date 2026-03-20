@@ -14,6 +14,10 @@
   "importedName": "Imported \"{{name}}\"",
   "failedToImport": "Failed to import: {{message}}",
   "deletedName": "\"{{name}}\" deleted",
+  "importConflictTitle": "Presentation Already Exists",
+  "importConflictMessage": "A presentation named \"{{name}}\" already exists. What would you like to do?",
+  "replace": "Replace",
+  "replacedName": "Replaced \"{{name}}\"",
   "importExcel": "Import Excel",
   "primary": "Primary",
 
@@ -26,6 +30,7 @@
   "deleting": "Deleting...",
   "deleteAll": "Delete All",
   "lineId": "Line ID",
+  "additionalInfo": "Additional Info",
   "messageStPaul": "Message StPaul",
   "messageApostle": "Message Apostle",
   "messageBookOfActs": "Message BookOfActs",

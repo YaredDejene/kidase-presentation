@@ -76,6 +76,21 @@ export function buildContext(args: BuildContextArgs): RuleContext {
     return acc;
   }, {} as Record<string, string>);
 
+  // Additional holidays to be added to holidaysObj
+  // 1. tsige (ጽጌ) - Month: 01, Day: 26 in Ethiopian calendar
+  // 2. quskuam (ቁስቋም) - Month: 03, Day: 06 in Ethiopian calendar
+  // 3. filseta (ፍልሰታ) - Month: 12, Day: 01 in Ethiopian calendar
+  // 4. kiremt (ክረምት) - Month: 10, Day: 26 in Ethiopian calendar
+  const tsigeGC = toGC(ethDate.year, 1, 26);
+  holidaysObj["tsige"] = `${tsigeGC.year}-${pad(tsigeGC.month)}-${pad(tsigeGC.day)}`;
+  const quskuamGC = toGC(ethDate.year, 3, 6);
+  holidaysObj["quskuam"] = `${quskuamGC.year}-${pad(quskuamGC.month)}-${pad(quskuamGC.day)}`;
+  const filsetaGC = toGC(ethDate.year, 12, 1);
+  holidaysObj["filseta"] = `${filsetaGC.year}-${pad(filsetaGC.month)}-${pad(filsetaGC.day)}`;
+  const kiremtGC = toGC(ethDate.year, 10, 26);
+  holidaysObj["kiremt"] = `${kiremtGC.year}-${pad(kiremtGC.month)}-${pad(kiremtGC.day)}`;
+
+
   const meta: Record<string, unknown> = {
     now: now.toISOString(),
     date: `${year}-${pad(month)}-${pad(day)}`,

@@ -13,6 +13,8 @@ import { VersesManager } from './components/manager/VersesManager';
 import { TemplatesManager } from './components/manager/TemplatesManager';
 import { SettingsPage } from './components/settings/SettingsPage';
 import { PresentationView } from './components/presentation/PresentationView';
+import { PresenterView } from './components/presentation/PresenterView';
+import { AudienceView } from './components/presentation/AudienceView';
 import { appBootstrapService } from './services/AppBootstrapService';
 import { ToastContainer } from './components/common/Toast';
 import { UpdateBanner } from './components/common/UpdateBanner';
@@ -67,10 +69,14 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+// Check if this window is the audience view
+const isAudienceWindow = new URLSearchParams(window.location.search).get('view') === 'audience';
+
 function App() {
   const { t } = useTranslation();
   const { currentView, setCurrentView } = useNavigationStore();
   const isPresenting = usePresentationModeStore(s => s.isPresenting);
+  const isPresenterMode = usePresentationModeStore(s => s.isPresenterMode);
   const { setAppSettings, setAllTemplates, setVerses, loadPresentationData } = usePresentationDataStore();
   const [isLoading, setIsLoading] = useState(true);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
@@ -128,6 +134,11 @@ function App() {
     );
   }
 
+  // Audience window renders only the slide view
+  if (isAudienceWindow) {
+    return <AudienceView />;
+  }
+
   return (
     <div className="app-layout">
       {updateAvailable && (
@@ -156,8 +167,9 @@ function App() {
         {currentView === 'settings' && <SettingsPage />}
       </main>
 
-      {/* Presentation overlay */}
-      {isPresenting && <PresentationView />}
+      {/* Presentation overlay: presenter mode (dual-monitor) or single-window fullscreen */}
+      {isPresenting && isPresenterMode && <PresenterView />}
+      {isPresenting && !isPresenterMode && <PresentationView />}
 
       <ToastContainer />
     </div>
