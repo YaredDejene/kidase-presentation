@@ -34,13 +34,19 @@ export function useVerses() {
   }, [loadVerses]);
 
   const importFromExcel = useCallback(async (filePath: string): Promise<boolean> => {
+    const progress = toast.progress(t('importingVerses'));
     try {
-      const result = await excelImportService.importVersesFromPath(filePath);
+      const result = await excelImportService.importVersesFromPath(filePath, (current, total) => {
+        const pct = Math.round((current / total) * 100);
+        progress.update(pct, t('importingData', { current, total }));
+      });
 
       if (result.verses.length === 0) {
-        toast.error(t('noVerseRecords'));
+        progress.fail(t('noVerseRecords'));
         return false;
       }
+
+      progress.update(60, t('savingRecords'));
 
       // Clear existing verses
       const existing = await verseRepository.getAll();
@@ -48,16 +54,18 @@ export function useVerses() {
         await verseRepository.delete(v.id);
       }
 
+      progress.update(80, t('savingRecords'));
+
       // Create new records
       await verseRepository.createMany(result.verses);
 
       const loaded = await loadVerses();
       setStoreVerses(loaded);
-      toast.success(t('importSuccess', { count: result.verses.length }));
+      progress.done(t('importSuccess', { count: result.verses.length }));
       return true;
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error(t('failedToImport', { message: error instanceof Error ? error.message : String(error) }));
+      progress.fail(t('failedToImport', { message: error instanceof Error ? error.message : String(error) }));
       return false;
     }
   }, [loadVerses, setStoreVerses, t]);

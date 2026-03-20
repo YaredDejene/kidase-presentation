@@ -96,12 +96,22 @@ export const KidaseManager: React.FC = () => {
       return;
     }
 
+    const progress = toast.progress(t('importingExcel'));
     try {
-      const outcome = await presentationService.prepareImportFromPath(filePath, defaultTemplate.id);
+      const outcome = await presentationService.prepareImportFromPath(
+        filePath,
+        defaultTemplate.id,
+        (current, total) => {
+          const pct = Math.round((current / total) * 100);
+          progress.update(pct, t('importingSlide', { current, total }));
+        },
+      );
       if (outcome.status === 'created') {
         await loadPresentations();
-        toast.success(t('importedName', { name: outcome.loaded.presentation.name }));
+        await loadPresentation(outcome.loaded.presentation.id);
+        progress.done(t('importedName', { name: outcome.loaded.presentation.name }));
       } else {
+        progress.done(t('importResolving'));
         setImportConflict({
           existingName: outcome.conflict.existingPresentation.name,
           existingId: outcome.conflict.existingPresentation.id,
@@ -110,9 +120,9 @@ export const KidaseManager: React.FC = () => {
       }
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error(t('failedToImport', { message: (error as Error).message }));
+      progress.fail(t('failedToImport', { message: (error as Error).message }));
     }
-  }, [templates, loadPresentations, t]);
+  }, [templates, loadPresentations, loadPresentation, t]);
 
   const handleImportReplace = useCallback(async () => {
     if (!importConflict) return;
@@ -121,12 +131,13 @@ export const KidaseManager: React.FC = () => {
     try {
       const loaded = await presentationService.replacePresentation(existingId, importResult);
       await loadPresentations();
+      await loadPresentation(loaded.presentation.id);
       toast.success(t('replacedName', { name: loaded.presentation.name }));
     } catch (error) {
       console.error('Replace failed:', error);
       toast.error(t('failedToImport', { message: (error as Error).message }));
     }
-  }, [importConflict, loadPresentations, t]);
+  }, [importConflict, loadPresentations, loadPresentation, t]);
 
 
   const getLanguages = (p: Presentation) => {

@@ -33,13 +33,19 @@ export function useGitsawe() {
   }, [loadGitsawes]);
 
   const importFromExcel = useCallback(async (filePath: string): Promise<boolean> => {
+    const progress = toast.progress(t('importingGitsawe'));
     try {
-      const result = await excelImportService.importGitsaweFromPath(filePath);
+      const result = await excelImportService.importGitsaweFromPath(filePath, (current, total) => {
+        const pct = Math.round((current / total) * 100);
+        progress.update(pct, t('importingData', { current, total }));
+      });
 
       if (result.gitsawes.length === 0) {
-        toast.error(t('noGitsaweRecords'));
+        progress.fail(t('noGitsaweRecords'));
         return false;
       }
+
+      progress.update(50, t('savingRecords'));
 
       // Clear existing gitsawe records + their rules
       const existing = await gitsaweRepository.getAll();
@@ -49,7 +55,9 @@ export function useGitsawe() {
       }
 
       // Create new records + selection rules
-      for (const imported of result.gitsawes) {
+      const total = result.gitsawes.length;
+      for (let i = 0; i < total; i++) {
+        const imported = result.gitsawes[i];
         const created = await gitsaweRepository.create(imported.gitsawe);
         if (imported.selectionRule) {
           const ruleDef = createRuleDefinition(
@@ -63,14 +71,15 @@ export function useGitsawe() {
           );
           await ruleRepository.create(ruleDef);
         }
+        progress.update(50 + Math.round(((i + 1) / total) * 50), t('savingRecord', { current: i + 1, total }));
       }
 
       await loadGitsawes();
-      toast.success(t('importSuccess', { count: result.gitsawes.length }));
+      progress.done(t('importSuccess', { count: result.gitsawes.length }));
       return true;
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error(t('failedToImport', { message: (error as Error).message }));
+      progress.fail(t('failedToImport', { message: (error as Error).message }));
       return false;
     }
   }, [loadGitsawes, t]);

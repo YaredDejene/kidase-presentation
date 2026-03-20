@@ -73,5 +73,14 @@
   "importSuccess": "Imported {{count}} record",
   "importSuccess_other": "Imported {{count}} records",
   "deleteAllSuccess": "All records deleted",
-  "deleteAllFailed": "Failed to delete records"
+  "deleteAllFailed": "Failed to delete records",
+
+  "importingExcel": "Importing Excel...",
+  "importingSlide": "Importing slide {{current}} of {{total}}...",
+  "importingGitsawe": "Importing Gitsawe...",
+  "importingVerses": "Importing Verses...",
+  "importingData": "Processing {{current}} of {{total}}...",
+  "savingRecords": "Saving records...",
+  "savingRecord": "Saving record {{current}} of {{total}}...",
+  "importResolving": "Resolving conflict..."
 }

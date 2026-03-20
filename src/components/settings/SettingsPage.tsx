@@ -64,9 +64,14 @@ export const SettingsPage: React.FC = () => {
       if (!filePath) return;
 
       setIsBackingUp(true);
-      const backup = await backupService.createBackup(version);
+      const progress = toast.progress(t('creatingBackup'));
+      const backup = await backupService.createBackup(version, (current, total) => {
+        const pct = Math.round((current / total) * 100);
+        progress.update(pct, t('backingUpTable', { current, total }));
+      });
+      progress.update(90, t('savingFile'));
       await writeTextFile(filePath, JSON.stringify(backup, null, 2));
-      toast.success(t('backupCreated'));
+      progress.done(t('backupCreated'));
     } catch (error) {
       toast.error(t('backupFailed', { message: error instanceof Error ? error.message : String(error) }));
     } finally {
@@ -109,16 +114,20 @@ export const SettingsPage: React.FC = () => {
     setShowRestoreConfirm(false);
     setIsRestoring(true);
 
+    const progress = toast.progress(t('restoringBackup'));
     try {
-      await backupService.restoreBackup(pendingRestoreData);
-      toast.success(t('restoreSuccess'));
-      setTimeout(() => window.location.reload(), 1000);
+      await backupService.restoreBackup(pendingRestoreData, (current, total) => {
+        const pct = Math.round((current / total) * 100);
+        progress.update(pct, t('restoringRecord', { current, total }));
+      });
+      progress.done(t('restoreSuccess'));
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       if (msg === 'INCOMPATIBLE_VERSION') {
-        toast.error(t('incompatibleBackup'));
+        progress.fail(t('incompatibleBackup'));
       } else {
-        toast.error(t('restoreFailed', { message: msg }));
+        progress.fail(t('restoreFailed', { message: msg }));
       }
       setIsRestoring(false);
     } finally {

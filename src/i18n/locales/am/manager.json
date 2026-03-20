@@ -73,5 +73,14 @@
   "importSuccess": "Imported {{count}} record",
   "importSuccess_other": "Imported {{count}} records",
   "deleteAllSuccess": "All records deleted",
-  "deleteAllFailed": "Failed to delete records"
+  "deleteAllFailed": "Failed to delete records",
+
+  "importingExcel": "ኤክሴል በማስገባት ላይ...",
+  "importingSlide": "ስላይድ {{current}} ከ {{total}} በማስገባት ላይ...",
+  "importingGitsawe": "ግጻዌ በማስገባት ላይ...",
+  "importingVerses": "ጥቅሶች በማስገባት ላይ...",
+  "importingData": "{{current}} ከ {{total}} በማስገባት ላይ...",
+  "savingRecords": "መዝገቦችን በማስቀመጥ ላይ...",
+  "savingRecord": "መዝገብ {{current}} ከ {{total}} በማስቀመጥ ላይ...",
+  "importResolving": "ግጭትን በመፍታት ላይ..."
 }

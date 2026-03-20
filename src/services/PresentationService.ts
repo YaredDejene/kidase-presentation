@@ -159,9 +159,10 @@ export class PresentationService {
    */
   async prepareImportFromPath(
     filePath: string,
-    templateId: string
+    templateId: string,
+    onProgress?: (current: number, total: number) => void,
   ): Promise<ImportOutcome> {
-    const result = await excelImportService.importFromPath(filePath, templateId);
+    const result = await excelImportService.importFromPath(filePath, templateId, onProgress);
 
     const existing = await presentationRepository.getByName(result.presentation.name);
     if (existing) {
