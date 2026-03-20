@@ -109,7 +109,6 @@ export const KidaseManager: React.FC = () => {
       if (outcome.status === 'created') {
         await loadPresentations();
         await loadPresentation(outcome.loaded.presentation.id);
-        setCurrentView('editor');
         progress.done(t('importedName', { name: outcome.loaded.presentation.name }));
       } else {
         progress.done(t('importResolving'));
@@ -123,7 +122,7 @@ export const KidaseManager: React.FC = () => {
       console.error('Import failed:', error);
       progress.fail(t('failedToImport', { message: (error as Error).message }));
     }
-  }, [templates, loadPresentations, loadPresentation, setCurrentView, t]);
+  }, [templates, loadPresentations, loadPresentation, t]);
 
   const handleImportReplace = useCallback(async () => {
     if (!importConflict) return;
@@ -133,13 +132,12 @@ export const KidaseManager: React.FC = () => {
       const loaded = await presentationService.replacePresentation(existingId, importResult);
       await loadPresentations();
       await loadPresentation(loaded.presentation.id);
-      setCurrentView('editor');
       toast.success(t('replacedName', { name: loaded.presentation.name }));
     } catch (error) {
       console.error('Replace failed:', error);
       toast.error(t('failedToImport', { message: (error as Error).message }));
     }
-  }, [importConflict, loadPresentations, loadPresentation, setCurrentView, t]);
+  }, [importConflict, loadPresentations, loadPresentation, t]);
 
 
   const getLanguages = (p: Presentation) => {
