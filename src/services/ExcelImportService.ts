@@ -125,7 +125,8 @@ export interface ImportResult {
 export class ExcelImportService {
   async importFromArrayBuffer(
     buffer: ArrayBuffer,
-    templateId: string
+    templateId: string,
+    onProgress?: (current: number, total: number) => void,
   ): Promise<ImportResult> {
     const workbook = XLSX.read(buffer, { type: 'array' });
 
@@ -136,48 +137,54 @@ export class ExcelImportService {
       templateNameMap.set(tmpl.name.toLowerCase(), tmpl.id);
     }
 
-    return this.parseWorkbook(workbook, templateId, templateNameMap);
+    return this.parseWorkbook(workbook, templateId, templateNameMap, onProgress);
   }
 
-  async importFromFile(file: File, templateId: string): Promise<ImportResult> {
+  async importFromFile(file: File, templateId: string, onProgress?: (current: number, total: number) => void): Promise<ImportResult> {
     const buffer = await file.arrayBuffer();
-    return this.importFromArrayBuffer(buffer, templateId);
+    return this.importFromArrayBuffer(buffer, templateId, onProgress);
   }
 
-  async importFromPath(filePath: string, templateId: string): Promise<ImportResult> {
+  async importFromPath(filePath: string, templateId: string, onProgress?: (current: number, total: number) => void): Promise<ImportResult> {
     const data = await readFile(filePath);
-    return this.importFromArrayBuffer(data.buffer, templateId);
+    return this.importFromArrayBuffer(data.buffer, templateId, onProgress);
   }
 
-  async importGitsaweFromPath(filePath: string): Promise<{ gitsawes: ImportedGitsawe[]; warnings: string[] }> {
+  async importGitsaweFromPath(filePath: string, onProgress?: (current: number, total: number) => void): Promise<{ gitsawes: ImportedGitsawe[]; warnings: string[] }> {
     const data = await readFile(filePath);
+    onProgress?.(1, 3); // Reading file
     const workbook = XLSX.read(data.buffer, { type: 'array' });
-    const warnings: string[] = [];
+    onProgress?.(2, 3); // Parsing
 
+    const warnings: string[] = [];
     const gitsaweSheet = workbook.Sheets['Gitsawe'] || workbook.Sheets['gitsawe'];
     if (!gitsaweSheet) {
       throw new Error('Gitsawe sheet not found in Excel file');
     }
 
     const gitsawes = this.parseGitsaweSheet(gitsaweSheet, warnings);
+    onProgress?.(3, 3); // Done parsing
     return { gitsawes, warnings };
   }
 
-  async importVersesFromPath(filePath: string): Promise<{ verses: Omit<Verse, 'id' | 'createdAt'>[]; warnings: string[] }> {
+  async importVersesFromPath(filePath: string, onProgress?: (current: number, total: number) => void): Promise<{ verses: Omit<Verse, 'id' | 'createdAt'>[]; warnings: string[] }> {
     const data = await readFile(filePath);
+    onProgress?.(1, 3); // Reading file
     const workbook = XLSX.read(data.buffer, { type: 'array' });
-    const warnings: string[] = [];
+    onProgress?.(2, 3); // Parsing
 
+    const warnings: string[] = [];
     const versesSheet = workbook.Sheets['Verses'] || workbook.Sheets['verses'];
     if (!versesSheet) {
       throw new Error('Verses sheet not found in Excel file');
     }
 
     const verses = this.parseVersesSheet(versesSheet);
+    onProgress?.(3, 3); // Done parsing
     return { verses, warnings };
   }
 
-  private parseWorkbook(workbook: XLSX.WorkBook, templateId: string, templateNameMap: Map<string, string>): ImportResult {
+  private parseWorkbook(workbook: XLSX.WorkBook, templateId: string, templateNameMap: Map<string, string>, onProgress?: (current: number, total: number) => void): ImportResult {
     const warnings: string[] = [];
 
     // Read metadata sheet
@@ -210,6 +217,10 @@ export class ExcelImportService {
       throw new Error('No content rows found in Excel file');
     }
 
+    // Total steps: rows + 2 (for metadata + variables/rules)
+    const totalSteps = rows.length + 2;
+    onProgress?.(1, totalSteps); // Metadata parsed
+
     // Build language map
     const languageMap: LanguageMap = {};
     if (metadata.lang1Name) languageMap.Lang1 = metadata.lang1Name;
@@ -238,8 +249,10 @@ export class ExcelImportService {
       isActive: false,
     };
 
-    // Build slides
-    const slides = this.parseSlides(rows, templateNameMap, warnings);
+    // Build slides (with progress)
+    const slides = this.parseSlides(rows, templateNameMap, warnings, (i) => {
+      onProgress?.(i + 2, totalSteps); // +2 for metadata step
+    });
 
     // Read variables sheet (optional)
     const variablesSheet =
@@ -263,6 +276,7 @@ export class ExcelImportService {
     // Parse display rules
     const displayRules = this.parseDisplayRules(rows, warnings);
 
+    onProgress?.(totalSteps, totalSteps); // All done
     return { presentation, slides, variables, displayRules, warnings };
   }
 
@@ -317,8 +331,9 @@ export class ExcelImportService {
     };
   }
 
-  private parseSlides(rows: ImportedSlideRow[], templateNameMap: Map<string, string>, warnings: string[]): Omit<Slide, 'id'>[] {
+  private parseSlides(rows: ImportedSlideRow[], templateNameMap: Map<string, string>, warnings: string[], onSlide?: (index: number) => void): Omit<Slide, 'id'>[] {
     return rows.map((row, index) => {
+      onSlide?.(index);
       // Parse title
       const title: SlideTitle = {};
       if (row.Title_Lang1) title.Lang1 = row.Title_Lang1;
