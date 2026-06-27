@@ -1,0 +1,72 @@
+/* Date picker — ported from desktop, themed via CSS variables. */
+.dp-container { position: relative; }
+
+.dp-trigger {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 40px; padding: 0 12px;
+  background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; color: var(--text);
+  font-size: 14px; cursor: pointer; box-sizing: border-box; transition: border-color .15s, box-shadow .15s;
+}
+.dp-trigger:hover { border-color: var(--accent); }
+.dp-trigger-icon { color: var(--muted); flex-shrink: 0; }
+.dp-trigger-text { flex: 1; text-align: left; }
+.dp-trigger-chevron { color: var(--muted); flex-shrink: 0; }
+
+.dp-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 100; width: 280px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4); padding: 12px;
+}
+
+.dp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.dp-month-year { font-size: 14px; font-weight: 600; color: var(--text); }
+.dp-nav-btn {
+  width: 28px; height: 28px; border: none; border-radius: 6px; background: transparent; color: var(--text2);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .1s;
+}
+.dp-nav-btn:hover { background: var(--elevated); color: var(--text); }
+
+.dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+.dp-weekday { text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); padding: 4px 0; text-transform: uppercase; }
+
+.dp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.dp-day {
+  width: 100%; aspect-ratio: 1; border: none; border-radius: 6px; background: transparent; color: var(--text2);
+  font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .1s;
+}
+.dp-day:hover:not(:disabled) { background: var(--elevated); color: var(--text); }
+.dp-day--other { color: var(--border2); cursor: default; }
+.dp-day--today { color: var(--accent); font-weight: 600; position: relative; }
+.dp-day--today::after { content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+.dp-day--selected { background: var(--accent); color: #fff; font-weight: 600; }
+.dp-day--selected:hover:not(:disabled) { background: var(--accent-hover); }
+.dp-day--selected.dp-day--today::after { background: #fff; }
+
+.dp-footer { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; justify-content: center; }
+.dp-today-btn {
+  padding: 6px 16px; border: 1px solid var(--border2); border-radius: 8px; background: transparent; color: var(--accent);
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.dp-today-btn:hover { background: var(--elevated); }
+
+/* react-day-picker (Gregorian) */
+.dp-dropdown--gregorian { width: 280px; }
+.dp-rdp { --rdp-day-height: 36px; --rdp-day-width: 36px; color: var(--text2); font-size: 13px; position: relative; }
+.dp-rdp-months { position: relative; }
+.dp-rdp-month { width: 100%; }
+.dp-rdp-nav { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; z-index: 1; pointer-events: none; }
+.dp-rdp-nav-btn { width: 28px; height: 28px; border: none; border-radius: 6px; background: transparent; color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .1s; pointer-events: auto; }
+.dp-rdp-nav-btn:hover { background: var(--elevated); color: var(--text); }
+.dp-rdp-chevron { fill: currentColor; width: 14px; height: 14px; }
+.dp-rdp-caption { display: flex; align-items: center; justify-content: center; height: 28px; margin-bottom: 10px; }
+.dp-rdp-caption-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.dp-rdp-grid { border-collapse: collapse; width: 100%; }
+.dp-rdp-grid th, .dp-rdp-grid td { padding: 0; text-align: center; }
+.dp-rdp-day { padding: 1px; }
+.dp-rdp-day .dp-day { width: var(--rdp-day-width); height: var(--rdp-day-height); aspect-ratio: auto; margin: 0 auto; }
+
+/* react-day-picker applies selected/today modifiers to the day CELL; re-apply
+   to the inner button so the number stays visible. */
+.dp-rdp-day.dp-day--selected .dp-day { background: var(--accent); color: #fff; font-weight: 600; }
+.dp-rdp-day.dp-day--selected .dp-day:hover { background: var(--accent-hover); color: #fff; }
+.dp-rdp-day.dp-day--today .dp-day { color: var(--accent); font-weight: 600; }
+.dp-rdp-day.dp-day--today.dp-day--selected .dp-day { color: #fff; }

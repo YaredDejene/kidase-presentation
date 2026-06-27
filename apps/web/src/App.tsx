@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { LangSlot } from '@kidase/shared';
-import { toEC, toGC } from 'kenat';
-import { fetchPresentations, fetchRender, PresentationSummary, RenderPayload } from './api/client';
+import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
 import { Stage } from './components/Stage';
 import { ConfigDrawer } from './components/ConfigDrawer';
@@ -18,19 +17,55 @@ function todayIso(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** Native Fullscreen API helpers (with WebKit fallback) for true edge-to-edge projection. */
+type FsDoc = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => void };
+type FsEl = HTMLElement & { webkitRequestFullscreen?: () => void };
+function fsElement(): Element | null {
+  const d = document as FsDoc;
+  return document.fullscreenElement ?? d.webkitFullscreenElement ?? null;
+}
+function requestFs(el: HTMLElement) {
+  const e = el as FsEl;
+  (e.requestFullscreen ?? e.webkitRequestFullscreen)?.call(e);
+}
+function exitFs() {
+  const d = document as FsDoc;
+  (d.exitFullscreen ?? d.webkitExitFullscreen)?.call(d);
+}
+
+/** Shareable view state encoded in the URL hash. */
+interface HashState {
+  p?: string; d?: string; m?: boolean; l?: LangSlot[]; s?: number; ui?: UiLang; th?: ThemeName;
+}
+function readHash(): HashState {
+  try {
+    const q = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    const out: HashState = {};
+    if (q.get('p')) out.p = q.get('p')!;
+    if (q.get('d')) out.d = q.get('d')!;
+    if (q.get('m')) out.m = q.get('m') === '1';
+    if (q.get('l')) out.l = q.get('l')!.split(',').filter(Boolean) as LangSlot[];
+    if (q.get('s')) out.s = parseInt(q.get('s')!, 10) || 0;
+    if (q.get('ui')) out.ui = q.get('ui') as UiLang;
+    if (q.get('th')) out.th = q.get('th') as ThemeName;
+    return out;
+  } catch { return {}; }
+}
+const HASH = readHash();
+
 const LOGO: React.CSSProperties = {
   borderRadius: 7, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
   color: '#fff', fontWeight: 700, fontFamily: "'Noto Serif Ethiopic',serif", flexShrink: 0,
 };
 
 export const App: React.FC = () => {
-  const [theme, setTheme] = useState<ThemeName>('dark');
-  const [uiLang, setUiLang] = useState<UiLang>('en');
-  const [presentations, setPresentations] = useState<PresentationSummary[]>([]);
-  const [selectedId, setSelectedId] = useState<string>('');
-  const [gregDate, setGregDate] = useState<string>(todayIso());
-  const [isMehella, setIsMehella] = useState(false);
-  const [activeSlots, setActiveSlots] = useState<LangSlot[]>([]);
+  const [theme, setTheme] = useState<ThemeName>(HASH.th ?? 'dark');
+  const [uiLang, setUiLang] = useState<UiLang>(HASH.ui ?? 'en');
+  const [selectedId, setSelectedId] = useState<string>(HASH.p ?? '');
+  const [gregDate, setGregDate] = useState<string>(HASH.d ?? todayIso());
+  const [isMehella, setIsMehella] = useState(HASH.m ?? false);
+  const [activeSlots, setActiveSlots] = useState<LangSlot[]>(HASH.l ?? []);
+  const pendingSlide = useRef<number>(HASH.s ?? 0);
   const [render, setRender] = useState<RenderPayload | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -50,7 +85,6 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     fetchPresentations().then(list => {
-      setPresentations(list);
       if (list.length) setSelectedId(prev => prev || list[0].id);
     }).catch(e => setError(String(e.message ?? e)));
   }, []);
@@ -62,7 +96,9 @@ export const App: React.FC = () => {
     fetchRender(selectedId, gregDate, isMehella)
       .then(payload => {
         if (cancelled) return;
-        setRender(payload); setSlideIndex(0);
+        setRender(payload);
+        setSlideIndex(Math.min(pendingSlide.current, Math.max(payload.slides.length - 1, 0)));
+        pendingSlide.current = 0;
         const avail = payload.languages.map(l => l.slot);
         setActiveSlots(prev => { const kept = prev.filter(s => avail.includes(s)); return kept.length ? kept : avail; });
       })
@@ -80,7 +116,22 @@ export const App: React.FC = () => {
     setControlsVisible(true);
     hideTimer.current = setTimeout(() => setControlsVisible(false), 2800);
   }, []);
-  const toggleFullscreen = useCallback(() => { setFullscreen(f => !f); setControlsVisible(true); bumpControls(); }, [bumpControls]);
+  // "Project" enters real browser fullscreen (hides the address bar / OS chrome).
+  const toggleFullscreen = useCallback(() => {
+    if (fsElement()) exitFs(); else requestFs(document.documentElement);
+  }, []);
+
+  // Keep the projection overlay in sync with the actual fullscreen state
+  // (covers Esc, F11, and the OS exiting fullscreen).
+  useEffect(() => {
+    const onChange = () => { setFullscreen(!!fsElement()); setControlsVisible(true); bumpControls(); };
+    document.addEventListener('fullscreenchange', onChange);
+    document.addEventListener('webkitfullscreenchange', onChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange);
+      document.removeEventListener('webkitfullscreenchange', onChange);
+    };
+  }, [bumpControls]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -92,7 +143,7 @@ export const App: React.FC = () => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); next(); }
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
       else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
-      else if (e.key === 'Escape' && fullscreen) setFullscreen(false);
+      else if (e.key === 'Escape' && fullscreen) exitFs();
       else if (e.key === 'i' || e.key === 'I') setInfoOpen(v => !v);
     };
     window.addEventListener('keydown', onKey);
@@ -102,14 +153,18 @@ export const App: React.FC = () => {
   const toggleLang = (slot: LangSlot) => setActiveSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
   const orderedActiveSlots = (render?.languages ?? []).map(l => l.slot).filter(s => activeSlots.includes(s));
 
-  // Ethiopian date derived from the Gregorian value (dual calendar).
-  const eth = useMemo(() => {
-    try { const d = new Date(gregDate + 'T12:00:00'); const ec = toEC(d.getFullYear(), d.getMonth() + 1, d.getDate()); return { monthIdx: ec.month - 1, day: ec.day, year: ec.year }; }
-    catch { return { monthIdx: 0, day: 1, year: 2018 }; }
-  }, [gregDate]);
-  const ethToGreg = (monthIdx: number, day: number, year: number) => {
-    try { const gc = toGC(year, monthIdx + 1, day); return `${gc.year}-${pad(gc.month)}-${pad(gc.day)}`; } catch { return gregDate; }
-  };
+  // Sync shareable view state into the URL hash so "Copy share link" reproduces the view.
+  useEffect(() => {
+    const q = new URLSearchParams();
+    if (selectedId) q.set('p', selectedId);
+    q.set('d', gregDate);
+    q.set('m', isMehella ? '1' : '0');
+    if (activeSlots.length) q.set('l', activeSlots.join(','));
+    q.set('s', String(slideIndex));
+    if (uiLang !== 'en') q.set('ui', uiLang);
+    if (theme !== 'dark') q.set('th', theme);
+    try { history.replaceState(null, '', `#${q.toString()}`); } catch { /* ignore */ }
+  }, [selectedId, gregDate, isMehella, activeSlots, slideIndex, uiLang, theme]);
 
   const current = render?.slides[slideIndex];
   const definition = current ? render?.templates[current.templateId] : undefined;
@@ -204,20 +259,15 @@ export const App: React.FC = () => {
       {configOpen && (
         <ConfigDrawer
           isDark={isDark} t={t} onClose={() => setConfigOpen(false)}
-          presentations={presentations} selectedId={selectedId} onSelect={id => setSelectedId(id)}
           gregDate={gregDate} onGreg={setGregDate}
-          ethMonthIdx={eth.monthIdx} ethDay={eth.day} ethYear={eth.year}
-          onEthMonth={i => setGregDate(ethToGreg(i, eth.day, eth.year))}
-          onEthDay={d => setGregDate(ethToGreg(eth.monthIdx, d, eth.year))}
-          onEthYear={y => setGregDate(ethToGreg(eth.monthIdx, eth.day, y))}
           languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang}
           isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
           uiLang={uiLang} setUiLang={setUiLang}
-          render={render} sections={[]}
+          sections={[]}
         />
       )}
       {infoOpen && <InfoPanel t={t} onClose={() => setInfoOpen(false)} render={render} />}
-      {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} slideCount={slideCount} />}
+      {exportOpen && render && <ExportDialog onClose={() => setExportOpen(false)} payload={render} activeSlots={orderedActiveSlots} />}
       {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
 
       {/* fullscreen projection */}
@@ -240,7 +290,7 @@ export const App: React.FC = () => {
                 );
               })}
               <div style={{ width: 1, height: 22, background: '#333', margin: '0 4px' }} />
-              <button onClick={() => setFullscreen(false)} title="Exit (Esc)" style={fsBtn}><I.Minimize size={20} /></button>
+              <button onClick={exitFs} title="Exit (Esc)" style={fsBtn}><I.Minimize size={20} /></button>
             </div>
           </div>
         </div>

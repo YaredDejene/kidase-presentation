@@ -11,8 +11,12 @@
   },
   "dependencies": {
     "@kidase/shared": "workspace:*",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.0.0",
     "kenat": "^3.2.0",
+    "pptxgenjs": "^4.0.1",
     "react": "^19.1.0",
+    "react-day-picker": "^9.13.2",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
