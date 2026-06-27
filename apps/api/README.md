@@ -56,7 +56,9 @@ docker compose -f apps/api/docker-compose.yml up -d   # starts mongo on :27017
 docker compose -f apps/api/docker-compose.yml down     # stop (data persists in a volume)
 ```
 
-Then keep the default `MONGODB_URI=mongodb://localhost:27017`.
+The compose file enables auth (`root`/`local_dev`), so use:
+`MONGODB_URI=mongodb://root:local_dev@localhost:27017/?authSource=admin` (already the
+default in `.env.example`).
 
 ## 2. Run the API
 

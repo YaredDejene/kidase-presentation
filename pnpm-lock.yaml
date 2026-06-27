@@ -145,7 +145,36 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@22.19.11)(tsx@4.22.4)(yaml@2.9.0)
 
-  apps/web: {}
+  apps/web:
+    dependencies:
+      '@kidase/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      kenat:
+        specifier: ^3.2.0
+        version: 3.2.0
+      react:
+        specifier: ^19.1.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.1.8
+        version: 19.2.10
+      '@types/react-dom':
+        specifier: ^19.1.6
+        version: 19.2.3(@types/react@19.2.10)
+      '@vitejs/plugin-react':
+        specifier: ^4.6.0
+        version: 4.7.0(vite@7.3.1(@types/node@22.19.11)(tsx@4.22.4)(yaml@2.9.0))
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+      vite:
+        specifier: ^7.0.4
+        version: 7.3.1(@types/node@22.19.11)(tsx@4.22.4)(yaml@2.9.0)
 
   packages/shared:
     dependencies:

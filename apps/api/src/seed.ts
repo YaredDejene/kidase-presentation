@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { ExcelImportService, PresentationService, templateSeeds } from '@kidase/shared';
+import { ExcelImportService, PresentationService, templateSeeds, createRuleDefinition } from '@kidase/shared';
 import type { TemplateDefinition } from '@kidase/shared';
 import { loadConfig } from './config';
 import { connectMongo } from './db/mongo';
@@ -53,6 +53,28 @@ async function main() {
       const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
       const loaded = await presentationService.importFromArrayBuffer(arrayBuffer, templateId);
       console.log(`Imported presentation "${loaded.presentation.name}" with ${loaded.slides.length} slides.`);
+
+      // Reference data: gitsawes (+ selection rules) and verses — needed for
+      // gitsawe selection, readings, and dynamic (verse) slide expansion.
+      try {
+        const { gitsawes } = await excel.importGitsaweFromArrayBuffer(arrayBuffer);
+        for (const g of gitsawes) {
+          const created = await repos.gitsawe.create(g.gitsawe);
+          if (g.selectionRule) {
+            await repos.rule.create(createRuleDefinition(g.selectionRule.name, 'gitsawe', g.selectionRule.ruleJson, { gitsaweId: created.id, isEnabled: true }));
+          }
+        }
+        console.log(`Imported ${gitsawes.length} gitsawes (+ selection rules).`);
+      } catch (e) {
+        console.log(`No Gitsawe sheet: ${(e as Error).message}`);
+      }
+      try {
+        const { verses } = await excel.importVersesFromArrayBuffer(arrayBuffer);
+        await repos.verse.createMany(verses);
+        console.log(`Imported ${verses.length} verses.`);
+      } catch (e) {
+        console.log(`No Verses sheet: ${(e as Error).message}`);
+      }
     } else {
       throw new Error(`Unsupported file type: ${ext} (expected .kidase, .json, or .xlsx)`);
     }

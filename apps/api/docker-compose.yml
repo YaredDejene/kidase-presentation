@@ -7,6 +7,9 @@ services:
     container_name: kidase-mongo
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: local_dev
     volumes:
       - kidase_mongo_data:/data/db
 
