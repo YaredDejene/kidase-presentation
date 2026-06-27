@@ -4,6 +4,7 @@ import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
 import { Stage } from './components/Stage';
 import { ConfigDrawer } from './components/ConfigDrawer';
+import { Admin } from './components/Admin';
 import { InfoPanel } from './components/InfoPanel';
 import { ExportDialog } from './components/ExportDialog';
 import { HelpOverlay } from './components/HelpOverlay';
@@ -77,6 +78,12 @@ export const App: React.FC = () => {
   const [exportOpen, setExportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [screen, setScreen] = useState<'viewer' | 'admin'>('viewer');
+  const [adminToken, setAdminToken] = useState<string | null>(() => { try { return localStorage.getItem('kidase_admin_token'); } catch { return null; } });
+  const updateToken = useCallback((tk: string | null) => {
+    setAdminToken(tk);
+    try { if (tk) localStorage.setItem('kidase_admin_token', tk); else localStorage.removeItem('kidase_admin_token'); } catch { /* ignore */ }
+  }, []);
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -203,7 +210,7 @@ export const App: React.FC = () => {
           <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
           <button className="ic" onClick={() => setConfigOpen(true)} title="Settings (date & languages)" style={iconBtn}><I.Gear /></button>
           <button className="ic" onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} title="Toggle theme" style={iconBtn}>{isDark ? <I.Sun /> : <I.Moon />}</button>
-          <button className="ic" title="Admin (sign-in in Phase 4)" style={iconBtn}><I.Users /></button>
+          <button className="ic" onClick={() => setScreen('admin')} title="Admin" style={iconBtn}><I.Users /></button>
           <button className="accent-btn" onClick={toggleFullscreen} title="Project fullscreen (F)" style={{ height: 36, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 7, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
             <I.Project /> Project
           </button>
@@ -294,6 +301,10 @@ export const App: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {screen === 'admin' && (
+        <Admin token={adminToken} setToken={updateToken} onBack={() => setScreen('viewer')} theme={theme} toggleTheme={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} isDark={isDark} />
       )}
     </div>
   );

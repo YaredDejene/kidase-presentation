@@ -43,6 +43,9 @@ cp apps/api/.env.example apps/api/.env
 | `HOST`           | `0.0.0.0`                     | Bind address                                           |
 | `RENDER_MAX_AGE` | `60`                          | `Cache-Control: max-age` (seconds) for `/render`       |
 | `RATE_LIMIT_MAX` | `120`                         | Requests/minute per IP                                 |
+| `ADMIN_EMAIL`    | `admin@church.org`            | Admin login email (`/admin/login`)                     |
+| `ADMIN_PASSWORD` | `changeme`                    | Admin login password — change in production            |
+| `JWT_SECRET`     | `dev-insecure-secret-change-me` | Secret used to sign admin JWTs — change in production |
 
 `.env` is gitignored; only `.env.example` is committed.
 
@@ -107,9 +110,18 @@ After seeding, try the endpoints below in `/docs`.
 | `GET /api/v1/presentations`                           | Picker catalog: `{ id, name, type, slideCount, langs, languages }`  |
 | `GET /api/v1/presentations/:id`                       | Viewer config meta (languages, template, default config)            |
 | `GET /api/v1/presentations/:id/render?date=&mehella=` | Resolved, display-ready slides + readings + context for a date      |
+| `POST /api/v1/admin/login`                            | Sign in (email+password) → JWT bearer token                         |
+| `GET /api/v1/admin/backup` *(auth)*                   | Download a full `.kidase` backup of all collections                 |
+| `POST /api/v1/admin/restore` *(auth)*                 | Restore a `.kidase` backup (replaces all data, bumps cache version) |
 
 **Render query params:** `date` = `YYYY-MM-DD` (defaults to today); `mehella` =
 `1`/`true` for the Mehella variant.
+
+**Admin auth:** `POST /admin/login` with `{ "email", "password" }` (env
+`ADMIN_EMAIL`/`ADMIN_PASSWORD`) returns `{ token }`. Send it as
+`Authorization: Bearer <token>` on `/admin/*`. In `/docs`, use the "Authorize"
+button to set the bearer token. Backup/restore follow the desktop strategy
+(dump every table / replace-all on restore) and reuse the `.kidase` importer.
 
 The render response returns **all enabled languages** (the viewer toggles
 translations client-side) and **deduped template definitions** in a `templates`

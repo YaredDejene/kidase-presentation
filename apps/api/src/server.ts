@@ -13,6 +13,9 @@ const app = await buildApp({
   db,
   renderMaxAge: cfg.renderMaxAge,
   rateLimitMax: cfg.rateLimitMax,
+  adminEmail: cfg.adminEmail,
+  adminPassword: cfg.adminPassword,
+  jwtSecret: cfg.jwtSecret,
 });
 
 await app.listen({ port: cfg.port, host: cfg.host });

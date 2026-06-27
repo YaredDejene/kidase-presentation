@@ -57,3 +57,12 @@ export const Calendar: React.FC<IconProps> = ({ size = 24, stroke = 1.6, color =
 export const Link: React.FC<IconProps> = ({ size = 15, stroke = 1.8, color = 'currentColor' }) => (
   <svg {...base(size, stroke, color)}><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8" /></svg>
 );
+export const Database: React.FC<IconProps> = ({ size = 17, stroke = 1.7, color = 'currentColor' }) => (
+  <svg {...base(size, stroke, color)}><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" /></svg>
+);
+export const LogOut: React.FC<IconProps> = ({ size = 15, stroke = 1.8, color = 'currentColor' }) => (
+  <svg {...base(size, stroke, color)}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+);
+export const Refresh: React.FC<IconProps> = ({ size = 16, stroke = 1.8, color = 'currentColor' }) => (
+  <svg {...base(size, stroke, color)}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5" /></svg>
+);

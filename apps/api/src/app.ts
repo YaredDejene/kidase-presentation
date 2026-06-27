@@ -1,20 +1,27 @@
-import Fastify, { FastifyInstance, FastifyReply } from 'fastify';
+import Fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import compress from '@fastify/compress';
 import rateLimit from '@fastify/rate-limit';
 import cors from '@fastify/cors';
+import jwt from '@fastify/jwt';
 import swagger from '@fastify/swagger';
 import scalarApiReference from '@scalar/fastify-api-reference';
 import { Db } from 'mongodb';
 import type { Repositories, Presentation, LangSlot } from '@kidase/shared';
 import { RenderService, getOrderedLanguages } from '@kidase/shared';
-import { getContentVersion } from './contentVersion';
+import { getContentVersion, bumpContentVersion } from './contentVersion';
 import { RenderCache } from './renderCache';
+import { createBackup, BackupData } from './backup';
+import { importKidaseBackup } from './importer/kidaseImporter';
 
 export interface BuildAppOptions {
   repos: Repositories;
   db: Db;
   renderMaxAge?: number;
   rateLimitMax?: number;
+  adminEmail?: string;
+  adminPassword?: string;
+  jwtSecret?: string;
+  appVersion?: string;
 }
 
 /** Viewer language codes for the picker badges, by slot. */
@@ -32,14 +39,19 @@ function langCodes(p: Presentation): string[] {
 }
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const app = Fastify({ logger: false });
+  // bodyLimit raised so /admin/restore can accept a full .kidase backup.
+  const app = Fastify({ logger: false, bodyLimit: 64 * 1024 * 1024 });
   const renderService = new RenderService(opts.repos);
   const cache = new RenderCache();
   const maxAge = opts.renderMaxAge ?? 60;
+  const adminEmail = opts.adminEmail ?? 'admin@church.org';
+  const adminPassword = opts.adminPassword ?? 'changeme';
+  const appVersion = opts.appVersion ?? '1.0.3';
 
   await app.register(cors, { origin: true });
   await app.register(compress, { global: true });
   await app.register(rateLimit, { max: opts.rateLimitMax ?? 120, timeWindow: '1 minute' });
+  await app.register(jwt, { secret: opts.jwtSecret ?? 'dev-insecure-secret-change-me' });
 
   // OpenAPI document (generated from route schemas) + Scalar reference/testing UI.
   await app.register(swagger, {
@@ -49,7 +61,11 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
         version: '1.0.3',
         description: 'Public read API for the Kidase web viewer. Render output is deterministic per (presentation, date, mehella) and HTTP-cacheable.',
       },
-      tags: [{ name: 'public', description: 'Public viewer endpoints' }],
+      tags: [
+        { name: 'public', description: 'Public viewer endpoints' },
+        { name: 'admin', description: 'Auth-protected admin endpoints (JWT bearer)' },
+      ],
+      components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } } },
     },
   });
   await app.register(scalarApiReference, { routePrefix: '/docs' });
@@ -166,6 +182,51 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       return reply.send(body);
     },
   );
+
+  // ---- Admin (JWT-protected) ----
+  async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
+    try { await req.jwtVerify(); } catch { return reply.code(401).send({ error: 'Unauthorized' }); }
+  }
+
+  app.post<{ Body: { email?: string; password?: string } }>('/api/v1/admin/login', {
+    schema: {
+      tags: ['admin'], summary: 'Sign in — returns a JWT bearer token',
+      body: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } },
+    },
+  }, async (req, reply) => {
+    const { email, password } = req.body ?? {};
+    if (email !== adminEmail || password !== adminPassword) {
+      return reply.code(401).send({ error: 'Invalid credentials' });
+    }
+    const token = app.jwt.sign({ sub: email, role: 'admin' }, { expiresIn: '12h' });
+    return { token, tokenType: 'Bearer', expiresIn: 43200 };
+  });
+
+  app.get('/api/v1/admin/backup', {
+    preHandler: requireAdmin,
+    schema: { tags: ['admin'], summary: 'Download a full .kidase backup of all collections', security: [{ bearerAuth: [] }] },
+  }, async (_req, reply) => {
+    const backup = await createBackup(opts.db, appVersion);
+    reply.header('content-type', 'application/json; charset=utf-8');
+    reply.header('content-disposition', `attachment; filename="kidase-backup-${backup.createdAt.slice(0, 10)}.kidase"`);
+    return backup;
+  });
+
+  app.post<{ Body: BackupData }>('/api/v1/admin/restore', {
+    preHandler: requireAdmin,
+    schema: {
+      tags: ['admin'], summary: 'Restore a .kidase backup (replaces all data)',
+      security: [{ bearerAuth: [] }],
+      body: { type: 'object', additionalProperties: true },
+    },
+  }, async (req, reply) => {
+    if (!req.body?.data || typeof req.body.data !== 'object') {
+      return reply.code(400).send({ error: 'Invalid backup: missing data' });
+    }
+    const counts = await importKidaseBackup(opts.db, req.body);
+    const contentVersion = await bumpContentVersion(opts.db);
+    return { counts, contentVersion };
+  });
 
   return app;
 }

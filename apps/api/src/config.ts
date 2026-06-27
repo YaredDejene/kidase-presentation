@@ -6,6 +6,9 @@ export interface ApiConfig {
   /** Public render cache TTL (seconds) advertised via Cache-Control. */
   renderMaxAge: number;
   rateLimitMax: number;
+  adminEmail: string;
+  adminPassword: string;
+  jwtSecret: string;
 }
 
 export function loadConfig(): ApiConfig {
@@ -16,5 +19,8 @@ export function loadConfig(): ApiConfig {
     host: process.env.HOST ?? '0.0.0.0',
     renderMaxAge: Number(process.env.RENDER_MAX_AGE ?? 60),
     rateLimitMax: Number(process.env.RATE_LIMIT_MAX ?? 120),
+    adminEmail: process.env.ADMIN_EMAIL ?? 'admin@church.org',
+    adminPassword: process.env.ADMIN_PASSWORD ?? 'changeme',
+    jwtSecret: process.env.JWT_SECRET ?? 'dev-insecure-secret-change-me',
   };
 }
