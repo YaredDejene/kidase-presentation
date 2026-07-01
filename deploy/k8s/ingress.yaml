@@ -1,0 +1,30 @@
+# Single domain: / -> web, /api -> api. TLS via cert-manager + Let's Encrypt.
+# Replace kidase.online with your domain.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kidase
+  namespace: kidase
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [kidase.online]
+      secretName: kidase-tls
+  rules:
+    - host: kidase.online
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: kidase-api
+                port: { number: 3001 }
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kidase-web
+                port: { number: 80 }

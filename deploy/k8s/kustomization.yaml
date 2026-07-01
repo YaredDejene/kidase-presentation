@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - issuer.yaml
+  - api.yaml
+  - web.yaml
+  - ingress.yaml
+
+# CI overrides these per release with:
+#   kustomize edit set image kidase-api=ghcr.io/<owner>/kidase-api:<tag> \
+#                            kidase-web=ghcr.io/<owner>/kidase-web:<tag>
+# Defaults let `kubectl apply -k deploy/k8s` work locally too (edit <owner>).
+images:
+  - name: kidase-api
+    newName: ghcr.io/OWNER/kidase-api
+    newTag: latest
+  - name: kidase-web
+    newName: ghcr.io/OWNER/kidase-web
+    newTag: latest

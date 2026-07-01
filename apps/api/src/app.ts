@@ -190,7 +190,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
   app.post<{ Body: { email?: string; password?: string } }>('/api/v1/admin/login', {
     schema: {
-      tags: ['admin'], summary: 'Sign in — returns a JWT bearer token',
+      tags: ['admin'], summary: 'Sign in, returns a JWT bearer token',
       body: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } },
     },
   }, async (req, reply) => {
