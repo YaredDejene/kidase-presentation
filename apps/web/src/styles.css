@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Ethiopic:wght@400;500;600;700&display=swap');
+
+* { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+textarea, input, select, button { font-family: inherit; }
+::selection { background: rgba(59,130,246,0.3); }
+select option { background: #1a1a1a; color: #fff; }
+input:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.18); }
+input::placeholder { color: var(--muted); }
+
+@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes slidein { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeup { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* hover affordances (inline styles can't express :hover) */
+.ic:hover { background: var(--elevated); color: var(--text); }
+.accent-btn:hover { background: var(--accent-hover) !important; }
+.outline-btn:hover { background: var(--elevated); color: var(--text); }
+.row-hover:hover { background: var(--elevated); }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }

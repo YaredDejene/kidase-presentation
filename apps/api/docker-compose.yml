@@ -1,0 +1,17 @@
+# Optional local MongoDB for development.
+#   docker compose -f apps/api/docker-compose.yml up -d
+# Then set MONGODB_URI=mongodb://localhost:27017 in apps/api/.env
+services:
+  mongo:
+    image: mongo:7
+    container_name: kidase-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: local_dev
+    volumes:
+      - kidase_mongo_data:/data/db
+
+volumes:
+  kidase_mongo_data:
