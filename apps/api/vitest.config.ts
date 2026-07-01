@@ -11,5 +11,7 @@ export default defineConfig({
     // mongodb-memory-server downloads a binary on first run; allow generous time.
     testTimeout: 60000,
     hookTimeout: 120000,
+    // Run test files serially so they don't race downloading/locking the mongod binary.
+    fileParallelism: false,
   },
 });
