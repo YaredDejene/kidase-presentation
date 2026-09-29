@@ -11,40 +11,69 @@ const withSlideFont = (family: string) => `${SLIDE_FONT}, ${family}`;
 
 /** Justifying fewer or shorter lines than this stretches a handful of words across the slide. */
 const MIN_JUSTIFIED_LINES = 3;
-const MIN_JUSTIFIED_CHARS_PER_LINE = 20;
+const MIN_JUSTIFIED_CHARS_PER_LINE = 30;
+
+/** Share of the content area the text may fill; the rest is breathing room. */
+const FILL = 0.94;
+const MIN_FIT = 0.2;
+const MAX_FIT = 4.4;
+const clampFit = (v: number) => Math.min(MAX_FIT, Math.max(MIN_FIT, v));
 
 /**
- * One language's text. Long blocks keep the template alignment; short blocks
- * (few lines, or narrow columns) drop justify for left and balance their lines
- * so no word sits alone. Neither change alters the line count, so measuring
- * the rendered height is stable.
+ * Long blocks keep the template alignment; short blocks (few lines, or narrow
+ * columns) drop justify for left and balance their lines so no word sits alone.
+ * Neither change alters the line count.
  */
-const LangText: React.FC<{ style: React.CSSProperties; children: string }> = ({ style, children }) => {
-  const ref = useRef<HTMLDivElement>(null);
+function alignTexts(root: HTMLElement): void {
+  for (const el of root.querySelectorAll<HTMLElement>('[data-slide-text]')) {
+    const lineHeightPx = parseFloat(getComputedStyle(el).lineHeight);
+    const lines = Math.max(1, Math.round(el.offsetHeight / lineHeightPx));
+    const isLong = lines >= MIN_JUSTIFIED_LINES
+      && (el.textContent ?? '').length / lines >= MIN_JUSTIFIED_CHARS_PER_LINE;
+    el.style.setProperty('text-wrap-style', isLong ? 'pretty' : 'balance');
+    if (el.dataset.slideText === 'justify') el.style.textAlign = isLong ? 'justify' : 'left';
+  }
+}
 
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const apply = () => {
-      const lineHeightPx = parseFloat(getComputedStyle(el).lineHeight);
-      const lines = Math.max(1, Math.round(el.scrollHeight / lineHeightPx));
-      const isLong = lines >= MIN_JUSTIFIED_LINES
-        && children.length / lines >= MIN_JUSTIFIED_CHARS_PER_LINE;
-      const wrap = isLong ? 'pretty' : 'balance';
-      if (el.style.getPropertyValue('text-wrap-style') !== wrap) el.style.setProperty('text-wrap-style', wrap);
-      if (style.textAlign !== 'justify') return;
-      const align = isLong ? 'justify' : 'left';
-      if (el.style.textAlign !== align) el.style.textAlign = align;
-    };
-    apply();
-    // The bundled font may arrive after first paint and change the wrapping.
-    let cancelled = false;
-    document.fonts?.ready.then(() => { if (!cancelled) apply(); });
-    return () => { cancelled = true; };
-  });
+/**
+ * Size the text by measuring it: adjust the `--fit` font multiplier until the
+ * rendered content fills the content area. Height grows roughly with the
+ * square of the font size (taller lines and fewer characters per line), hence
+ * the square-root step.
+ */
+function fitSlide(root: HTMLElement): void {
+  const box = root.querySelector<HTMLElement>('[data-fit-box]');
+  if (!box || box.clientHeight === 0) return;
 
-  return <div ref={ref} style={style}>{children}</div>;
-};
+  const gap = parseFloat(getComputedStyle(box).rowGap) || 0;
+  const rows = Array.from(box.children) as HTMLElement[];
+  const needed = () =>
+    rows.reduce((h, row) => h + row.offsetHeight, 0) + gap * Math.max(0, rows.length - 1);
+
+  let fit = parseFloat(root.style.getPropertyValue('--fit')) || 1;
+  const setFit = (v: number) => {
+    fit = clampFit(v);
+    root.style.setProperty('--fit', String(fit));
+  };
+
+  const target = box.clientHeight * FILL;
+  for (let i = 0; i < 6; i++) {
+    const height = needed();
+    if (height === 0) return;
+    const ratio = height / target;
+    if (ratio <= 1 && ratio >= 0.93) break;
+    const next = clampFit(fit / Math.sqrt(ratio));
+    if (Math.abs(next - fit) < 0.005) break;
+    setFit(next);
+  }
+
+  alignTexts(root);
+
+  // Never overflow: step down until it fits.
+  for (let i = 0; i < 20 && fit > MIN_FIT && needed() > box.clientHeight; i++) {
+    setFit(fit * 0.96);
+  }
+}
 
 const VERTICAL_ALIGN_TO_JUSTIFY = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
 
@@ -94,26 +123,39 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
     });
   }, [def, enabledLanguages, block, title, footer]);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    fitSlide(root);
+    // The bundled font may arrive after first paint and change the wrapping.
+    let cancelled = false;
+    document.fonts?.ready.then(() => { if (!cancelled) fitSlide(root); });
+    return () => { cancelled = true; };
+  });
+
   const renderLanguageContent = (langDef: EnabledLanguage) => {
     const text = block[langDef.slot];
     if (!text) return null;
 
     return (
-      <LangText
+      <div
         key={langDef.slot}
+        data-slide-text={langDef.alignment}
         style={{
-          fontSize: `${langDef.fontSize * fontScaleFactor * scale}px`,
+          fontSize: `calc(var(--fit) * ${langDef.fontSize * scale}px)`,
           fontFamily: withSlideFont(langDef.fontFamily),
           color: langDef.color,
           textAlign: langDef.alignment,
           lineHeight: langDef.lineHeight,
           whiteSpace: 'pre-wrap',
+          flexShrink: 0,
           wordBreak: 'break-word',
-          overflow: 'hidden',
         }}
       >
         {text}
-      </LangText>
+      </div>
     );
   };
 
@@ -200,19 +242,25 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
 
     const gap = Math.max(def.layout.gap * scale, 16 * scale);
 
+    const boxStyle: React.CSSProperties = {
+      display: 'flex',
+      flexDirection: 'column',
+      flex: 1,
+      minHeight: 0,
+      justifyContent: justify,
+      gap: `${gap}px`,
+      overflow: 'hidden',
+    };
+
     if (def.layout.columns > 1) {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: `${gap}px`, overflow: 'hidden' }}>
-          {def.layout.rows > 1 && enabledLanguages[0] && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: justify, overflow: 'hidden' }}>
-              {renderLanguageContent(enabledLanguages[0])}
-            </div>
-          )}
-          <div style={{ display: 'flex', flex: 1, gap: `${gap}px`, overflow: 'hidden' }}>
+        <div data-fit-box style={boxStyle}>
+          {def.layout.rows > 1 && enabledLanguages[0] && renderLanguageContent(enabledLanguages[0])}
+          <div style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0, gap: `${gap}px` }}>
             {(def.layout.rows > 1 ? enabledLanguages.slice(1) : enabledLanguages)
               .filter(langDef => !!block[langDef.slot])
               .map(langDef => (
-                <div key={langDef.slot} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: justify, overflow: 'hidden' }}>
+                <div key={langDef.slot} style={{ flex: 1, minWidth: 0 }}>
                   {renderLanguageContent(langDef)}
                 </div>
               ))}
@@ -222,16 +270,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
     }
 
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          justifyContent: justify,
-          gap: `${gap}px`,
-          overflow: 'hidden',
-        }}
-      >
+      <div data-fit-box style={boxStyle}>
         {enabledLanguages.map(langDef => renderLanguageContent(langDef))}
       </div>
     );
@@ -242,7 +281,10 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
 
   return (
     <div
+      ref={rootRef}
       style={{
+        // Starting guess from the character-count heuristic; fitSlide refines it by measuring.
+        ['--fit' as string]: fontScaleFactor,
         width: '100%',
         height: '100%',
         backgroundColor: def.background.color,
