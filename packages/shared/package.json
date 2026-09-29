@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/noto-serif-ethiopic": "^5.3.0",
     "kenat": "^3.2.0",
     "xlsx": "^0.18.5"
   },

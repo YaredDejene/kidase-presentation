@@ -1,7 +1,13 @@
 import React, { useMemo } from 'react';
+import '@fontsource-variable/noto-serif-ethiopic';
 import type { TemplateDefinition } from '../domain/entities/Template';
 import type { SlideBlock, SlideTitle } from '../domain/entities/Slide';
 import { computeFontScaleFactor, EnabledLanguage } from './fontScale';
+
+/** Bundled with both apps so text wraps identically on every platform. */
+export const SLIDE_FONT = "'Noto Serif Ethiopic Variable'";
+/** Templates name fonts that may not be installed (e.g. Nyala); the bundled font goes first. */
+const withSlideFont = (family: string) => `${SLIDE_FONT}, ${family}`;
 
 const VERTICAL_ALIGN_TO_JUSTIFY = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
 
@@ -60,7 +66,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
         key={langDef.slot}
         style={{
           fontSize: `${langDef.fontSize * fontScaleFactor * scale}px`,
-          fontFamily: langDef.fontFamily,
+          fontFamily: withSlideFont(langDef.fontFamily),
           color: langDef.color,
           textAlign: langDef.alignment,
           lineHeight: langDef.lineHeight,
@@ -120,7 +126,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
         footerParts.push(
           <span
             key={`footer-${langDef.slot}`}
-            style={{ fontFamily: langDef.fontFamily, color: langDef.color }}
+            style={{ fontFamily: withSlideFont(langDef.fontFamily), color: langDef.color }}
           >
             {titlePart && (
               <span style={{ fontWeight: 'bold' }}>
@@ -206,6 +212,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
         width: '100%',
         height: '100%',
         backgroundColor: def.background.color,
+        fontFamily: withSlideFont('serif'), // title and footer
         padding: `${paddingTop}px ${def.margins.right * scale}px ${paddingBottom}px ${def.margins.left * scale}px`,
         boxSizing: 'border-box',
         display: 'flex',

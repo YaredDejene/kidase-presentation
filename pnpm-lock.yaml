@@ -193,6 +193,9 @@ importers:
 
   packages/shared:
     dependencies:
+      '@fontsource-variable/noto-serif-ethiopic':
+        specifier: ^5.3.0
+        version: 5.3.0
       kenat:
         specifier: ^3.2.0
         version: 3.2.0
@@ -652,6 +655,9 @@ packages:
 
   '@fastify/swagger@9.7.0':
     resolution: {integrity: sha512-Vp1SC1GC2Hrkd3faFILv86BzUNyFz5N4/xdExqtCgkGASOzn/x+eMe4qXIGq7cdT6wif/P/oa6r1Ruqx19paZA==}
+
+  '@fontsource-variable/noto-serif-ethiopic@5.3.0':
+    resolution: {integrity: sha512-Li961IUqR2MmBocqRhgrB12NKt3qnqp7ma9humdKVYVb1LvRzs7saOZoVp/k14AcPDr9Ak2VDxyD8gvC7Gfzcg==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -2407,6 +2413,8 @@ snapshots:
       yaml: 2.9.0
     transitivePeerDependencies:
       - supports-color
+
+  '@fontsource-variable/noto-serif-ethiopic@5.3.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
