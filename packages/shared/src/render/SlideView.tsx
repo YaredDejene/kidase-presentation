@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import '@fontsource-variable/noto-serif-ethiopic';
 import type { TemplateDefinition } from '../domain/entities/Template';
 import type { SlideBlock, SlideTitle } from '../domain/entities/Slide';
@@ -8,6 +8,43 @@ import { computeFontScaleFactor, EnabledLanguage } from './fontScale';
 export const SLIDE_FONT = "'Noto Serif Ethiopic Variable'";
 /** Templates name fonts that may not be installed (e.g. Nyala); the bundled font goes first. */
 const withSlideFont = (family: string) => `${SLIDE_FONT}, ${family}`;
+
+/** Justifying fewer or shorter lines than this stretches a handful of words across the slide. */
+const MIN_JUSTIFIED_LINES = 3;
+const MIN_JUSTIFIED_CHARS_PER_LINE = 20;
+
+/**
+ * One language's text. Long blocks keep the template alignment; short blocks
+ * (few lines, or narrow columns) drop justify for left and balance their lines
+ * so no word sits alone. Neither change alters the line count, so measuring
+ * the rendered height is stable.
+ */
+const LangText: React.FC<{ style: React.CSSProperties; children: string }> = ({ style, children }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => {
+      const lineHeightPx = parseFloat(getComputedStyle(el).lineHeight);
+      const lines = Math.max(1, Math.round(el.scrollHeight / lineHeightPx));
+      const isLong = lines >= MIN_JUSTIFIED_LINES
+        && children.length / lines >= MIN_JUSTIFIED_CHARS_PER_LINE;
+      const wrap = isLong ? 'pretty' : 'balance';
+      if (el.style.getPropertyValue('text-wrap-style') !== wrap) el.style.setProperty('text-wrap-style', wrap);
+      if (style.textAlign !== 'justify') return;
+      const align = isLong ? 'justify' : 'left';
+      if (el.style.textAlign !== align) el.style.textAlign = align;
+    };
+    apply();
+    // The bundled font may arrive after first paint and change the wrapping.
+    let cancelled = false;
+    document.fonts?.ready.then(() => { if (!cancelled) apply(); });
+    return () => { cancelled = true; };
+  });
+
+  return <div ref={ref} style={style}>{children}</div>;
+};
 
 const VERTICAL_ALIGN_TO_JUSTIFY = { top: 'flex-start', center: 'center', bottom: 'flex-end' } as const;
 
@@ -62,7 +99,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
     if (!text) return null;
 
     return (
-      <div
+      <LangText
         key={langDef.slot}
         style={{
           fontSize: `${langDef.fontSize * fontScaleFactor * scale}px`,
@@ -76,7 +113,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
         }}
       >
         {text}
-      </div>
+      </LangText>
     );
   };
 
@@ -159,10 +196,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
   const footerContent = renderFooter();
 
   const renderLayoutContent = () => {
-    const hasChrome = !!titleContent || !!footerContent;
-    const justify = hasChrome
-      ? 'flex-start'
-      : VERTICAL_ALIGN_TO_JUSTIFY[def.layout.verticalAlign ?? 'center'];
+    const justify = VERTICAL_ALIGN_TO_JUSTIFY[def.layout.verticalAlign ?? 'center'];
 
     const gap = Math.max(def.layout.gap * scale, 16 * scale);
 
