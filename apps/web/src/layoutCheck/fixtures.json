@@ -1,0 +1,361 @@
+{
+ "languages": [
+  {
+   "slot": "Lang1",
+   "name": "Geez"
+  },
+  {
+   "slot": "Lang2",
+   "name": "Amharic"
+  },
+  {
+   "slot": "Lang3",
+   "name": "Tigrigna"
+  },
+  {
+   "slot": "Lang4",
+   "name": "English"
+  }
+ ],
+ "templates": {
+  "4d041396-ae83-4dcd-9f37-3932790c5eba": {
+   "layout": {
+    "columns": 1,
+    "rows": 1,
+    "gap": 20,
+    "verticalAlign": "center"
+   },
+   "title": {
+    "show": true,
+    "fontSize": 64,
+    "color": "#FFD700",
+    "alignment": "left"
+   },
+   "languages": [
+    {
+     "slot": "Lang1",
+     "fontSize": 62,
+     "fontFamily": "Nyala, serif",
+     "color": "#FFFFFF",
+     "alignment": "justify",
+     "lineHeight": 1.15
+    },
+    {
+     "slot": "Lang2",
+     "fontSize": 46,
+     "fontFamily": "Nyala, serif",
+     "color": "#FFFF00",
+     "alignment": "justify",
+     "lineHeight": 1.15
+    },
+    {
+     "slot": "Lang3",
+     "fontSize": 46,
+     "fontFamily": "Nyala, serif",
+     "color": "#00FF00",
+     "alignment": "justify",
+     "lineHeight": 1.15
+    },
+    {
+     "slot": "Lang4",
+     "fontSize": 46,
+     "fontFamily": "Nyala, serif",
+     "color": "#00BFFF",
+     "alignment": "justify",
+     "lineHeight": 1.15
+    }
+   ],
+   "background": {
+    "color": "#000000"
+   },
+   "margins": {
+    "top": 20,
+    "right": 40,
+    "bottom": 20,
+    "left": 40
+   },
+   "safeArea": {
+    "horizontal": 5,
+    "vertical": 5
+   }
+  },
+  "d449697a-d3fe-42bb-bcbe-8e1f28541f5f": {
+   "layout": {
+    "columns": 1,
+    "rows": 1,
+    "gap": 20,
+    "verticalAlign": "center"
+   },
+   "title": {
+    "show": true,
+    "fontSize": 64,
+    "color": "#FFD700",
+    "alignment": "left"
+   },
+   "languages": [
+    {
+     "slot": "Lang1",
+     "fontSize": 62,
+     "fontFamily": "Nyala, serif",
+     "color": "#FFFFFF",
+     "alignment": "center",
+     "lineHeight": 1.15
+    },
+    {
+     "slot": "Lang2",
+     "fontSize": 46,
+     "fontFamily": "Nyala, serif",
+     "color": "#FFFF00",
+     "alignment": "center",
+     "lineHeight": 1.15
+    },
+    {
+     "slot": "Lang3",
+     "fontSize": 46,
+     "fontFamily": "Nyala, serif",
+     "color": "#00FF00",
+     "alignment": "center",
+     "lineHeight": 1.15
+    },
+    {
+     "slot": "Lang4",
+     "fontSize": 46,
+     "fontFamily": "Nyala, serif",
+     "color": "#00BFFF",
+     "alignment": "center",
+     "lineHeight": 1.15
+    }
+   ],
+   "background": {
+    "color": "#000000"
+   },
+   "margins": {
+    "top": 20,
+    "right": 40,
+    "bottom": 20,
+    "left": 40
+   },
+   "safeArea": {
+    "horizontal": 5,
+    "vertical": 5
+   }
+  },
+  "cad15c74-618d-4eab-b23f-1da21af76afd": {
+   "layout": {
+    "columns": 3,
+    "rows": 2,
+    "gap": 12,
+    "verticalAlign": "center"
+   },
+   "title": {
+    "show": true,
+    "fontSize": 64,
+    "color": "#FFD700",
+    "alignment": "center"
+   },
+   "languages": [
+    {
+     "slot": "Lang1",
+     "fontSize": 56,
+     "fontFamily": "Nyala, serif",
+     "color": "#FFFFFF",
+     "alignment": "justify",
+     "lineHeight": 1.2
+    },
+    {
+     "slot": "Lang2",
+     "fontSize": 42,
+     "fontFamily": "Nyala, serif",
+     "color": "#FFFF00",
+     "alignment": "justify",
+     "lineHeight": 1.2
+    },
+    {
+     "slot": "Lang3",
+     "fontSize": 42,
+     "fontFamily": "Nyala, serif",
+     "color": "#00FF00",
+     "alignment": "justify",
+     "lineHeight": 1.2
+    },
+    {
+     "slot": "Lang4",
+     "fontSize": 42,
+     "fontFamily": "Nyala, serif",
+     "color": "#00BFFF",
+     "alignment": "justify",
+     "lineHeight": 1.2
+    }
+   ],
+   "background": {
+    "color": "#000000"
+   },
+   "margins": {
+    "top": 20,
+    "right": 30,
+    "bottom": 20,
+    "left": 30
+   },
+   "safeArea": {
+    "horizontal": 5,
+    "vertical": 5
+   }
+  }
+ },
+ "slides": [
+  {
+   "name": "slide 1",
+   "templateId": "4d041396-ae83-4dcd-9f37-3932790c5eba",
+   "title": {
+    "Lang1": "ይ:ካ ",
+    "Lang4": "Priest"
+   },
+   "footer": null,
+   "block": {
+    "Lang1": "ሚመጠን ግርምት ዛቲ ዕለት ወእፅብት ዛቲ ሠዓት እንተ ባቲ ይወርድ መንፈስ ቅዱስ እመልዕልተ ሰማያት ወይጼልሎ ለዝንቱ መስዋእት ወይቄድሶ",
+    "Lang2": "ይህች ቀን ምን ያህል የምታስፈራ ናት፤ ይህችስ ሰዓት ምን ያህል የምታስጨንቅ ናት፤ መንፈስ ቅዱስ ከሰማየ ሰማያት የሚወርድባት፤ ይህን መሥዋዕቱን የሚሰውርባትና የሚያከብርባት ።",
+    "Lang3": "መንፈስ ቅዱስ ብኣኣ ካብ ሰማይ ሰማያት ወሪዱ ነዚ መስዋእቲ ነዚ ዜጽልላን ዚቕድሳን እዛ ዕለት እዚኣ ክንደይ እተፍርህ እያ እዛ ሰዓት እዚኣኸ ክንደይ እተስደምም እያ።",
+    "Lang4": "How awful is this day and how marvelous this hour wherein the Holy Spirit will descend from heaven and overshadow and hallow this sacrifice."
+   }
+  },
+  {
+   "name": "slide 24",
+   "templateId": "d449697a-d3fe-42bb-bcbe-8e1f28541f5f",
+   "title": {
+    "Lang1": "ይ:ካ"
+   },
+   "footer": null,
+   "block": {
+    "Lang1": "ማሳረግ/ቡራኬ",
+    "Lang4": "Benediction"
+   }
+  },
+  {
+   "name": "slide 27",
+   "templateId": "cad15c74-618d-4eab-b23f-1da21af76afd",
+   "title": {
+    "Lang1": "ይ፡ካ"
+   },
+   "footer": null,
+   "block": {
+    "Lang1": "አሐዱ አብ ቅዱስ። \nአሐዱ ወልድ ቅዱስ። \nአሐዱ ውእቱ መንፈስ ቅዱስ። ",
+    "Lang2": "አንዱ አብ ቅዱስ ነው \nአንዱ ወልድ ቅዱስ ነው \nአንዱ መንፈስ ቅዱስ ቅዱስ ነው",
+    "Lang3": "ሓደ ኣብ ቅዱስ እዩ \nሓደ ወልድ ቅዱስ እዩ \nሓደ መንፈስ ቅዱስውን ቅዱስ እዩ",
+    "Lang4": "One is the Holy Father, \nOne is the Holy Son, \nOne is the Holy Spirit"
+   }
+  },
+  {
+   "name": "slide 30",
+   "templateId": "4d041396-ae83-4dcd-9f37-3932790c5eba",
+   "title": {
+    "Lang1": "ይ፡ሕ"
+   },
+   "footer": null,
+   "block": {
+    "Lang1": "ወይሴብሕዎ ኵሎሙ ሕዝብ",
+    "Lang2": "ሕዝብም ሁሉ ያመሰግኑታል",
+    "Lang3": "ኵሎም ሕዝቢውን የመስግንዎ።",
+    "Lang4": "And praise, all ye people"
+   }
+  },
+  {
+   "name": "slide 34",
+   "templateId": "4d041396-ae83-4dcd-9f37-3932790c5eba",
+   "title": {
+    "Lang1": "ይ፡ካ"
+   },
+   "footer": {
+    "title": {
+     "Lang1": "ይ፡ሕ"
+    },
+    "text": {
+     "Lang1": "ከማሁ",
+     "Lang2": "እንደ ካህኑ ይበሉ",
+     "Lang3": "ከምኡ ይበሉ",
+     "Lang4": "Shall repeat his words"
+    }
+   },
+   "block": {
+    "Lang1": "ይእዜኒ ወዘልፈኒ ወለዓለመ ዓለም፤ አሜን ሃሌ ሉያ።",
+    "Lang2": "ዛሬም ዘወትርም ለዘለዓለሙ አሜን ሃሌ ሉያ",
+    "Lang3": "ንዘልዓለም ዓለም ኣሜን ሃሌ ሉያ።",
+    "Lang4": "Both now and ever and world without end. Amen."
+   }
+  },
+  {
+   "name": "slide 56",
+   "templateId": "4d041396-ae83-4dcd-9f37-3932790c5eba",
+   "title": null,
+   "footer": null,
+   "block": {
+    "Lang1": "መስዋዕተ ቀዳምያተ ዐሥራተ አኮቴተ ተዝካር ዘብዙኀ ወዘኅዳጠ ዘኅቡእ ወዘገሃድ  ወለእለሃ ይፈቅዱ የሀቡ ተወኪፈከ ፍትወቶሙ ሀብ ለኩሎሙ ዐስበ በፈከተ ክፍለ ትኩን",
+    "Lang2": "ወሥዋዕቱን መጀመሪያውን ከአሥር አንዱን የመታሰቢያ ምስጋናን ብዙውንና ጥቂቱን፤ የተሰወረውንና የተገለጸውን ይሰጡ ዘንድ ሲወዱ የሚሰጡት ከሌላቸው ላይ ፈቃዳቸውን ተቀብለህ ለሁሉም የበረከት ዋጋን ስጥ ዕድል ፈንታ ትሆን ዘንድ",
+    "Lang3": "መሥዋዕትን፣ ቀዳምያትን፣ ዓሥራትን ናይ መዘከርታ ምስጋናን፤ ብዚኀን ውሑድን ሕቡእን ግሁድን ዝኾነ ዜቕርቡ ከህቡ እናደለዩ ዚህብዎ ንዘይብሎምን ድልየቶም ተቐቢልካ ብጽሒቶም ክትከውን ንኹሎም ዓስቢ በፈኸጽ ሃቦም",
+    "Lang4": "a sacrifice, first-fruits, tithes, a thank offering, a memorial, whether much or little, in secret or openly, and for those who wish to give and have not wherewith to give. Thy acceptance of their ready mind grant Thou unto every one; let the recompense of blessing be a portion to all of them:"
+   }
+  },
+  {
+   "name": "slide 78",
+   "templateId": "4d041396-ae83-4dcd-9f37-3932790c5eba",
+   "title": {
+    "Lang1": "ይ፡ዲ"
+   },
+   "footer": null,
+   "block": {
+    "Lang1": "ስግዱ ለእግዚአብሔር በፍርሐት።",
+    "Lang2": "በፍርሐት ለእግዚአብሔር ስገዱ",
+    "Lang3": "ንእግዚኣብሔር ብፍርሓት ስገዱ",
+    "Lang4": "Worship the Lord with fear."
+   }
+  },
+  {
+   "name": "slide 142",
+   "templateId": "4d041396-ae83-4dcd-9f37-3932790c5eba",
+   "title": null,
+   "footer": {
+    "title": {
+     "Lang1": "ሐዋ ም 10 ቁ 9-24"
+    },
+    "text": null
+   },
+   "block": {
+    "Lang2": "9 እነርሱም በነገው ሲሄዱ ወደ ከተማም ሲቀርቡ፥ ጴጥሮስ በስድስት ሰዓት ያህል ይጸልይ ዘንድ ወደ ጣራው ወጣ።\n10 ተርቦም ሊበላ ወደደ፤ ሲያዘጋጁለት ሳሉም ተመስጦ መጣበት፤\n11 ሰማይም ተከፍቶ በአራት ማዕዘን የተያዘ ታላቅ ሸማ የሚመስል ዕቃ ወደ ምድር ሲወርድ አየ፤\n12 በዚያውም አራት እግር ያላቸው ሁሉ አራዊትም በምድርም የሚንቀሳቀሱት የሰማይ ወፎችም ነበሩበት።",
+    "Lang3": "9 ንጽብሒቱ ንሳቶም መገዲ ኪኸዱ ኸለዉ፡ ናብታ ኸተማ ምስ ቀረቡ፡ ጴጥሮስ ብሳድሰይቲ ሰዓት ኣቢሉ ኺጽሊ ናብ ናሕሲ ደየበ።\n10 ሽዑ ጠምዩ ኺበልዕ ደለየ፡ ኬዳልዉሉ ኸለዉ ኸኣ፡ ተመሰጠ።\n11 ሰማይ ተኸፊቱ ኣቕሓ ኸኣ ከም ዓብዪ ኽዳን በርባዕተ መኣዝኑ ተትሒዙ ኺወርድ፡ ኣብ ምድሪውን ኪበጽሕ ከሎ ረኣየ።\n12 ኣብኡ ኸኣ ኣርባዕተ መሓውር ዘለዎም ኲሎምን ኣብ ምድሪ ለመም ዚብሉን ኣዕዋፍ ሰማይን ነበሩ እሞ፡",
+    "Lang4": "9 On the morrow, as they went on their journey, and drew nigh unto the city, Peter went up upon the housetop to pray about the sixth hour:\n10 And he became very hungry, and would have eaten: but while they made ready, he fell into a trance,\n11 And saw heaven opened, and a certain vessel descending unto him, as it had been a great sheet knit at the four corners, and let down to the earth:\n12 Wherein were all manner of fourfooted beasts of the earth, and wild beasts, and creeping things, and fowls of the air."
+   }
+  },
+  {
+   "name": "slide 145",
+   "templateId": "4d041396-ae83-4dcd-9f37-3932790c5eba",
+   "title": null,
+   "footer": {
+    "title": {
+     "Lang1": "ሐዋ ም 10 ቁ 9-24"
+    },
+    "text": null
+   },
+   "block": {
+    "Lang2": "21 ጴጥሮስም ወደ ሰዎቹ ወርዶ። እነሆ፥ የምትፈልጉኝ እኔ ነኝ፤ የመጣችሁበትስ ምክንያት ምንድር ነው? አላቸው።\n22 እነርሱም። ጻድቅ ሰው እግዚአብሔርንም የሚፈራ በአይሁድም ሕዝብ ሁሉ የተመሰከረለት የመቶ አለቃ ቆርኔሌዎስ ወደ ቤቱ ያስመጣህ ዘንድ ከአንተም ቃልን ይሰማ ዘንድ ከቅዱስ መልአክ ተረዳ አሉት።\n23 እርሱም ወደ ውስጥ ጠርቶ እንድግድነት ተቀበላቸው። በነገውም ተነሥቶ ከእነርሱ ጋር ወጣ፥ በኢዮጴም ከነበሩት ወንድሞች አንዳንዶቹ ከእርሱ ጋር አብረው ሄዱ።\n24 በነገውም ወደ ቂሣርያ ገቡ፤ ቆርኔሌዎስም ዘመዶቹንና የቅርብ ወዳጆቹን በአንድነት ጠርቶ ይጠባበቃቸው ነበር።",
+    "Lang3": "21 ሽዑ ጴጥሮስ ናብቶም ሰባት ወሪዱ፡ እንሆ፡ እቲ እትደልይዎ ዘሎኹም ኣነ እየ፡ ብዛዕባ እንታይ ኢኹም ኣብዚ ደው ኢልኩም ዘሎኹም፧ በሎም።\n22 ንሳቶም ከኣ፡ ንቆርኔሌዎስ፡ ነቲ ሓለቓ ሚእቲ፡ ብዂሉ ህዝቢ ኣይሁድ እተመስከረሉ፡ ንኣምላኽ ዚፈርህ ጻድቕ ሰብኣይ፡ ናብ ቤቱ ኺጽውዓካ ኻባኻውን ቃል ኪሰምዕ፡ ብቕዱስ መልኣኽ ተገሊጹሉ ኣሎ፡ በሉ።\n23 ሽዑ ኣእትዩ ኣሕደሮም። ንጽብሒቱ ተንሲኡ ምሳታቶም ከደ፡ ካብ ዮጴ ኸኣ ሓያሎ ኣሕዋት ሰዐብዎ።\n24 ንጽብሒቱ ድማ ኣብ ቂሳርያ ኣተዉ። ቆርኔሌዎስ ከኣ ኣዝማዱን ዚቐርብዎ ፈተውቱን ኣኪቡ ይጽበዮም ነበረ።",
+    "Lang4": "21 Then Peter went down to the men which were sent unto him from Cornelius; and said, Behold, I am he whom ye seek: what is the cause wherefore ye are come?\n22 And they said, Cornelius the centurion, a just man, and one that feareth God, and of good report among all the nation of the Jews, was warned from God by an holy angel to send for thee into his house, and to hear words of thee.\n23 Then called he them in, and lodged them. And on the morrow Peter went away with them, and certain brethren from Joppa accompanied him.\n24 And the morrow after they entered into Caesarea. And Cornelius waited for them, and had called together his kinsmen and near friends."
+   }
+  },
+  {
+   "name": "slide 235",
+   "templateId": "cad15c74-618d-4eab-b23f-1da21af76afd",
+   "title": null,
+   "footer": {
+    "title": {
+     "Lang1": "መዝ ም 70 ቁ 20-21"
+    },
+    "text": null
+   },
+   "block": {
+    "Lang1": "ወተመየጥከኒ ወአሕየውከኒ፤ ወእምቀላየ ምድር ካዕበ አውፃእከኒ። ወአብዛኅኮ ለጽድቅከ።",
+    "Lang2": "ተመለስህ ሕያውም አደረግኸኝ፤ ከምድር ጥልቅም እንደ ገና አወጣኸኝ። ጽድቅህንም አብዛው።",
+    "Lang3": "መሊስካ ህይወት ክትህበኒ፣ ከም ብሓድሽ ድማ ካብ መዓሙቚ ምድሪ ኸተውጽአኒ ኢኻ። ንዕቤተይ ክትውስኸሉ።",
+    "Lang4": "Shalt bring me up again from the depths of the earth. Thou shalt increase my greatness, and comfort me on every side."
+   }
+  }
+ ]
+}

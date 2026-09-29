@@ -25,6 +25,19 @@ pnpm --filter web preview  # preview the production build
 For a deployed static build, set `VITE_API_BASE` (e.g. `https://api.example.com`)
 so the client calls the API directly instead of relying on the dev proxy.
 
+## Slide layout check
+
+Renders slides in a real browser (your installed Chrome) and fails if any
+overflows, drops under 30px, stretches word gaps past 2em, or wraps its footer.
+
+```bash
+pnpm --filter web layout-check                              # 10 fixture slides, no API needed
+pnpm --filter web layout-check -- --live --date=2026-09-29  # every slide from the local API
+```
+
+The limits live in `packages/shared/src/render/layoutMetrics.ts`; the fixtures in
+`src/layoutCheck/fixtures.json`.
+
 ## Design
 
 The UI mirrors the Claude Design mock (`Kidase Presentation.dc.html`): exact
