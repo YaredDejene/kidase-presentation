@@ -3,7 +3,7 @@
     "name": "Default Template",
     "maxLangCount": 4,
     "definitionJson": {
-      "layout": { "columns": 1, "rows": 1, "gap": 18, "verticalAlign": "center" },
+      "layout": { "columns": 1, "rows": 1, "gap": 20, "verticalAlign": "center" },
       "title": {
         "show": true,
         "fontSize": 64,
@@ -153,7 +153,7 @@
     "name": "Default Centered",
     "maxLangCount": 4,
     "definitionJson": {
-      "layout": { "columns": 1, "rows": 1, "gap": 18, "verticalAlign": "center" },
+      "layout": { "columns": 1, "rows": 1, "gap": 20, "verticalAlign": "center" },
       "title": {
         "show": true,
         "fontSize": 64,

@@ -15,8 +15,17 @@ const MIN_JUSTIFIED_CHARS_PER_LINE = 30;
 
 /** Share of the content area the text may fill; the rest is breathing room. */
 const FILL = 0.94;
-const MIN_FIT = 0.2;
-const MAX_FIT = 4.4;
+/**
+ * Preferred range of the font multiplier, relative to the template's sizes.
+ * Keeps sizes steady from slide to slide; short slides get empty space
+ * instead of giant text.
+ */
+const MIN_FIT = 0.6;
+const MAX_FIT = 2;
+/** Slides are never split, so text too long for MIN_FIT may shrink down to this. */
+const FLOOR_FIT = 0.2;
+/** Footer size relative to the template's title size. */
+const FOOTER_RATIO = 0.6;
 const clampFit = (v: number) => Math.min(MAX_FIT, Math.max(MIN_FIT, v));
 
 /**
@@ -50,17 +59,18 @@ function fitSlide(root: HTMLElement): void {
   const needed = () =>
     rows.reduce((h, row) => h + row.offsetHeight, 0) + gap * Math.max(0, rows.length - 1);
 
-  let fit = parseFloat(root.style.getPropertyValue('--fit')) || 1;
+  let fit = 1;
   const setFit = (v: number) => {
-    fit = clampFit(v);
+    fit = v;
     root.style.setProperty('--fit', String(fit));
   };
+  setFit(clampFit(parseFloat(root.style.getPropertyValue('--fit')) || 1));
 
-  const target = box.clientHeight * FILL;
   for (let i = 0; i < 6; i++) {
     const height = needed();
     if (height === 0) return;
-    const ratio = height / target;
+    // The footer scales with --fit, so the box height moves too.
+    const ratio = height / (box.clientHeight * FILL);
     if (ratio <= 1 && ratio >= 0.93) break;
     const next = clampFit(fit / Math.sqrt(ratio));
     if (Math.abs(next - fit) < 0.005) break;
@@ -70,7 +80,7 @@ function fitSlide(root: HTMLElement): void {
   alignTexts(root);
 
   // Never overflow: step down until it fits.
-  for (let i = 0; i < 20 && fit > MIN_FIT && needed() > box.clientHeight; i++) {
+  for (let i = 0; i < 40 && fit > FLOOR_FIT && needed() > box.clientHeight; i++) {
     setFit(fit * 0.96);
   }
 }
@@ -225,7 +235,8 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
       <div
         style={{
           marginTop: `${8 * scale}px`,
-          fontSize: `${def.title.fontSize * scale}px`,
+          // A small caption; shrinks further with dense text, never grows.
+          fontSize: `calc(min(var(--fit), 1) * ${def.title.fontSize * FOOTER_RATIO * scale}px)`,
           textAlign: 'left',
         }}
       >
