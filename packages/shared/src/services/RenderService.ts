@@ -54,7 +54,7 @@ export interface RenderedContext {
 }
 
 export interface RenderResult {
-  presentation: { id: string; name: string; amh?: string; type: string };
+  presentation: { id: string; name: string; amh?: string; type: string; secondaryName?: string };
   context: RenderedContext;
   readings: ResolvedReading[];
   languages: { slot: LangSlot; name: string }[];
@@ -70,8 +70,9 @@ export interface RenderArgs {
   isMehella?: boolean;
 }
 
-/** Maps Gitsawe record fields to the viewer's readings panel. */
+/** Maps Gitsawe record fields to the viewer's info panel. */
 const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string }[] = [
+  { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: '' },
   { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ' },
   { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት' },
   { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት' },
@@ -179,7 +180,8 @@ export class RenderService {
 
       let template: Template | null;
       if (slide.templateOverrideId) {
-        template = allTemplates.find(t => t.id === slide.templateOverrideId) ?? owner.template;
+        // Desktop falls back to the primary template when the override is missing.
+        template = allTemplates.find(t => t.id === slide.templateOverrideId) ?? primary.template;
       } else {
         template = owner.template;
       }
@@ -219,6 +221,7 @@ export class RenderService {
         id: primary.presentation.id,
         name: primary.presentation.name,
         type: primary.presentation.type,
+        secondaryName: secondary?.presentation.name,
       },
       context: this.buildRenderedContext(meta, isMehella, gitsaweMeta, overrideDate),
       readings: this.buildReadings(gitsaweMeta),

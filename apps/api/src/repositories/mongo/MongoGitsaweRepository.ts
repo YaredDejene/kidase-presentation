@@ -6,7 +6,7 @@ export class MongoGitsaweRepository implements IGitsaweRepository {
   constructor(private readonly col: Collection) {}
 
   async getAll(): Promise<Gitsawe[]> {
-    const docs = await this.col.find().sort({ priority: 1 }).toArray();
+    const docs = await this.col.find().sort({ priority: 1, lineId: 1 }).toArray();
     return docs.map(d => docToEntity<Gitsawe>(d as Doc)!);
   }
 

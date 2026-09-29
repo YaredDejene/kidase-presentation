@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { LangSlot } from '@kidase/shared';
+import { isVerseSlide } from '@kidase/shared';
 import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
 import { Stage } from './components/Stage';
@@ -201,7 +202,8 @@ export const App: React.FC = () => {
         <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px 0 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
             <div style={{ ...LOGO, width: 28, height: 28, fontSize: 15 }}>ቅ</div>
-            <span style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: '-0.01em', color: 'var(--text)' }}>{render?.presentation.name ?? 'Kidase'}</span>
+            <span style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: '-0.01em', color: 'var(--text)' }}>{render?.presentation.name ?? 'Kidase'}{render?.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>
+            {render && <span style={{ fontSize: 13, color: 'var(--muted)' }}>{slideCount} slides</span>}
           </div>
           <div style={{ flex: 1 }} />
           <button className="ic" onClick={() => setHelpOpen(true)} title="Keyboard shortcuts (?)" style={iconBtn}><I.Help /></button>
@@ -223,9 +225,10 @@ export const App: React.FC = () => {
               {render?.slides.map((s, i) => {
                 const def = render.templates[s.templateId];
                 const activeRow = i === slideIndex;
+                const isVerse = isVerseSlide(s.id); // dynamically loaded verse, marked like desktop
                 return (
-                  <div key={s.id} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
-                    <span style={{ fontSize: 11, color: activeRow ? 'var(--accent)' : 'var(--muted)', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
+                  <div key={s.id} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, boxShadow: isVerse ? 'inset 3px 0 0 #4a6a4a' : undefined, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
+                    <span style={{ fontSize: 11, color: isVerse ? '#9a8acd' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
                     <div style={{ width: 150, height: 84, flexShrink: 0, borderRadius: 5, overflow: 'hidden', background: '#000' }}>
                       {def && <Stage><WebSlideRenderer definition={def} activeSlots={orderedActiveSlots} block={s.block} title={s.title} footer={s.footer} /></Stage>}
                     </div>
