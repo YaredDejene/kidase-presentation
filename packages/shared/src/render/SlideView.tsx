@@ -29,18 +29,22 @@ const FOOTER_RATIO = 0.6;
 const clampFit = (v: number) => Math.min(MAX_FIT, Math.max(MIN_FIT, v));
 
 /**
- * Long blocks keep the template alignment; short blocks (few lines, or narrow
- * columns) drop justify for left and balance their lines so no word sits alone.
- * Neither change alters the line count.
+ * One decision per slide, so every language looks the same: when all blocks
+ * are long they keep the template alignment; if any is short (few lines, or
+ * narrow columns) they all drop justify for left and balance their lines so no
+ * word sits alone. Neither change alters the line count.
  */
 function alignTexts(root: HTMLElement): void {
-  for (const el of root.querySelectorAll<HTMLElement>('[data-slide-text]')) {
+  const texts = Array.from(root.querySelectorAll<HTMLElement>('[data-slide-text]'));
+  const allLong = texts.every(el => {
     const lineHeightPx = parseFloat(getComputedStyle(el).lineHeight);
     const lines = Math.max(1, Math.round(el.offsetHeight / lineHeightPx));
-    const isLong = lines >= MIN_JUSTIFIED_LINES
+    return lines >= MIN_JUSTIFIED_LINES
       && (el.textContent ?? '').length / lines >= MIN_JUSTIFIED_CHARS_PER_LINE;
-    el.style.setProperty('text-wrap-style', isLong ? 'pretty' : 'balance');
-    if (el.dataset.slideText === 'justify') el.style.textAlign = isLong ? 'justify' : 'left';
+  });
+  for (const el of texts) {
+    el.style.setProperty('text-wrap-style', allLong ? 'pretty' : 'balance');
+    if (el.dataset.slideText === 'justify') el.style.textAlign = allLong ? 'justify' : 'left';
   }
 }
 
