@@ -88,7 +88,9 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       cacheHeaders(reply, etag);
       return reply.code(304).send();
     }
-    const all = await opts.repos.presentation.getAll();
+    // Primary first (then active), so the viewer's default matches desktop bootstrap.
+    const rank = (p: { isPrimary: boolean; isActive: boolean }) => (p.isPrimary ? 2 : 0) + (p.isActive ? 1 : 0);
+    const all = (await opts.repos.presentation.getAll()).sort((a, b) => rank(b) - rank(a));
     const list = await Promise.all(all.map(async p => ({
       id: p.id,
       name: p.name,

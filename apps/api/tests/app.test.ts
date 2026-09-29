@@ -60,6 +60,14 @@ describe('public API', () => {
     expect(list[0]).toMatchObject({ id: 'p1', name: 'Kidase', type: 'Kidase', slideCount: 2, langs: ['geez'] });
   });
 
+  it('GET /presentations lists the primary presentation first', async () => {
+    const newer = { _id: 'p0', name: 'Anaphora', type: 'Kidase', templateId: 't1', languageMap: {}, isPrimary: false, isActive: false, createdAt: '2026-02-01' };
+    await db.collection('presentations').insertOne(newer as never);
+    const res = await app.inject({ method: 'GET', url: '/api/v1/presentations' });
+    await db.collection('presentations').deleteOne({ _id: 'p0' as never });
+    expect(res.json().map((p: { id: string }) => p.id)).toEqual(['p1', 'p0']);
+  });
+
   it('GET /:id/render returns resolved, display-ready slides with no engine data', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/presentations/p1/render?date=2026-06-25' });
     expect(res.statusCode).toBe(200);

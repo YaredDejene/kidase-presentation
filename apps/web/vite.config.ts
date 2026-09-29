@@ -8,6 +8,8 @@ const API_TARGET = process.env.VITE_API_TARGET || "http://localhost:3001";
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // shared components must use the app's single React instance
+    dedupe: ["react", "react-dom"],
     alias: {
       "@kidase/shared": fileURLToPath(new URL("../../packages/shared/src", import.meta.url)),
     },

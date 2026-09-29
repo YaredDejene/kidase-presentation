@@ -14,11 +14,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/noto-serif-ethiopic": "^5.3.0",
     "kenat": "^3.2.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/react": "^19.1.8",
+    "react": "^19.1.0",
     "typescript": "~5.8.3",
     "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0"
   }
 }
