@@ -31,9 +31,17 @@ export function expandDynamicSlides(
         }
       }
 
+      // The verse sheet repeats a psalm once per date it is read, so the same
+      // text often appears many times under one segment; show each text once.
+      const seen = new Set<string>();
       const matchingVerses = verses
         .filter(v => v.segmentId === segmentId)
-        .sort((a, b) => a.verseOrder - b.verseOrder);
+        .sort((a, b) => a.verseOrder - b.verseOrder)
+        .filter(v => {
+          const key = [v.titleLang1, v.titleLang2, v.titleLang3, v.titleLang4, v.textLang1, v.textLang2, v.textLang3, v.textLang4]
+            .map(t => (t ?? '').replace(/\s+/g, ' ').trim()).join('\u0000');
+          return !seen.has(key) && !!seen.add(key);
+        });
 
       for (const verse of matchingVerses) {
         expanded.push({
