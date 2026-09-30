@@ -14,6 +14,22 @@ export interface SlideMetrics {
   footerLines: number;
 }
 
+/** Widest space between words of a text element, in font sizes. */
+export function wordGapEm(el: HTMLElement): number {
+  const node = el.firstChild;
+  if (!node || node.nodeType !== Node.TEXT_NODE) return 0;
+  const fontPx = parseFloat(getComputedStyle(el).fontSize);
+  const text = node.textContent ?? '';
+  const range = document.createRange();
+  let widest = 0;
+  for (let i = text.indexOf(' '); i > 0; i = text.indexOf(' ', i + 1)) {
+    range.setStart(node, i);
+    range.setEnd(node, i + 1);
+    widest = Math.max(widest, range.getBoundingClientRect().width / fontPx);
+  }
+  return widest;
+}
+
 /** Measure a rendered SlideView root (the element holding `--fit`). */
 export function measureSlide(root: HTMLElement): SlideMetrics | null {
   const box = root.querySelector<HTMLElement>('[data-fit-box]');
@@ -26,23 +42,15 @@ export function measureSlide(root: HTMLElement): SlideMetrics | null {
 
   let minFontPx = Infinity;
   let maxWordGapEm = 0;
-  const range = document.createRange();
   for (const el of texts) {
-    const fontPx = parseFloat(getComputedStyle(el).fontSize);
-    minFontPx = Math.min(minFontPx, fontPx);
-    const node = el.firstChild;
-    if (el.style.textAlign !== 'justify' || !node || node.nodeType !== Node.TEXT_NODE) continue;
-    const text = node.textContent ?? '';
-    for (let i = text.indexOf(' '); i > 0; i = text.indexOf(' ', i + 1)) {
-      range.setStart(node, i);
-      range.setEnd(node, i + 1);
-      maxWordGapEm = Math.max(maxWordGapEm, range.getBoundingClientRect().width / fontPx);
-    }
+    minFontPx = Math.min(minFontPx, parseFloat(getComputedStyle(el).fontSize));
+    if (el.style.textAlign === 'justify') maxWordGapEm = Math.max(maxWordGapEm, wordGapEm(el));
   }
 
   const footer = box.nextElementSibling as HTMLElement | null;
   let footerLines = 0;
   if (footer) {
+    const range = document.createRange();
     range.selectNodeContents(footer);
     const lineTops = new Set(Array.from(range.getClientRects(), r => Math.round(r.top / 8)));
     footerLines = lineTops.size;

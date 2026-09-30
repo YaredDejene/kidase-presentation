@@ -3,6 +3,7 @@ import '@fontsource-variable/noto-serif-ethiopic';
 import type { TemplateDefinition } from '../domain/entities/Template';
 import type { SlideBlock, SlideTitle } from '../domain/entities/Slide';
 import { computeFontScaleFactor, EnabledLanguage } from './fontScale';
+import { wordGapEm } from './layoutMetrics';
 
 /** Bundled with both apps so text wraps identically on every platform. */
 export const SLIDE_FONT = "'Noto Serif Ethiopic Variable'";
@@ -12,6 +13,8 @@ const withSlideFont = (family: string) => `${SLIDE_FONT}, ${family}`;
 /** Justifying fewer or shorter lines than this stretches a handful of words across the slide. */
 const MIN_JUSTIFIED_LINES = 3;
 const MIN_JUSTIFIED_CHARS_PER_LINE = 30;
+/** Justified text whose long words stretch a space wider than this falls back to left. */
+const MAX_WORD_GAP_EM = 2;
 
 /** Share of the content area the text may fill; the rest is breathing room. */
 const FILL = 0.94;
@@ -31,8 +34,9 @@ const clampFit = (v: number) => Math.min(MAX_FIT, Math.max(MIN_FIT, v));
 /**
  * One decision per slide, so every language looks the same: when all blocks
  * are long they keep the template alignment; if any is short (few lines, or
- * narrow columns) they all drop justify for left and balance their lines so no
- * word sits alone. Neither change alters the line count.
+ * narrow columns), or justifying stretches a word gap too far, they all drop
+ * justify for left and balance their lines so no word sits alone. Neither
+ * change alters the line count.
  */
 function alignTexts(root: HTMLElement): void {
   const texts = Array.from(root.querySelectorAll<HTMLElement>('[data-slide-text]'));
@@ -42,10 +46,13 @@ function alignTexts(root: HTMLElement): void {
     return lines >= MIN_JUSTIFIED_LINES
       && (el.textContent ?? '').length / lines >= MIN_JUSTIFIED_CHARS_PER_LINE;
   });
-  for (const el of texts) {
-    el.style.setProperty('text-wrap-style', allLong ? 'pretty' : 'balance');
-    if (el.dataset.slideText === 'justify') el.style.textAlign = allLong ? 'justify' : 'left';
-  }
+  const justified = texts.filter(el => el.dataset.slideText === 'justify');
+  const apply = (justify: boolean) => {
+    for (const el of texts) el.style.setProperty('text-wrap-style', justify ? 'pretty' : 'balance');
+    for (const el of justified) el.style.textAlign = justify ? 'justify' : 'left';
+  };
+  apply(allLong);
+  if (allLong && justified.some(el => wordGapEm(el) > MAX_WORD_GAP_EM)) apply(false);
 }
 
 /**
