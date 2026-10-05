@@ -63,8 +63,8 @@ export class PdfExportService {
       document.body.appendChild(container);
 
       try {
-        // Small delay to let the DOM settle before capture
-        await new Promise(r => setTimeout(r, 50));
+        // Layout is synchronous; only fonts may still be loading.
+        await document.fonts?.ready;
 
         // Convert to canvas
         const canvas = await html2canvas(container, {
@@ -75,6 +75,8 @@ export class PdfExportService {
           logging: false,
           useCORS: true,
           allowTaint: true,
+          // html2canvas clones the whole page per capture; skip the app (hundreds of slide thumbnails).
+          ignoreElements: el => el.parentElement === document.body && el !== container,
         });
 
         // Add page (except for first slide)

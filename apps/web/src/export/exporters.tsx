@@ -25,9 +25,13 @@ async function slideToCanvas(payload: RenderPayload, slide: RSlide, languages: O
     flushSync(() => root.render(
       <WebSlideRenderer definition={def} languages={languages} block={slide.block} title={slide.title} footer={slide.footer} />,
     ));
+    // flushSync rendered and fitted the slide; only fonts may still be loading. No timer wait:
+    // browsers throttle timers to ~1s in background tabs, which made long exports crawl.
     try { await (document as Document & { fonts?: FontFaceSet }).fonts?.ready; } catch { /* ignore */ }
-    await new Promise(r => setTimeout(r, 30));
-    return await html2canvas(host, { width: DESIGN_W, height: DESIGN_H, scale, backgroundColor: def.background?.color || '#000000', useCORS: true, allowTaint: true, logging: false });
+    return await html2canvas(host, { width: DESIGN_W, height: DESIGN_H, scale, backgroundColor: def.background?.color || '#000000', useCORS: true, allowTaint: true, logging: false,
+      // html2canvas clones the whole page per capture; skip the app (hundreds of slide thumbnails).
+      ignoreElements: el => el.parentElement === document.body && el !== host,
+    });
   } finally {
     root.unmount();
     document.body.removeChild(host);
