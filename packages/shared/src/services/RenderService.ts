@@ -4,8 +4,9 @@ import { Template, TemplateDefinition } from '../domain/entities/Template';
 import { Variable } from '../domain/entities/Variable';
 import {
   Presentation,
-  OrderedLanguage,
-  getOrderedLanguages,
+  PresentationLanguage,
+  getAllLanguages,
+  LANG_SLOTS,
 } from '../domain/entities/Presentation';
 import { Gitsawe } from '../domain/entities/Gitsawe';
 import { RuleDefinition } from '../domain/entities/RuleDefinition';
@@ -57,7 +58,11 @@ export interface RenderResult {
   presentation: { id: string; name: string; amh?: string; type: string; secondaryName?: string };
   context: RenderedContext;
   readings: ResolvedReading[];
-  languages: OrderedLanguage[];
+  /**
+   * Every language that has text in these slides, in display order. `enabled` marks the
+   * presentation's own selection, which viewers start with; they may pick others.
+   */
+  languages: PresentationLanguage[];
   templates: Record<string, TemplateDefinition>;
   sections: ResolvedSection[];
   slides: ResolvedSlide[];
@@ -216,6 +221,9 @@ export class RenderService {
       };
     });
 
+    const slotsWithText = new Set(LANG_SLOTS.filter(slot => slides.some(s =>
+      s.block[slot] || s.title?.[slot] || s.footer?.title?.[slot] || s.footer?.text?.[slot])));
+
     return {
       presentation: {
         id: primary.presentation.id,
@@ -225,7 +233,8 @@ export class RenderService {
       },
       context: this.buildRenderedContext(meta, isMehella, gitsaweMeta, overrideDate),
       readings: this.buildReadings(gitsaweMeta),
-      languages: getOrderedLanguages(primary.presentation.languageSettings, primary.presentation.languageMap),
+      languages: getAllLanguages(primary.presentation.languageSettings, primary.presentation.languageMap)
+        .filter(lang => slotsWithText.has(lang.slot)),
       templates,
       sections: [],
       slides,

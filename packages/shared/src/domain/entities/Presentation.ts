@@ -110,20 +110,32 @@ export function languageMapToSettings(map: LanguageMap): LanguageSettings {
   return settings;
 }
 
-// Helper to get enabled languages in order
-export function getOrderedLanguages(settings: LanguageSettings | undefined, map: LanguageMap): OrderedLanguage[] {
+/** A configured language, whether or not it is enabled. */
+export interface PresentationLanguage extends OrderedLanguage {
+  enabled: boolean;
+}
+
+// Helper to get every configured language in display order, enabled or not
+export function getAllLanguages(settings: LanguageSettings | undefined, map: LanguageMap): PresentationLanguage[] {
   if (!settings) {
     // Fallback to languageMap for backward compatibility
     return LANG_SLOTS
       .filter(slot => map[slot])
-      .map(slot => ({ slot, name: map[slot]! }));
+      .map(slot => ({ slot, name: map[slot]!, enabled: true }));
   }
 
   return LANG_SLOTS
-    .filter(slot => settings[slot]?.enabled)
+    .filter(slot => settings[slot])
     .map(slot => ({ slot, ...settings[slot]! }))
     .sort((a, b) => a.order - b.order)
-    .map(({ slot, name, color }) => (color ? { slot, name, color } : { slot, name }));
+    .map(({ slot, name, enabled, color }) => (color ? { slot, name, enabled, color } : { slot, name, enabled }));
+}
+
+// Helper to get enabled languages in order
+export function getOrderedLanguages(settings: LanguageSettings | undefined, map: LanguageMap): OrderedLanguage[] {
+  return getAllLanguages(settings, map)
+    .filter(lang => lang.enabled)
+    .map(({ enabled: _enabled, ...lang }) => lang);
 }
 
 export type PresentationType =

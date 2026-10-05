@@ -111,9 +111,11 @@ export const App: React.FC = () => {
         setRender(payload);
         setSlideIndex(Math.min(pendingSlide.current, Math.max(payload.slides.length - 1, 0)));
         pendingSlide.current = 0;
+        // Start with the presentation's own selection; viewers can switch to any other language.
         const avail = payload.languages.map(l => l.slot);
+        const defaults = payload.languages.filter(l => l.enabled !== false).map(l => l.slot); // older payloads have no flag
         const cap = languageCapacity(payload);
-        setActiveSlots(prev => { const kept = prev.filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : avail.slice(0, cap); });
+        setActiveSlots(prev => { const kept = prev.filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : defaults.slice(0, cap); });
       })
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
