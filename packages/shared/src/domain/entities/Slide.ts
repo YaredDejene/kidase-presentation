@@ -3,19 +3,11 @@
  * Represents a single slide in a presentation
  */
 
-export interface SlideTitle {
-  Lang1?: string;
-  Lang2?: string;
-  Lang3?: string;
-  Lang4?: string;
-}
+import { LANG_SLOTS, type LangText } from './Presentation';
 
-export interface SlideBlock {
-  Lang1?: string;
-  Lang2?: string;
-  Lang3?: string;
-  Lang4?: string;
-}
+export type SlideTitle = LangText;
+
+export type SlideBlock = LangText;
 
 export interface SlideFooter {
   title?: SlideTitle;
@@ -39,7 +31,7 @@ export interface Slide {
 export function getSlidePreviewText(slide: Slide): string {
   const blocks = slide.blocksJson || [];
   for (const block of blocks) {
-    for (const key of ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const) {
+    for (const key of LANG_SLOTS) {
       const val = block[key];
       if (val && typeof val === 'string' && val.trim()) {
         return val.trim().substring(0, 80);
@@ -71,7 +63,7 @@ export function getParentSlideId(id: string): string {
 
 export function getSlideTitle(slide: Slide): string | null {
   if (!slide.titleJson) return null;
-  for (const key of ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const) {
+  for (const key of LANG_SLOTS) {
     const val = slide.titleJson[key];
     if (val && typeof val === 'string' && val.trim()) {
       return val.trim();

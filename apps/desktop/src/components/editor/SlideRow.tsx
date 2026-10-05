@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Slide } from '@kidase/shared/domain/entities/Slide';
-import { LanguageMap } from '@kidase/shared/domain/entities/Presentation';
+import { LanguageMap, firstText } from '@kidase/shared/domain/entities/Presentation';
 
 interface SlideRowProps {
   slide: Slide;
@@ -41,14 +41,13 @@ export const SlideRow: React.FC<SlideRowProps> = React.memo(({
   const block = slide.blocksJson[0] || {};
 
   // Get preview text from first available language
-  const previewText = block.Lang1 || block.Lang2 || block.Lang3 || block.Lang4 || '';
+  const previewText = firstText(block) || '';
   const truncatedText = previewText.length > 100
     ? previewText.substring(0, 100) + '...'
     : previewText;
 
   // Get title text
-  const titleText = slide.titleJson?.Lang1 || slide.titleJson?.Lang2 ||
-                   slide.titleJson?.Lang3 || slide.titleJson?.Lang4;
+  const titleText = firstText(slide.titleJson);
 
   // Close menu when clicking outside
   useEffect(() => {

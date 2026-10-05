@@ -7,7 +7,7 @@ import swagger from '@fastify/swagger';
 import scalarApiReference from '@scalar/fastify-api-reference';
 import { Db } from 'mongodb';
 import type { Repositories, Presentation, LangSlot } from '@kidase/shared';
-import { RenderService, getOrderedLanguages } from '@kidase/shared';
+import { RenderService, getOrderedLanguages, LANG_SLOTS } from '@kidase/shared';
 import { getContentVersion, bumpContentVersion } from './contentVersion';
 import { RenderCache } from './renderCache';
 import { createBackup, BackupData } from './backup';
@@ -28,11 +28,9 @@ export interface BuildAppOptions {
 const LANG_CODE: Record<LangSlot, string> = {
   Lang1: 'geez',
   Lang2: 'amharic',
-  Lang3: 'english',
-  Lang4: 'tigrinya',
+  Lang3: 'tigrinya',
+  Lang4: 'english',
 };
-
-const LANG_SLOTS: LangSlot[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'];
 
 function langCodes(p: Presentation): string[] {
   return LANG_SLOTS.filter(s => p.languageMap[s]).map(s => LANG_CODE[s]);

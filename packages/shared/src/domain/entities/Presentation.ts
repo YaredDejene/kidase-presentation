@@ -7,13 +7,26 @@
  * `type` field indicating its specific liturgical category.
  */
 
-// Simple language map for backward compatibility (name only)
-export interface LanguageMap {
-  Lang1?: string; // e.g., "Ge'ez"
-  Lang2?: string; // e.g., "Amharic"
-  Lang3?: string; // e.g., "English"
-  Lang4?: string; // e.g., "Tigrinya"
+/** Ordered array of all language slots. Every per-language list in the app derives from this. */
+export const LANG_SLOTS = ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const;
+
+/** Language slot identifiers used across the app */
+export type LangSlot = (typeof LANG_SLOTS)[number];
+
+/** Any per-slot record of text: slide title/blocks/footer, language names, etc. */
+export type LangText = Partial<Record<LangSlot, string>>;
+
+/** First non-empty value in slot order, e.g. for previews and character-count estimates. */
+export function firstText(rec: LangText | null | undefined): string | undefined {
+  if (!rec) return undefined;
+  for (const slot of LANG_SLOTS) {
+    if (rec[slot]) return rec[slot];
+  }
+  return undefined;
 }
+
+// Simple language map for backward compatibility (name only), e.g. Lang1 = "Ge'ez"
+export type LanguageMap = LangText;
 
 // Enhanced language configuration with order and enabled status
 export interface LanguageConfig {
@@ -22,26 +35,15 @@ export interface LanguageConfig {
   order: number;
 }
 
-export interface LanguageSettings {
-  Lang1?: LanguageConfig;
-  Lang2?: LanguageConfig;
-  Lang3?: LanguageConfig;
-  Lang4?: LanguageConfig;
-}
-
-/** The four language slot identifiers used across the app */
-export type LangSlot = 'Lang1' | 'Lang2' | 'Lang3' | 'Lang4';
-
-/** Ordered array of all language slots */
-export const LANG_SLOTS: readonly LangSlot[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const;
+export type LanguageSettings = Partial<Record<LangSlot, LanguageConfig>>;
 
 /** Maps LangSlot to the corresponding Variable value field name */
-export const LANG_VALUE_FIELD_MAP: Record<LangSlot, 'valueLang1' | 'valueLang2' | 'valueLang3' | 'valueLang4'> = {
+export const LANG_VALUE_FIELD_MAP = {
   Lang1: 'valueLang1',
   Lang2: 'valueLang2',
   Lang3: 'valueLang3',
   Lang4: 'valueLang4',
-} as const;
+} as const satisfies Record<LangSlot, string>;
 
 export interface Presentation {
   id: string;

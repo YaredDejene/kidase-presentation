@@ -1,6 +1,6 @@
 import { Variable } from '../domain/entities/Variable';
 import { SlideBlock, SlideTitle } from '../domain/entities/Slide';
-import type { LangSlot } from '../domain/entities/Presentation';
+import { LANG_SLOTS, LANG_VALUE_FIELD_MAP, type LangSlot, type LangText } from '../domain/entities/Presentation';
 
 export class PlaceholderService {
   /**
@@ -42,27 +42,22 @@ export class PlaceholderService {
    * Replace placeholders in a slide block (language-aware for @VarName)
    */
   replaceInBlock(block: SlideBlock, variables: Variable[], meta?: Record<string, unknown>): SlideBlock {
-    const result: SlideBlock = {};
-
-    if (block.Lang1) result.Lang1 = this.replaceInText(block.Lang1, variables, 'Lang1', meta);
-    if (block.Lang2) result.Lang2 = this.replaceInText(block.Lang2, variables, 'Lang2', meta);
-    if (block.Lang3) result.Lang3 = this.replaceInText(block.Lang3, variables, 'Lang3', meta);
-    if (block.Lang4) result.Lang4 = this.replaceInText(block.Lang4, variables, 'Lang4', meta);
-
-    return result;
+    return this.replaceInLangText(block, variables, meta);
   }
 
   /**
    * Replace placeholders in a slide title (language-aware for @VarName)
    */
   replaceInTitle(title: SlideTitle, variables: Variable[], meta?: Record<string, unknown>): SlideTitle {
-    const result: SlideTitle = {};
+    return this.replaceInLangText(title, variables, meta);
+  }
 
-    if (title.Lang1) result.Lang1 = this.replaceInText(title.Lang1, variables, 'Lang1', meta);
-    if (title.Lang2) result.Lang2 = this.replaceInText(title.Lang2, variables, 'Lang2', meta);
-    if (title.Lang3) result.Lang3 = this.replaceInText(title.Lang3, variables, 'Lang3', meta);
-    if (title.Lang4) result.Lang4 = this.replaceInText(title.Lang4, variables, 'Lang4', meta);
-
+  private replaceInLangText(rec: LangText, variables: Variable[], meta?: Record<string, unknown>): LangText {
+    const result: LangText = {};
+    for (const slot of LANG_SLOTS) {
+      const text = rec[slot];
+      if (text) result[slot] = this.replaceInText(text, variables, slot, meta);
+    }
     return result;
   }
 
@@ -99,21 +94,11 @@ export class PlaceholderService {
     const allText: string[] = [];
 
     if (slide.titleJson) {
-      allText.push(
-        slide.titleJson.Lang1 || '',
-        slide.titleJson.Lang2 || '',
-        slide.titleJson.Lang3 || '',
-        slide.titleJson.Lang4 || ''
-      );
+      allText.push(...LANG_SLOTS.map(slot => slide.titleJson![slot] || ''));
     }
 
     for (const block of slide.blocksJson) {
-      allText.push(
-        block.Lang1 || '',
-        block.Lang2 || '',
-        block.Lang3 || '',
-        block.Lang4 || ''
-      );
+      allText.push(...LANG_SLOTS.map(slot => block[slot] || ''));
     }
 
     const placeholders = new Set<string>();
@@ -127,12 +112,7 @@ export class PlaceholderService {
   }
 
   private getLangValue(variable: Variable, langSlot: LangSlot): string | undefined {
-    switch (langSlot) {
-      case 'Lang1': return variable.valueLang1;
-      case 'Lang2': return variable.valueLang2;
-      case 'Lang3': return variable.valueLang3;
-      case 'Lang4': return variable.valueLang4;
-    }
+    return variable[LANG_VALUE_FIELD_MAP[langSlot]];
   }
 
   /**

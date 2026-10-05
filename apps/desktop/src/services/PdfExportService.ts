@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { Slide, SlideBlock } from '@kidase/shared/domain/entities/Slide';
 import { Template, TemplateDefinition } from '@kidase/shared/domain/entities/Template';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
-import { LanguageMap, LangSlot } from '@kidase/shared/domain/entities/Presentation';
+import { LanguageMap, LangSlot, firstText } from '@kidase/shared/domain/entities/Presentation';
 import { placeholderService } from '@kidase/shared';
 import { computeFontScale } from '@kidase/shared/domain/formatting';
 
@@ -131,23 +131,19 @@ export class PdfExportService {
 
     if (slide.titleJson) {
       const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables, meta);
-      const titleText = processedTitle.Lang1 || processedTitle.Lang2 ||
-                       processedTitle.Lang3 || processedTitle.Lang4;
+      const titleText = firstText(processedTitle);
       if (titleText) totalChars += titleText.length;
     }
 
     if (slide.footerJson) {
       if (slide.footerJson.title) {
         const ft = slide.footerJson.title;
-        const footerTitle = ft.Lang1 || ft.Lang2 || ft.Lang3 || ft.Lang4;
+        const footerTitle = firstText(ft);
         if (footerTitle) totalChars += footerTitle.length;
       }
       if (slide.footerJson.text) {
         const ftxt = slide.footerJson.text;
-        const footerText = (ftxt as Record<string, string>).Lang1 ||
-                          (ftxt as Record<string, string>).Lang2 ||
-                          (ftxt as Record<string, string>).Lang3 ||
-                          (ftxt as Record<string, string>).Lang4;
+        const footerText = firstText(ftxt);
         if (footerText) totalChars += footerText.length;
       }
     }
@@ -190,8 +186,7 @@ export class PdfExportService {
     // Render title if present
     if (slide.titleJson && def.title.show) {
       const processedTitle = placeholderService.replaceInTitle(slide.titleJson, variables, meta);
-      const titleText = processedTitle.Lang1 || processedTitle.Lang2 ||
-                       processedTitle.Lang3 || processedTitle.Lang4;
+      const titleText = firstText(processedTitle);
 
       if (titleText) {
         const titleEl = document.createElement('div');

@@ -3,7 +3,7 @@ import type { LangSlot, TemplateDefinition, EnabledLanguage } from '@kidase/shar
 
 // Interop-safe constructor (CJS default may be double-wrapped under Node ESM).
 const Pptx = ((PptxGenJS as unknown as { default?: typeof PptxGenJS }).default ?? PptxGenJS) as typeof PptxGenJS;
-import { computeFontScaleFactor } from '@kidase/shared';
+import { computeFontScaleFactor, firstText } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 
 type RSlide = RenderPayload['slides'][number];
@@ -16,8 +16,6 @@ const hex6 = (c: string) => c.replace(/^#/, '');
 const cleanFont = (f: string) => f.split(',')[0].trim().replace(/['"]/g, '');
 const mapAlign = (a: string): 'left' | 'center' | 'right' => (a === 'center' || a === 'right' ? a : 'left');
 
-type LangText = { Lang1?: string; Lang2?: string; Lang3?: string; Lang4?: string };
-const firstText = (o: LangText | null | undefined) => (o ? (o.Lang1 || o.Lang2 || o.Lang3 || o.Lang4) : undefined);
 
 function enabledLangsFor(def: TemplateDefinition, slots: LangSlot[]): EnabledLanguage[] {
   return slots.map(s => def.languages.find(l => l.slot === s)).filter((l): l is EnabledLanguage => !!l);
