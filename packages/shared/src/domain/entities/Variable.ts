@@ -3,15 +3,13 @@
  * Represents a variable that can be used in slides
  */
 
-export interface Variable {
+import type { LangFields } from './Presentation';
+
+export interface Variable extends LangFields<'value'> {
   id: string;
   presentationId: string;
   name: string;
   value: string;
-  valueLang1?: string;
-  valueLang2?: string;
-  valueLang3?: string;
-  valueLang4?: string;
 }
 
 // Common liturgical variables (legacy {{VAR}} format)

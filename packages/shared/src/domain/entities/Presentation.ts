@@ -37,13 +37,28 @@ export interface LanguageConfig {
 
 export type LanguageSettings = Partial<Record<LangSlot, LanguageConfig>>;
 
+/** Flat per-slot fields on an entity, e.g. LangFields<'value'> = { valueLang1?: string, ... }. */
+export type LangFields<P extends string> = { [S in LangSlot as `${P}${S}`]?: string };
+
+/** Field name for a slot, e.g. langField('value', 'Lang3') -> 'valueLang3'. */
+export const langField = <P extends string>(prefix: P, slot: LangSlot) => `${prefix}${slot}` as `${P}${LangSlot}`;
+
+/** SQLite column for a slot, e.g. langColumn('value', 'Lang3') -> 'value_lang3'. */
+export const langColumn = (prefix: string, slot: LangSlot) => `${prefix}_${slot.toLowerCase()}`;
+
+/** Copies flat per-slot fields into a slot-keyed record, e.g. a verse's textLangN into a slide block. */
+export function langFieldsToText<P extends string>(prefix: P, fields: LangFields<P>): LangText {
+  const rec: LangText = {};
+  for (const slot of LANG_SLOTS) {
+    rec[slot] = (fields as Record<string, string | undefined>)[langField(prefix, slot)];
+  }
+  return rec;
+}
+
 /** Maps LangSlot to the corresponding Variable value field name */
-export const LANG_VALUE_FIELD_MAP = {
-  Lang1: 'valueLang1',
-  Lang2: 'valueLang2',
-  Lang3: 'valueLang3',
-  Lang4: 'valueLang4',
-} as const satisfies Record<LangSlot, string>;
+export const LANG_VALUE_FIELD_MAP = Object.fromEntries(
+  LANG_SLOTS.map(slot => [slot, langField('value', slot)]),
+) as { [S in LangSlot]: `value${S}` };
 
 export interface Presentation {
   id: string;

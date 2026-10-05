@@ -1,6 +1,10 @@
 import { useCallback } from 'react';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
+import { LANG_VALUE_FIELD_MAP } from '@kidase/shared/domain/entities/Presentation';
 import { variableRepository } from '../repositories';
+
+const langValuesOf = (v: Variable) =>
+  Object.fromEntries(Object.values(LANG_VALUE_FIELD_MAP).map(field => [field, v[field]]));
 
 export function useVariables() {
   const createVariable = useCallback(
@@ -40,19 +44,13 @@ export function useVariables() {
             presentationId,
             name: variable.name,
             value: variable.value,
-            valueLang1: variable.valueLang1,
-            valueLang2: variable.valueLang2,
-            valueLang3: variable.valueLang3,
-            valueLang4: variable.valueLang4,
+            ...langValuesOf(variable),
           });
           saved.push(created);
         } else {
           const updated = await variableRepository.update(variable.id, {
             value: variable.value,
-            valueLang1: variable.valueLang1,
-            valueLang2: variable.valueLang2,
-            valueLang3: variable.valueLang3,
-            valueLang4: variable.valueLang4,
+            ...langValuesOf(variable),
           });
           saved.push(updated);
         }
