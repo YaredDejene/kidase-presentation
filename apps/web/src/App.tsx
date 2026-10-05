@@ -60,6 +60,10 @@ const LOGO: React.CSSProperties = {
   color: '#fff', fontWeight: 700, fontFamily: "'Noto Serif Ethiopic',serif", flexShrink: 0,
 };
 
+/** Most languages any template in the payload shows at once; slides with smaller templates show the first ones. */
+const languageCapacity = (payload: RenderPayload) =>
+  Math.max(0, ...Object.values(payload.templates).map(def => def.languages.length));
+
 export const App: React.FC = () => {
   const [theme, setTheme] = useState<ThemeName>(HASH.th ?? 'dark');
   const [uiLang, setUiLang] = useState<UiLang>(HASH.ui ?? 'en');
@@ -108,7 +112,8 @@ export const App: React.FC = () => {
         setSlideIndex(Math.min(pendingSlide.current, Math.max(payload.slides.length - 1, 0)));
         pendingSlide.current = 0;
         const avail = payload.languages.map(l => l.slot);
-        setActiveSlots(prev => { const kept = prev.filter(s => avail.includes(s)); return kept.length ? kept : avail; });
+        const cap = languageCapacity(payload);
+        setActiveSlots(prev => { const kept = prev.filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : avail.slice(0, cap); });
       })
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
@@ -158,7 +163,9 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [helpOpen, configOpen, exportOpen, infoOpen, fullscreen, next, prev, toggleFullscreen]);
 
-  const toggleLang = (slot: LangSlot) => setActiveSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+  const capacity = render ? languageCapacity(render) : 0;
+  const toggleLang = (slot: LangSlot) => setActiveSlots(prev =>
+    prev.includes(slot) ? prev.filter(s => s !== slot) : prev.length < capacity ? [...prev, slot] : prev);
   const activeLanguages = (render?.languages ?? []).filter(l => activeSlots.includes(l.slot));
 
   // Sync shareable view state into the URL hash so "Copy share link" reproduces the view.
@@ -270,7 +277,7 @@ export const App: React.FC = () => {
         <ConfigDrawer
           isDark={isDark} t={t} onClose={() => setConfigOpen(false)}
           gregDate={gregDate} onGreg={setGregDate}
-          languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang}
+          languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
           isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
           uiLang={uiLang} setUiLang={setUiLang}
           sections={[]}
@@ -293,9 +300,10 @@ export const App: React.FC = () => {
               {(render?.languages ?? []).map(l => {
                 const on = activeSlots.includes(l.slot);
                 const meta = LANG_BY_SLOT[l.slot] || { short: l.name.slice(0, 2), color: '#fff' };
+                const blocked = !on && activeSlots.length >= capacity;
                 return (
-                  <button key={l.slot} onClick={() => toggleLang(l.slot)} title={l.name} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${on ? '#444' : '#2a2a2a'}`, background: on ? '#262626' : 'transparent', color: on ? '#fff' : '#666' }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: meta.color, opacity: on ? 1 : 0.4, flexShrink: 0 }} />{meta.short}
+                  <button key={l.slot} onClick={() => toggleLang(l.slot)} disabled={blocked} title={blocked ? t.langSub(capacity) : l.name} style={{ opacity: blocked ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${on ? '#444' : '#2a2a2a'}`, background: on ? '#262626' : 'transparent', color: on ? '#fff' : '#666' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color ?? meta.color, opacity: on ? 1 : 0.4, flexShrink: 0 }} />{meta.short}
                   </button>
                 );
               })}

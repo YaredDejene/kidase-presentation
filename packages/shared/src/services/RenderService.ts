@@ -4,7 +4,7 @@ import { Template, TemplateDefinition } from '../domain/entities/Template';
 import { Variable } from '../domain/entities/Variable';
 import {
   Presentation,
-  LangSlot,
+  OrderedLanguage,
   getOrderedLanguages,
 } from '../domain/entities/Presentation';
 import { Gitsawe } from '../domain/entities/Gitsawe';
@@ -57,7 +57,7 @@ export interface RenderResult {
   presentation: { id: string; name: string; amh?: string; type: string; secondaryName?: string };
   context: RenderedContext;
   readings: ResolvedReading[];
-  languages: { slot: LangSlot; name: string }[];
+  languages: OrderedLanguage[];
   templates: Record<string, TemplateDefinition>;
   sections: ResolvedSection[];
   slides: ResolvedSlide[];

@@ -52,6 +52,8 @@
   "statistics": "Statistics",
   "totalSlides": "Total Slides",
   "activeSlides": "Active Slides",
+  "templateLanguageLimit": "The selected template shows up to {{count}} languages at once.",
+  "templateLanguageOverLimit": "More languages are enabled than the template can show; only the first {{count}} are displayed.",
   "languageReorderHint": "Drag and drop to reorder languages. The order here determines display order on slides.",
   "languageNamePlaceholder": "Language name...",
   "moveUp": "Move up",

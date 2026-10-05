@@ -342,6 +342,11 @@
   transform: translateX(20px);
 }
 
+.toggle-switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Template Editor Side-by-Side Layout */
 .template-editor-layout {
   display: flex;

@@ -33,6 +33,7 @@ interface LanguageConfig {
   name: string;
   enabled: boolean;
   order: number;
+  color?: string;
 }
 
 export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProps> = ({
@@ -79,6 +80,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
             name: settings[slot]!.name,
             enabled: settings[slot]!.enabled,
             order: settings[slot]!.order,
+            color: settings[slot]!.color,
           };
         }
         // Fallback to languageMap for backward compatibility
@@ -160,11 +162,19 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     });
   };
 
+  // The selected template shows at most this many languages, so no more can be enabled.
+  const selectedTemplate = templates.find(tmpl => tmpl.id === selectedTemplateId) ?? template;
+  const capacity = selectedTemplate.definitionJson.languages.length;
+  const enabledCount = languages.filter(lang => lang.enabled).length;
+  const defaultColor = (slot: LangSlot) =>
+    selectedTemplate.definitionJson.languages.find(l => l.slot === slot)?.color ?? '#FFFFFF';
+
   const handleLanguageToggle = (slot: string) => {
     setLanguages(prev =>
       prev.map(lang => {
         if (lang.slot === slot) {
           const newEnabled = !lang.enabled;
+          if (newEnabled && prev.filter(l => l.enabled).length >= capacity) return lang;
           // When re-enabling, restore the original name
           const name = newEnabled ? (originalNames[slot] || lang.name) : lang.name;
           return { ...lang, enabled: newEnabled, name };
@@ -180,6 +190,10 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
     );
     // Also update original names so toggle doesn't reset it
     setOriginalNames(prev => ({ ...prev, [slot]: newName }));
+  };
+
+  const handleLanguageColorChange = (slot: string, color: string) => {
+    setLanguages(prev => prev.map(lang => (lang.slot === slot ? { ...lang, color } : lang)));
   };
 
   const handleVariableChange = (name: string, value: string, langSlot?: LangSlot) => {
@@ -212,6 +226,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
           name: lang.name,
           enabled: lang.enabled,
           order: lang.order,
+          ...(lang.color && { color: lang.color }),
         };
       }
 
@@ -283,9 +298,13 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
         {activeTab === 'languages' && (
           <LanguagesTab
             sortedLanguages={sortedLanguages}
+            capacity={capacity}
+            enabledCount={enabledCount}
+            defaultColor={defaultColor}
             onMoveLanguage={moveLanguage}
             onToggle={handleLanguageToggle}
             onNameChange={handleLanguageNameChange}
+            onColorChange={handleLanguageColorChange}
           />
         )}
 
@@ -390,16 +409,27 @@ function GeneralTab({
 
 interface LanguagesTabProps {
   sortedLanguages: LanguageConfig[];
+  capacity: number;
+  enabledCount: number;
+  defaultColor: (slot: LangSlot) => string;
   onMoveLanguage: (fromIndex: number, direction: 'up' | 'down') => void;
   onToggle: (slot: string) => void;
   onNameChange: (slot: string, name: string) => void;
+  onColorChange: (slot: string, color: string) => void;
 }
 
-function LanguagesTab({ sortedLanguages, onMoveLanguage, onToggle, onNameChange }: LanguagesTabProps) {
+function LanguagesTab({
+  sortedLanguages, capacity, enabledCount, defaultColor, onMoveLanguage, onToggle, onNameChange, onColorChange,
+}: LanguagesTabProps) {
   const { t } = useTranslation('dialogs');
+  const atLimit = enabledCount >= capacity;
   return (
     <div className="tab-content">
       <p className="tab-hint">{t('languageReorderHint')}</p>
+      <p className="tab-hint">{t('templateLanguageLimit', { count: capacity })}</p>
+      {enabledCount > capacity && (
+        <p className="tab-note">{t('templateLanguageOverLimit', { count: capacity })}</p>
+      )}
 
       <div className="languages-list">
         {sortedLanguages.map((lang, index) => (
@@ -430,10 +460,18 @@ function LanguagesTab({ sortedLanguages, onMoveLanguage, onToggle, onNameChange 
               onChange={e => onNameChange(lang.slot, e.target.value)}
               placeholder={t('languageNamePlaceholder')}
             />
+            <input
+              type="color"
+              className="template-color-input"
+              value={lang.color ?? defaultColor(lang.slot)}
+              onChange={e => onColorChange(lang.slot, e.target.value)}
+              title={t('color')}
+            />
             <button
               className={`toggle-switch ${lang.enabled ? 'active' : ''}`}
               onClick={() => onToggle(lang.slot)}
-              title={lang.enabled ? t('disable') : t('enable')}
+              disabled={!lang.enabled && atLimit}
+              title={lang.enabled ? t('disable') : atLimit ? t('templateLanguageLimit', { count: capacity }) : t('enable')}
             >
               <span className="toggle-knob" />
             </button>
