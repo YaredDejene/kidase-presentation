@@ -3,7 +3,7 @@
  * Represents a slide template with layout and styling information
  */
 
-import type { LangSlot, OrderedLanguage } from './Presentation';
+import { DEFAULT_LANG_COLORS, type LangSlot, type OrderedLanguage } from './Presentation';
 
 export interface TemplateDefinition {
   layout: {
@@ -51,6 +51,11 @@ export type TemplateLanguageStyle = TemplateDefinition['languages'][number];
 /** A template style row bound to the language it renders. */
 export type EnabledLanguage = TemplateLanguageStyle & { slot: LangSlot };
 
+/** A language's own color, else the template's color for its slot, else the default palette. */
+export function languageColor(def: TemplateDefinition | undefined, slot: LangSlot, color?: string): string {
+  return color ?? def?.languages.find(l => l.slot === slot)?.color ?? DEFAULT_LANG_COLORS[slot];
+}
+
 /**
  * Pairs the languages to show (in display order) with the template's style rows by position.
  * Languages beyond the template's row count are not shown. Color follows the language, not the row.
@@ -59,7 +64,7 @@ export function templateLanguages(def: TemplateDefinition, langs: Pick<OrderedLa
   return langs.slice(0, def.languages.length).map(({ slot, color }, i) => ({
     ...def.languages[i],
     slot,
-    color: color ?? def.languages.find(l => l.slot === slot)?.color ?? def.languages[i].color,
+    color: languageColor(def, slot, color),
   }));
 }
 

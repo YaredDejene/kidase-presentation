@@ -1,5 +1,5 @@
 import React from 'react';
-import type { LangSlot, OrderedLanguage } from '@kidase/shared';
+import { DEFAULT_LANG_COLORS, type LangSlot, type OrderedLanguage } from '@kidase/shared';
 import { select, switchTrack, switchKnob, iconBtn } from '../theme';
 import { Strings, UiLang, UI_LANGS, LANG_BY_SLOT } from '../i18n';
 import { Gear, Close, Link } from '../icons';
@@ -73,10 +73,10 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
               {p.languages.map(l => {
                 const on = p.activeSlots.includes(l.slot);
                 const blocked = !on && p.activeSlots.length >= p.capacity;
-                const meta = LANG_BY_SLOT[l.slot] || { amh: '', color: '#fff' };
+                const meta = LANG_BY_SLOT[l.slot] || { amh: '' };
                 return (
                   <div key={l.slot} onClick={() => p.toggleLang(l.slot)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderTop: '1px solid var(--border)', cursor: blocked ? 'not-allowed' : 'pointer', opacity: blocked ? 0.4 : 1 }}>
-                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: l.color ?? meta.color, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.25)', flexShrink: 0 }} />
+                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: l.color ?? DEFAULT_LANG_COLORS[l.slot], boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.25)', flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{l.name}</span>
                       <span style={{ fontSize: 14, color: 'var(--text2)', fontFamily: "'Noto Serif Ethiopic',serif", marginLeft: 8 }}>{meta.amh}</span>

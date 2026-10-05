@@ -13,6 +13,18 @@ export const LANG_SLOTS = ['Lang1', 'Lang2', 'Lang3', 'Lang4', 'Lang5', 'Lang6',
 /** Language slot identifiers used across the app */
 export type LangSlot = (typeof LANG_SLOTS)[number];
 
+/** Each slot's color when neither the language nor the template sets one. Bright enough for a black slide. */
+export const DEFAULT_LANG_COLORS: Record<LangSlot, string> = {
+  Lang1: '#FFFFFF',
+  Lang2: '#FFFF00',
+  Lang3: '#00FF00',
+  Lang4: '#00BFFF',
+  Lang5: '#FFA500',
+  Lang6: '#FF69B4',
+  Lang7: '#B388FF',
+  Lang8: '#FF6B6B',
+};
+
 /** Any per-slot record of text: slide title/blocks/footer, language names, etc. */
 export type LangText = Partial<Record<LangSlot, string>>;
 

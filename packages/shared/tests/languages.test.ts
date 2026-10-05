@@ -28,12 +28,12 @@ describe('language slots', () => {
       ({ slot, fontSize, color, fontFamily: 'f', alignment: 'left' as const, lineHeight: 1 });
     const def = { languages: [row('Lang1', 62, 'white'), row('Lang2', 46, 'yellow'), row(undefined, 40, 'grey')] } as TemplateDefinition;
 
-    const shown = templateLanguages(def, [{ slot: 'Lang2' }, { slot: 'Lang6', color: 'pink' }, { slot: 'Lang1' }, { slot: 'Lang3' }]);
+    const shown = templateLanguages(def, [{ slot: 'Lang2' }, { slot: 'Lang6', color: 'pink' }, { slot: 'Lang7' }, { slot: 'Lang3' }]);
     expect(shown.map(l => [l.slot, l.fontSize, l.color])).toEqual([
-      ['Lang2', 62, 'yellow'], // row 1 size, its own slot's color
-      ['Lang6', 46, 'pink'],   // its own color setting
-      ['Lang1', 40, 'white'],
-    ]);                         // Lang3 is beyond the 3 rows
+      ['Lang2', 62, 'yellow'],  // row 1 size, its slot's color in the template
+      ['Lang6', 46, 'pink'],    // its own color setting
+      ['Lang7', 40, '#B388FF'], // not in the template: default palette, not the row's grey
+    ]);                          // Lang3 is beyond the 3 rows
   });
 });
 

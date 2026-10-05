@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from '../common/Modal';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
 import { Presentation, LanguageMap, LanguageSettings, LangSlot, LANG_SLOTS, LANG_VALUE_FIELD_MAP } from '@kidase/shared/domain/entities/Presentation';
-import { Template } from '@kidase/shared/domain/entities/Template';
+import { Template, languageColor } from '@kidase/shared/domain/entities/Template';
 import { Slide } from '@kidase/shared/domain/entities/Slide';
 import { useVariables } from '../../hooks/useVariables';
 import { usePresentation } from '../../hooks/usePresentation';
@@ -166,8 +166,7 @@ export const PresentationSettingsDialog: React.FC<PresentationSettingsDialogProp
   const selectedTemplate = templates.find(tmpl => tmpl.id === selectedTemplateId) ?? template;
   const capacity = selectedTemplate.definitionJson.languages.length;
   const enabledCount = languages.filter(lang => lang.enabled).length;
-  const defaultColor = (slot: LangSlot) =>
-    selectedTemplate.definitionJson.languages.find(l => l.slot === slot)?.color ?? '#FFFFFF';
+  const defaultColor = (slot: LangSlot) => languageColor(selectedTemplate.definitionJson, slot);
 
   const handleLanguageToggle = (slot: string) => {
     setLanguages(prev =>

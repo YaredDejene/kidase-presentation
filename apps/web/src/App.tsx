@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { LangSlot } from '@kidase/shared';
-import { isVerseSlide } from '@kidase/shared';
+import { isVerseSlide, DEFAULT_LANG_COLORS } from '@kidase/shared';
 import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
 import { Stage } from './components/Stage';
@@ -299,11 +299,11 @@ export const App: React.FC = () => {
               <div style={{ width: 1, height: 22, background: '#333', margin: '0 4px' }} />
               {(render?.languages ?? []).map(l => {
                 const on = activeSlots.includes(l.slot);
-                const meta = LANG_BY_SLOT[l.slot] || { short: l.name.slice(0, 2), color: '#fff' };
+                const meta = LANG_BY_SLOT[l.slot] || { short: l.name.slice(0, 2) };
                 const blocked = !on && activeSlots.length >= capacity;
                 return (
                   <button key={l.slot} onClick={() => toggleLang(l.slot)} disabled={blocked} title={blocked ? t.langSub(capacity) : l.name} style={{ opacity: blocked ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${on ? '#444' : '#2a2a2a'}`, background: on ? '#262626' : 'transparent', color: on ? '#fff' : '#666' }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color ?? meta.color, opacity: on ? 1 : 0.4, flexShrink: 0 }} />{meta.short}
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color ?? DEFAULT_LANG_COLORS[l.slot], opacity: on ? 1 : 0.4, flexShrink: 0 }} />{meta.short}
                   </button>
                 );
               })}

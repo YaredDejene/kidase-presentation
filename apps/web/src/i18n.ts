@@ -20,12 +20,12 @@ export const UI_LANGS: { key: UiLang; label: string }[] = [
 export const ETH_MONTHS_LONG = ['መስከረም · Meskerem', 'ጥቅምት · Tikimt', 'ኅዳር · Hidar', 'ታኅሣሥ · Tahsas', 'ጥር · Tir', 'የካቲት · Yekatit', 'መጋቢት · Megabit', 'ሚያዝያ · Miazia', 'ግንቦት · Ginbot', 'ሰኔ · Sene', 'ሐምሌ · Hamle', 'ነሐሴ · Nehase', 'ጳጉሜን · Pagume'];
 export const ETH_MONTHS_SHORT = ['መስከረም', 'ጥቅምት', 'ኅዳር', 'ታኅሣሥ', 'ጥር', 'የካቲት', 'መጋቢት', 'ሚያዝያ', 'ግንቦት', 'ሰኔ', 'ሐምሌ', 'ነሐሴ', 'ጳጉሜን'];
 
-/** Per-slot language presentation metadata (amharic name, short chip label, dot color). */
-export const LANG_BY_SLOT: Record<string, { amh: string; short: string; color: string }> = {
-  Lang1: { amh: 'ግዕዝ', short: 'ግ', color: '#FFFFFF' },
-  Lang2: { amh: 'አማርኛ', short: 'አ', color: '#FFFF00' },
-  Lang3: { amh: 'ትግርኛ', short: 'ት', color: '#00FF00' },
-  Lang4: { amh: 'እንግሊዝኛ', short: 'En', color: '#00BFFF' },
+/** Per-slot language presentation metadata (amharic name, short chip label). */
+export const LANG_BY_SLOT: Record<string, { amh: string; short: string }> = {
+  Lang1: { amh: 'ግዕዝ', short: 'ግ' },
+  Lang2: { amh: 'አማርኛ', short: 'አ' },
+  Lang3: { amh: 'ትግርኛ', short: 'ት' },
+  Lang4: { amh: 'እንግሊዝኛ', short: 'En' },
 };
 
 export const SHORTCUTS: { keys: string[]; label: string }[] = [

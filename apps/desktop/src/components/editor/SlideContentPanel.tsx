@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Slide, SlideBlock } from '@kidase/shared/domain/entities/Slide';
 import { LanguageMap, LanguageSettings, LangSlot, getOrderedLanguages } from '@kidase/shared/domain/entities/Presentation';
-import { Template } from '@kidase/shared/domain/entities/Template';
+import { Template, languageColor } from '@kidase/shared/domain/entities/Template';
 
 interface SlideContentPanelProps {
   slide: Slide;
@@ -20,11 +20,9 @@ export const SlideContentPanel: React.FC<SlideContentPanelProps> = ({
   const { t } = useTranslation('editor');
   const languages = getOrderedLanguages(languageSettings, languageMap);
 
-  // Each language's own color, else the color its slot has in the template
   const langColors: Partial<Record<LangSlot, string>> = {};
   for (const { slot, color } of languages) {
-    const c = color ?? template?.definitionJson.languages.find(l => l.slot === slot)?.color;
-    if (c) langColors[slot] = c;
+    langColors[slot] = languageColor(template?.definitionJson, slot, color);
   }
 
   return (
