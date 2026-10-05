@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Presentation } from '@kidase/shared/domain/entities/Presentation';
+import { findDefaultTemplate } from '@kidase/shared/domain/entities/Template';
 import { presentationService } from '../../services';
 import { usePresentation } from '../../hooks/usePresentation';
 import { useTemplates } from '../../hooks/useTemplates';
@@ -90,7 +91,7 @@ export const KidaseManager: React.FC = () => {
 
     if (!filePath || typeof filePath !== 'string') return;
 
-    const defaultTemplate = templates[0];
+    const defaultTemplate = findDefaultTemplate(templates);
     if (!defaultTemplate) {
       toast.error(t('noTemplateAvailable'));
       return;

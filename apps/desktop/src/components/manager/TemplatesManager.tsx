@@ -98,7 +98,7 @@ export const TemplatesManager: React.FC = () => {
                   onClick={() => setEditingTemplate(tmpl)}
                 >
                   <td className="templates-cell-name">{tmpl.name}</td>
-                  <td className="templates-cell-langs">{tmpl.maxLangCount}</td>
+                  <td className="templates-cell-langs">{tmpl.definitionJson.languages.length}</td>
                   <td className="templates-cell-date">{formatDate(tmpl.createdAt)}</td>
                   <td className="templates-cell-actions">
                     <button

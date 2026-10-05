@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { TemplateDefinition, SlideBlock, SlideTitle, LangSlot, EnabledLanguage } from '@kidase/shared';
+import { templateLanguages, type TemplateDefinition, type SlideBlock, type SlideTitle, type OrderedLanguage } from '@kidase/shared';
 import { SlideView } from '@kidase/shared/render/SlideView';
 
 export interface ResolvedFooter {
@@ -9,8 +9,8 @@ export interface ResolvedFooter {
 
 interface WebSlideRendererProps {
   definition: TemplateDefinition;
-  /** Active language slots, in display order (from the render payload). */
-  activeSlots: LangSlot[];
+  /** Active languages, in display order (from the render payload). */
+  languages: OrderedLanguage[];
   block: SlideBlock;
   title: SlideTitle | null;
   footer: ResolvedFooter | null;
@@ -23,16 +23,12 @@ interface WebSlideRendererProps {
  */
 export const WebSlideRenderer: React.FC<WebSlideRendererProps> = React.memo(({
   definition: def,
-  activeSlots,
+  languages,
   block,
   title,
   footer,
 }) => {
-  const enabledLanguages = useMemo<EnabledLanguage[]>(() => {
-    return activeSlots
-      .map(slot => def.languages.find(l => l.slot === slot))
-      .filter((l): l is EnabledLanguage => !!l);
-  }, [def.languages, activeSlots]);
+  const enabledLanguages = useMemo(() => templateLanguages(def, languages), [def, languages]);
 
   return <SlideView definition={def} enabledLanguages={enabledLanguages} block={block} title={title} footer={footer} />;
 });

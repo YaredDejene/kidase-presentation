@@ -1,9 +1,9 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import '@fontsource-variable/noto-serif-ethiopic';
-import type { TemplateDefinition } from '../domain/entities/Template';
+import type { TemplateDefinition, EnabledLanguage } from '../domain/entities/Template';
 import type { SlideBlock, SlideTitle } from '../domain/entities/Slide';
 import { firstText } from '../domain/entities/Presentation';
-import { computeFontScaleFactor, EnabledLanguage } from './fontScale';
+import { computeFontScaleFactor } from './fontScale';
 import { wordGapEm } from './layoutMetrics';
 
 /** Bundled with both apps so text wraps identically on every platform. */

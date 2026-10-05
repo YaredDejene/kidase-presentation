@@ -159,7 +159,7 @@ export const App: React.FC = () => {
   }, [helpOpen, configOpen, exportOpen, infoOpen, fullscreen, next, prev, toggleFullscreen]);
 
   const toggleLang = (slot: LangSlot) => setActiveSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
-  const orderedActiveSlots = (render?.languages ?? []).map(l => l.slot).filter(s => activeSlots.includes(s));
+  const activeLanguages = (render?.languages ?? []).filter(l => activeSlots.includes(l.slot));
 
   // Sync shareable view state into the URL hash so "Copy share link" reproduces the view.
   useEffect(() => {
@@ -181,7 +181,7 @@ export const App: React.FC = () => {
 
   const slideStage = (slide: NonNullable<typeof current>, def: NonNullable<typeof definition>) => (
     <Stage>
-      <WebSlideRenderer definition={def} activeSlots={orderedActiveSlots} block={slide.block} title={slide.title} footer={slide.footer} />
+      <WebSlideRenderer definition={def} languages={activeLanguages} block={slide.block} title={slide.title} footer={slide.footer} />
     </Stage>
   );
 
@@ -230,7 +230,7 @@ export const App: React.FC = () => {
                   <div key={s.id} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, boxShadow: isVerse ? 'inset 3px 0 0 #4a6a4a' : undefined, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
                     <span style={{ fontSize: 11, color: isVerse ? '#9a8acd' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
                     <div style={{ width: 150, height: 84, flexShrink: 0, borderRadius: 5, overflow: 'hidden', background: '#000' }}>
-                      {def && <Stage><WebSlideRenderer definition={def} activeSlots={orderedActiveSlots} block={s.block} title={s.title} footer={s.footer} /></Stage>}
+                      {def && <Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} /></Stage>}
                     </div>
                   </div>
                 );
@@ -277,7 +277,7 @@ export const App: React.FC = () => {
         />
       )}
       {infoOpen && <InfoPanel t={t} onClose={() => setInfoOpen(false)} render={render} />}
-      {exportOpen && render && <ExportDialog onClose={() => setExportOpen(false)} payload={render} activeSlots={orderedActiveSlots} />}
+      {exportOpen && render && <ExportDialog onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
       {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
 
       {/* fullscreen projection */}

@@ -6,26 +6,26 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from '../store/toastStore';
 import { Template } from '@kidase/shared/domain/entities/Template';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
-import { LanguageMap } from '@kidase/shared/domain/entities/Presentation';
+import { OrderedLanguage, getOrderedLanguages } from '@kidase/shared/domain/entities/Presentation';
 import { Slide } from '@kidase/shared/domain/entities/Slide';
 
 function buildPerSlideMaps(slides: Slide[]) {
   const store = useAppStore.getState();
   const templateMap = new Map<string, Template>();
   const variablesMap = new Map<string, Variable[]>();
-  const languageMapMap = new Map<string, LanguageMap>();
+  const languagesMap = new Map<string, OrderedLanguage[]>();
 
   for (const slide of slides) {
     const tmpl = store.getTemplateForSlide(slide);
     if (tmpl) templateMap.set(slide.id, tmpl);
     variablesMap.set(slide.id, store.getVariablesForSlide(slide));
-    languageMapMap.set(slide.id, store.getLanguageMapForSlide(slide));
+    languagesMap.set(slide.id, getOrderedLanguages(store.getLanguageSettingsForSlide(slide), store.getLanguageMapForSlide(slide)));
   }
 
   return {
     templateMap: templateMap.size > 0 ? templateMap : undefined,
     variablesMap: variablesMap.size > 0 ? variablesMap : undefined,
-    languageMapMap: languageMapMap.size > 0 ? languageMapMap : undefined,
+    languagesMap: languagesMap.size > 0 ? languagesMap : undefined,
   };
 }
 
@@ -49,14 +49,14 @@ export function useExport(displaySlides: Slide[]) {
     if (!filePath) return;
 
     const progress = toast.progress(t('exportingPdf', { total: displaySlides.length }));
-    const { templateMap, variablesMap, languageMapMap } = buildPerSlideMaps(displaySlides);
+    const { templateMap, variablesMap, languagesMap } = buildPerSlideMaps(displaySlides);
 
     try {
       const blob = await pdfExportService.exportToPdf(
         displaySlides,
         currentTemplate,
         currentVariables,
-        currentPresentation.languageMap,
+        getOrderedLanguages(currentPresentation.languageSettings, currentPresentation.languageMap),
         {},
         (current, total) => {
           const pct = Math.round((current / total) * 100);
@@ -65,7 +65,7 @@ export function useExport(displaySlides: Slide[]) {
         ruleContextMeta,
         templateMap,
         variablesMap,
-        languageMapMap
+        languagesMap
       );
 
       const { writeFile } = await import('@tauri-apps/plugin-fs');
@@ -89,14 +89,14 @@ export function useExport(displaySlides: Slide[]) {
     if (!filePath) return;
 
     const progress = toast.progress(t('exportingPptx', { total: displaySlides.length }));
-    const { templateMap, variablesMap, languageMapMap } = buildPerSlideMaps(displaySlides);
+    const { templateMap, variablesMap, languagesMap } = buildPerSlideMaps(displaySlides);
 
     try {
       const blob = await pptxExportService.exportToPptx(
         displaySlides,
         currentTemplate,
         currentVariables,
-        currentPresentation.languageMap,
+        getOrderedLanguages(currentPresentation.languageSettings, currentPresentation.languageMap),
         (current: number, total: number) => {
           const pct = Math.round((current / total) * 100);
           progress.update(pct, t('exportingSlide', { current, total }));
@@ -104,7 +104,7 @@ export function useExport(displaySlides: Slide[]) {
         ruleContextMeta,
         templateMap,
         variablesMap,
-        languageMapMap
+        languagesMap
       );
 
       const { writeFile } = await import('@tauri-apps/plugin-fs');

@@ -1,8 +1,8 @@
 import PptxGenJS from 'pptxgenjs';
-import { Slide, SlideBlock } from '@kidase/shared/domain/entities/Slide';
-import { Template, TemplateDefinition } from '@kidase/shared/domain/entities/Template';
+import { Slide } from '@kidase/shared/domain/entities/Slide';
+import { Template, TemplateDefinition, EnabledLanguage, templateLanguages } from '@kidase/shared/domain/entities/Template';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
-import { LanguageMap, LangSlot, firstText } from '@kidase/shared/domain/entities/Presentation';
+import { OrderedLanguage, LangSlot, firstText } from '@kidase/shared/domain/entities/Presentation';
 import { placeholderService } from '@kidase/shared';
 import { computeFontScale } from '@kidase/shared/domain/formatting';
 
@@ -39,12 +39,12 @@ export class PptxExportService {
     slides: Slide[],
     template: Template,
     variables: Variable[],
-    languageMap: LanguageMap,
+    languages: OrderedLanguage[],
     onProgress?: (current: number, total: number) => void,
     meta?: Record<string, unknown> | null,
     templateMap?: Map<string, Template>,
     variablesMap?: Map<string, Variable[]>,
-    languageMapMap?: Map<string, LanguageMap>
+    languagesMap?: Map<string, OrderedLanguage[]>
   ): Promise<Blob> {
     if (slides.length === 0) {
       throw new Error('No slides to export');
@@ -59,9 +59,9 @@ export class PptxExportService {
 
       const slideTemplate = templateMap?.get(slide.id) || template;
       const slideVariables = variablesMap?.get(slide.id) || variables;
-      const slideLangMap = languageMapMap?.get(slide.id) || languageMap;
+      const slideLanguages = languagesMap?.get(slide.id) || languages;
 
-      this.addSlide(pptx, slide, slideTemplate, slideVariables, slideLangMap, meta ?? undefined);
+      this.addSlide(pptx, slide, slideTemplate, slideVariables, slideLanguages, meta ?? undefined);
     }
 
     const arrayBuffer = await pptx.write({ outputType: 'arraybuffer' }) as ArrayBuffer;
@@ -70,16 +70,9 @@ export class PptxExportService {
     });
   }
 
-  private getEnabledLanguages(
-    def: TemplateDefinition,
-    languageMap: LanguageMap
-  ): TemplateDefinition['languages'] {
-    return def.languages.filter(lang => languageMap[lang.slot] !== undefined);
-  }
-
   private calculateFontScale(
     slide: Slide,
-    enabledLanguages: TemplateDefinition['languages'],
+    enabledLanguages: EnabledLanguage[],
     variables: Variable[],
     meta?: Record<string, unknown>
   ): number {
@@ -89,7 +82,7 @@ export class PptxExportService {
     let totalChars = 0;
 
     for (const langDef of enabledLanguages) {
-      const text = processedBlock[langDef.slot as keyof SlideBlock];
+      const text = processedBlock[langDef.slot];
       if (text) totalChars += text.length;
     }
 
@@ -120,11 +113,11 @@ export class PptxExportService {
     slide: Slide,
     template: Template,
     variables: Variable[],
-    languageMap: LanguageMap,
+    languages: OrderedLanguage[],
     meta?: Record<string, unknown>
   ): void {
     const def = template.definitionJson;
-    const enabledLanguages = this.getEnabledLanguages(def, languageMap);
+    const enabledLanguages = templateLanguages(def, languages);
     const fontScale = this.calculateFontScale(slide, enabledLanguages, variables, meta);
 
     const pptxSlide = pptx.addSlide();
@@ -179,14 +172,14 @@ export class PptxExportService {
     const processedBlock = placeholderService.replaceInBlock(slide.blocksJson[0] || {}, variables, meta);
     const availableHeight = slideHeight - currentY - marginBottom - footerHeight;
     const gapInch = pxToInch(def.layout.gap);
-    const langCount = enabledLanguages.filter(lang => processedBlock[lang.slot as keyof SlideBlock]).length;
+    const langCount = enabledLanguages.filter(lang => processedBlock[lang.slot]).length;
 
     if (langCount > 0) {
       const totalGaps = (langCount - 1) * gapInch;
       const perLangHeight = (availableHeight - totalGaps) / langCount;
 
       for (const langDef of enabledLanguages) {
-        const text = processedBlock[langDef.slot as keyof typeof processedBlock];
+        const text = processedBlock[langDef.slot];
         if (!text) continue;
 
         const adjustedFontSize = pxToPoints(langDef.fontSize) * fontScale;
@@ -218,7 +211,7 @@ export class PptxExportService {
   private addFooter(
     pptxSlide: PptxGenJS.Slide,
     slide: Slide,
-    enabledLanguages: TemplateDefinition['languages'],
+    enabledLanguages: EnabledLanguage[],
     variables: Variable[],
     def: TemplateDefinition,
     x: number,
@@ -247,7 +240,7 @@ export class PptxExportService {
 
     for (const langDef of enabledLanguages) {
       const titlePart = processedFooterTitle?.[langDef.slot as LangSlot];
-      const textPart = processedFooterText?.[langDef.slot as keyof SlideBlock];
+      const textPart = processedFooterText?.[langDef.slot];
 
       if (titlePart || textPart) {
         if (hasContent) {

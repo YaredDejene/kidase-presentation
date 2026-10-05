@@ -1,12 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { templateRepository } from '../repositories';
-import { Template, TemplateDefinition } from '@kidase/shared/domain/entities/Template';
+import { Template, TemplateDefinition, findDefaultTemplate } from '@kidase/shared/domain/entities/Template';
 import templateSeeds from '@kidase/shared/data/template-seeds.json';
 
-/** Cast seed definitionJson (untyped JSON) to TemplateDefinition */
-function seedDefinition(index: number): TemplateDefinition {
-  return templateSeeds[index].definitionJson as TemplateDefinition;
-}
+const defaultSeed = findDefaultTemplate(templateSeeds)!;
 
 export function useTemplates() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -39,7 +36,7 @@ export function useTemplates() {
       const template = await templateRepository.create({
         name,
         maxLangCount,
-        definitionJson: definition || seedDefinition(0),
+        definitionJson: definition || (defaultSeed.definitionJson as TemplateDefinition),
       });
 
       setTemplates(prev => [...prev, template]);
@@ -117,7 +114,7 @@ export function useTemplates() {
     const existing = await templateRepository.getAll();
 
     if (existing.length === 0) {
-      const seed = templateSeeds[0];
+      const seed = defaultSeed;
       const defaultTemplate = await templateRepository.create({
         name: seed.name,
         maxLangCount: seed.maxLangCount,

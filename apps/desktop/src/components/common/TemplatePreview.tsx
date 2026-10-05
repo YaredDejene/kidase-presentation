@@ -11,6 +11,7 @@ const PLACEHOLDER_TEXTS = [
   'Sed do eiusmod tempor incididunt ut labore et dolore magna.',
   'Ut enim ad minim veniam, quis nostrud exercitation ullamco.',
   'Duis aute irure dolor in reprehenderit in voluptate velit.',
+  'Excepteur sint occaecat cupidatat non proident, sunt in culpa.',
 ];
 
 function renderLanguageBlocks(def: TemplateDefinition, scale: number) {
@@ -57,7 +58,7 @@ function renderLanguageBlocks(def: TemplateDefinition, scale: number) {
         >
           {(def.layout.rows > 1 ? def.languages.slice(1) : def.languages).map((lang, index) => (
             <div
-              key={lang.slot}
+              key={index}
               style={{
                 flex: 1,
                 display: 'flex',
@@ -99,7 +100,7 @@ function renderLanguageBlocks(def: TemplateDefinition, scale: number) {
     >
       {def.languages.map((lang, index) => (
         <div
-          key={lang.slot}
+          key={index}
           style={{
             fontSize: `${lang.fontSize * scale}px`,
             fontFamily: lang.fontFamily,

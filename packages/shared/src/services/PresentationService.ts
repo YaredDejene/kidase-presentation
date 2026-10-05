@@ -1,6 +1,6 @@
 import { Presentation } from '../domain/entities/Presentation';
 import { Slide } from '../domain/entities/Slide';
-import { Template, TemplateDefinition } from '../domain/entities/Template';
+import { Template, TemplateDefinition, findDefaultTemplate } from '../domain/entities/Template';
 import templateSeeds from '../data/template-seeds.json';
 import { Variable } from '../domain/entities/Variable';
 import { Repositories } from '../domain/interfaces/Repositories';
@@ -313,7 +313,7 @@ export class PresentationService {
     const templates = await this.repos.template.getAll();
 
     if (templates.length === 0) {
-      const seed = templateSeeds[0];
+      const seed = findDefaultTemplate(templateSeeds)!;
       return this.repos.template.create({
         name: seed.name,
         maxLangCount: seed.maxLangCount,
@@ -321,7 +321,7 @@ export class PresentationService {
       });
     }
 
-    return templates[0];
+    return findDefaultTemplate(templates)!;
   }
 
   /**

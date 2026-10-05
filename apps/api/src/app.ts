@@ -24,8 +24,8 @@ export interface BuildAppOptions {
   appVersion?: string;
 }
 
-/** Viewer language codes for the picker badges, by slot. */
-const LANG_CODE: Record<LangSlot, string> = {
+/** Viewer language codes for the picker badges, by slot. Other slots use the language name. */
+const LANG_CODE: Partial<Record<LangSlot, string>> = {
   Lang1: 'geez',
   Lang2: 'amharic',
   Lang3: 'tigrinya',
@@ -33,7 +33,7 @@ const LANG_CODE: Record<LangSlot, string> = {
 };
 
 function langCodes(p: Presentation): string[] {
-  return LANG_SLOTS.filter(s => p.languageMap[s]).map(s => LANG_CODE[s]);
+  return LANG_SLOTS.filter(s => p.languageMap[s]).map(s => LANG_CODE[s] ?? p.languageMap[s]!.toLowerCase());
 }
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {

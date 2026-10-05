@@ -16,6 +16,8 @@ const FONT_FAMILIES = [
 ];
 
 const ALIGNMENTS = ['left', 'center', 'right', 'justify'] as const;
+/** A template shows at most this many languages at once. */
+const MAX_LANGUAGE_ROWS = 5;
 const VERTICAL_ALIGNS = ['top', 'center', 'bottom'] as const;
 
 interface TemplateEditorDialogProps {
@@ -67,12 +69,26 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
     });
   };
 
+  const addLanguageRow = () => {
+    setTemplateDef(prev => {
+      if (!prev) return prev;
+      // A new row starts as a copy of the last one; rows are styled by position, so it has no slot.
+      const { slot: _slot, ...last } = prev.languages[prev.languages.length - 1];
+      return { ...prev, languages: [...prev.languages, last] };
+    });
+  };
+
+  const removeLanguageRow = (langIndex: number) => {
+    setTemplateDef(prev => prev && { ...prev, languages: prev.languages.filter((_, i) => i !== langIndex) });
+  };
+
   const handleSave = async () => {
     if (!templateDef) return;
     setIsSaving(true);
     try {
       await onSave(template.id, {
         name,
+        maxLangCount: templateDef.languages.length,
         definitionJson: templateDef,
       });
       onClose();
@@ -147,13 +163,18 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
             <div className="template-section">
               <div className="template-section-header">{t('languageStyles')}</div>
               {templateDef.languages.map((lang, index) => (
-                <div key={lang.slot} className="template-lang-editor">
+                <div key={index} className="template-lang-editor">
                   <div className="template-lang-header">
                     <span
                       className="template-lang-color"
                       style={{ backgroundColor: lang.color }}
                     />
-                    <span className="template-lang-title">{lang.slot}</span>
+                    <span className="template-lang-title">{t('languageRow', { n: index + 1 })}</span>
+                    {templateDef.languages.length > 1 && (
+                      <button type="button" onClick={() => removeLanguageRow(index)} className="btn-cancel" style={{ marginLeft: 'auto' }}>
+                        {t('removeLanguageRow')}
+                      </button>
+                    )}
                   </div>
                   <div className="template-lang-grid">
                     <div className="template-field">
@@ -211,6 +232,11 @@ export const TemplateEditorDialog: React.FC<TemplateEditorDialogProps> = ({
                   </div>
                 </div>
               ))}
+              {templateDef.languages.length < MAX_LANGUAGE_ROWS && (
+                <button type="button" onClick={addLanguageRow} className="btn-cancel">
+                  {t('addLanguageRow')}
+                </button>
+              )}
             </div>
 
             {/* Margins */}

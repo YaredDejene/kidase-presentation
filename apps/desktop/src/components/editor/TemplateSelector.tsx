@@ -36,7 +36,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             <option value="">{t('selectTemplate')}</option>
             {templates.map((template) => (
               <option key={template.id} value={template.id}>
-                {template.name} ({t('languageCount', { count: template.maxLangCount })})
+                {template.name} ({t('languageCount', { count: template.definitionJson.languages.length })})
               </option>
             ))}
           </>

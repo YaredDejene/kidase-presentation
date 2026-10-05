@@ -20,12 +20,11 @@ export const SlideContentPanel: React.FC<SlideContentPanelProps> = ({
   const { t } = useTranslation('editor');
   const languages = getOrderedLanguages(languageSettings, languageMap);
 
-  // Build a map of slot → color from the template's language definitions
-  const langColors: Record<string, string> = {};
-  if (template) {
-    for (const langDef of template.definitionJson.languages) {
-      langColors[langDef.slot] = langDef.color;
-    }
+  // Each language's own color, else the color its slot has in the template
+  const langColors: Partial<Record<LangSlot, string>> = {};
+  for (const { slot, color } of languages) {
+    const c = color ?? template?.definitionJson.languages.find(l => l.slot === slot)?.color;
+    if (c) langColors[slot] = c;
   }
 
   return (

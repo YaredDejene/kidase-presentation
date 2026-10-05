@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { LangSlot } from '@kidase/shared';
+import type { OrderedLanguage } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 import { iconBtn } from '../theme';
 import { Close, Download, Check } from '../icons';
@@ -10,7 +10,7 @@ type Status = 'idle' | 'running' | 'done';
 interface Props {
   onClose: () => void;
   payload: RenderPayload;
-  activeSlots: LangSlot[];
+  languages: OrderedLanguage[];
 }
 
 const FORMATS = [
@@ -18,7 +18,7 @@ const FORMATS = [
   { key: 'pptx', label: 'PowerPoint', sub: () => 'Editable · one slide per page' },
 ] as const;
 
-export const ExportDialog: React.FC<Props> = ({ onClose, payload, activeSlots }) => {
+export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) => {
   const [fmt, setFmt] = useState<'pdf' | 'pptx'>('pdf');
   const [status, setStatus] = useState<Status>('idle');
   const [pct, setPct] = useState(0);
@@ -33,8 +33,8 @@ export const ExportDialog: React.FC<Props> = ({ onClose, payload, activeSlots })
     setPct(0);
     const onProgress = (c: number, t: number) => setPct(Math.round((c / t) * 100));
     try {
-      if (fmt === 'pdf') await exportPdf(payload, activeSlots, name, onProgress);
-      else await exportPptx(payload, activeSlots, name, onProgress);
+      if (fmt === 'pdf') await exportPdf(payload, languages, name, onProgress);
+      else await exportPptx(payload, languages, name, onProgress);
       setStatus('done');
     } catch (e) {
       setStatus('idle');

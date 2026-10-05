@@ -1,9 +1,9 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Slide, SlideBlock } from '@kidase/shared/domain/entities/Slide';
-import { Template, TemplateDefinition } from '@kidase/shared/domain/entities/Template';
+import { Slide } from '@kidase/shared/domain/entities/Slide';
+import { Template, EnabledLanguage, templateLanguages } from '@kidase/shared/domain/entities/Template';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
-import { LanguageMap, LangSlot, firstText } from '@kidase/shared/domain/entities/Presentation';
+import { OrderedLanguage, LangSlot, firstText } from '@kidase/shared/domain/entities/Presentation';
 import { placeholderService } from '@kidase/shared';
 import { computeFontScale } from '@kidase/shared/domain/formatting';
 
@@ -29,13 +29,13 @@ export class PdfExportService {
     slides: Slide[],
     template: Template,
     variables: Variable[],
-    languageMap: LanguageMap,
+    languages: OrderedLanguage[],
     options: PdfExportOptions = {},
     onProgress?: (current: number, total: number) => void,
     meta?: Record<string, unknown> | null,
     templateMap?: Map<string, Template>,
     variablesMap?: Map<string, Variable[]>,
-    languageMapMap?: Map<string, LanguageMap>
+    languagesMap?: Map<string, OrderedLanguage[]>
   ): Promise<Blob> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
@@ -58,8 +58,8 @@ export class PdfExportService {
       // Create a temporary container for rendering (per-slide resolution)
       const slideTemplate = templateMap?.get(slide.id) || template;
       const slideVariables = variablesMap?.get(slide.id) || variables;
-      const slideLangMap = languageMapMap?.get(slide.id) || languageMap;
-      const container = this.createSlideContainer(slide, slideTemplate, slideVariables, slideLangMap, opts, meta ?? undefined);
+      const slideLanguages = languagesMap?.get(slide.id) || languages;
+      const container = this.createSlideContainer(slide, slideTemplate, slideVariables, slideLanguages, opts, meta ?? undefined);
       document.body.appendChild(container);
 
       try {
@@ -102,20 +102,13 @@ export class PdfExportService {
     return pdf.output('blob');
   }
 
-  private getEnabledLanguages(
-    def: TemplateDefinition,
-    languageMap: LanguageMap
-  ): TemplateDefinition['languages'] {
-    return def.languages.filter(lang => languageMap[lang.slot] !== undefined);
-  }
-
   /**
    * Calculate dynamic font scale based on total content length.
    * Mirrors SlideRenderer's fontScaleFactor logic.
    */
   private calculateFontScale(
     slide: Slide,
-    enabledLanguages: TemplateDefinition['languages'],
+    enabledLanguages: EnabledLanguage[],
     variables: Variable[],
     meta?: Record<string, unknown>
   ): number {
@@ -125,7 +118,7 @@ export class PdfExportService {
     let totalChars = 0;
 
     for (const langDef of enabledLanguages) {
-      const text = processedBlock[langDef.slot as keyof SlideBlock];
+      const text = processedBlock[langDef.slot];
       if (text) totalChars += text.length;
     }
 
@@ -155,12 +148,12 @@ export class PdfExportService {
     slide: Slide,
     template: Template,
     variables: Variable[],
-    languageMap: LanguageMap,
+    languages: OrderedLanguage[],
     opts: Required<PdfExportOptions>,
     meta?: Record<string, unknown>
   ): HTMLDivElement {
     const def = template.definitionJson;
-    const enabledLanguages = this.getEnabledLanguages(def, languageMap);
+    const enabledLanguages = templateLanguages(def, languages);
     const fontScale = this.calculateFontScale(slide, enabledLanguages, variables, meta);
     // Scale all measurements from design resolution to container resolution
     const viewportScale = opts.width / DESIGN_WIDTH;
@@ -215,7 +208,7 @@ export class PdfExportService {
     const processedBlock = placeholderService.replaceInBlock(slide.blocksJson[0] || {}, variables, meta);
 
     for (const langDef of enabledLanguages) {
-      const text = processedBlock[langDef.slot as keyof typeof processedBlock];
+      const text = processedBlock[langDef.slot];
 
       if (text) {
         const langEl = document.createElement('div');
@@ -249,7 +242,7 @@ export class PdfExportService {
 
   private createFooterElement(
     slide: Slide,
-    enabledLanguages: TemplateDefinition['languages'],
+    enabledLanguages: EnabledLanguage[],
     variables: Variable[],
     titleFontSize: number,
     meta?: Record<string, unknown>
@@ -279,7 +272,7 @@ export class PdfExportService {
 
     for (const langDef of enabledLanguages) {
       const titlePart = processedFooterTitle?.[langDef.slot as LangSlot];
-      const textPart = processedFooterText?.[langDef.slot as keyof SlideBlock];
+      const textPart = processedFooterText?.[langDef.slot];
 
       if (titlePart || textPart) {
         if (hasContent) {

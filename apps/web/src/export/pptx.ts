@@ -1,9 +1,9 @@
 import PptxGenJS from 'pptxgenjs';
-import type { LangSlot, TemplateDefinition, EnabledLanguage } from '@kidase/shared';
+import type { OrderedLanguage, TemplateDefinition } from '@kidase/shared';
 
 // Interop-safe constructor (CJS default may be double-wrapped under Node ESM).
 const Pptx = ((PptxGenJS as unknown as { default?: typeof PptxGenJS }).default ?? PptxGenJS) as typeof PptxGenJS;
-import { computeFontScaleFactor, firstText } from '@kidase/shared';
+import { computeFontScaleFactor, firstText, templateLanguages } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 
 type RSlide = RenderPayload['slides'][number];
@@ -17,14 +17,10 @@ const cleanFont = (f: string) => f.split(',')[0].trim().replace(/['"]/g, '');
 const mapAlign = (a: string): 'left' | 'center' | 'right' => (a === 'center' || a === 'right' ? a : 'left');
 
 
-function enabledLangsFor(def: TemplateDefinition, slots: LangSlot[]): EnabledLanguage[] {
-  return slots.map(s => def.languages.find(l => l.slot === s)).filter((l): l is EnabledLanguage => !!l);
-}
-
 /** Ported from the desktop PptxExportService, fed with already-resolved slide data. */
-function addPptxSlide(pptx: PptxGenJS, slide: RSlide, def: TemplateDefinition | undefined, slots: LangSlot[]): void {
+function addPptxSlide(pptx: PptxGenJS, slide: RSlide, def: TemplateDefinition | undefined, languages: OrderedLanguage[]): void {
   if (!def) return;
-  const enabled = enabledLangsFor(def, slots);
+  const enabled = templateLanguages(def, languages);
 
   let titleFooterChars = 0;
   const titleText = firstText(slide.title);
@@ -86,12 +82,12 @@ function addPptxSlide(pptx: PptxGenJS, slide: RSlide, def: TemplateDefinition | 
 }
 
 /** Build a configured PptxGenJS deck from the resolved render payload (pure; no DOM). */
-export function buildPptx(payload: RenderPayload, slots: LangSlot[], onProgress?: Progress): PptxGenJS {
+export function buildPptx(payload: RenderPayload, languages: OrderedLanguage[], onProgress?: Progress): PptxGenJS {
   const pptx = new Pptx();
   pptx.layout = 'LAYOUT_WIDE';
   for (let i = 0; i < payload.slides.length; i++) {
     onProgress?.(i + 1, payload.slides.length);
-    addPptxSlide(pptx, payload.slides[i], payload.templates[payload.slides[i].templateId], slots);
+    addPptxSlide(pptx, payload.slides[i], payload.templates[payload.slides[i].templateId], languages);
   }
   return pptx;
 }

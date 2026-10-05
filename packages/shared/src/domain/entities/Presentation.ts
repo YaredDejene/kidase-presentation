@@ -8,7 +8,7 @@
  */
 
 /** Ordered array of all language slots. Every per-language list in the app derives from this. */
-export const LANG_SLOTS = ['Lang1', 'Lang2', 'Lang3', 'Lang4'] as const;
+export const LANG_SLOTS = ['Lang1', 'Lang2', 'Lang3', 'Lang4', 'Lang5', 'Lang6', 'Lang7', 'Lang8'] as const;
 
 /** Language slot identifiers used across the app */
 export type LangSlot = (typeof LANG_SLOTS)[number];
@@ -33,6 +33,15 @@ export interface LanguageConfig {
   name: string;
   enabled: boolean;
   order: number;
+  /** Text color for this language; unset keeps the template's color for the slot. */
+  color?: string;
+}
+
+/** An enabled language in display order. */
+export interface OrderedLanguage {
+  slot: LangSlot;
+  name: string;
+  color?: string;
 }
 
 export type LanguageSettings = Partial<Record<LangSlot, LanguageConfig>>;
@@ -90,7 +99,7 @@ export function languageMapToSettings(map: LanguageMap): LanguageSettings {
 }
 
 // Helper to get enabled languages in order
-export function getOrderedLanguages(settings: LanguageSettings | undefined, map: LanguageMap): Array<{ slot: LangSlot; name: string }> {
+export function getOrderedLanguages(settings: LanguageSettings | undefined, map: LanguageMap): OrderedLanguage[] {
   if (!settings) {
     // Fallback to languageMap for backward compatibility
     return LANG_SLOTS
@@ -100,9 +109,9 @@ export function getOrderedLanguages(settings: LanguageSettings | undefined, map:
 
   return LANG_SLOTS
     .filter(slot => settings[slot]?.enabled)
-    .map(slot => ({ slot, name: settings[slot]!.name, order: settings[slot]!.order }))
+    .map(slot => ({ slot, ...settings[slot]! }))
     .sort((a, b) => a.order - b.order)
-    .map(({ slot, name }) => ({ slot, name }));
+    .map(({ slot, name, color }) => (color ? { slot, name, color } : { slot, name }));
 }
 
 export type PresentationType =
