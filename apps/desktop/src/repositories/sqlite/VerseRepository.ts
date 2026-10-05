@@ -1,39 +1,34 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../../lib/database';
 import { Verse } from '@kidase/shared/domain/entities/Verse';
+import { LANG_SLOTS, langColumn, langField } from '@kidase/shared/domain/entities/Presentation';
 import { IVerseRepository } from '@kidase/shared/domain/interfaces/IVerseRepository';
 
 interface VerseRow {
   id: string;
   segment_id: string;
   verse_order: number;
-  title_lang1: string | null;
-  title_lang2: string | null;
-  title_lang3: string | null;
-  title_lang4: string | null;
-  text_lang1: string | null;
-  text_lang2: string | null;
-  text_lang3: string | null;
-  text_lang4: string | null;
   created_at: string;
+  [langColumn: string]: string | number | null;
 }
+
+// Every title column, then every text column, in slot order.
+const LANG_PARTS = (['title', 'text'] as const).flatMap(prefix => LANG_SLOTS.map(slot => ({ prefix, slot })));
+const LANG_COLUMNS = LANG_PARTS.map(({ prefix, slot }) => langColumn(prefix, slot));
+const langValues = (v: Partial<Verse>) => LANG_PARTS.map(({ prefix, slot }) => v[langField(prefix, slot)] ?? null);
 
 export class VerseRepository implements IVerseRepository {
   private mapRowToEntity(row: VerseRow): Verse {
-    return {
+    const verse: Verse = {
       id: row.id,
       segmentId: row.segment_id,
       verseOrder: row.verse_order,
-      titleLang1: row.title_lang1 ?? undefined,
-      titleLang2: row.title_lang2 ?? undefined,
-      titleLang3: row.title_lang3 ?? undefined,
-      titleLang4: row.title_lang4 ?? undefined,
-      textLang1: row.text_lang1 ?? undefined,
-      textLang2: row.text_lang2 ?? undefined,
-      textLang3: row.text_lang3 ?? undefined,
-      textLang4: row.text_lang4 ?? undefined,
       createdAt: row.created_at,
     };
+    for (const { prefix, slot } of LANG_PARTS) {
+      verse[langField(prefix, slot)] = (row[langColumn(prefix, slot)] as string | null) ?? undefined;
+    }
+    return verse;
   }
 
   async getAll(): Promise<Verse[]> {
@@ -70,23 +65,9 @@ export class VerseRepository implements IVerseRepository {
 
     await db.execute(
       `INSERT INTO verses
-       (id, segment_id, verse_order, title_lang1, title_lang2, title_lang3, title_lang4,
-        text_lang1, text_lang2, text_lang3, text_lang4, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        verse.segmentId,
-        verse.verseOrder,
-        verse.titleLang1 ?? null,
-        verse.titleLang2 ?? null,
-        verse.titleLang3 ?? null,
-        verse.titleLang4 ?? null,
-        verse.textLang1 ?? null,
-        verse.textLang2 ?? null,
-        verse.textLang3 ?? null,
-        verse.textLang4 ?? null,
-        createdAt,
-      ]
+       (id, segment_id, verse_order, ${LANG_COLUMNS.join(', ')}, created_at)
+       VALUES (?, ?, ?, ${LANG_COLUMNS.map(() => '?').join(', ')}, ?)`,
+      [id, verse.segmentId, verse.verseOrder, ...langValues(verse), createdAt]
     );
 
     return { ...verse, id, createdAt };
@@ -110,23 +91,9 @@ export class VerseRepository implements IVerseRepository {
 
     await db.execute(
       `UPDATE verses
-       SET segment_id = ?, verse_order = ?,
-           title_lang1 = ?, title_lang2 = ?, title_lang3 = ?, title_lang4 = ?,
-           text_lang1 = ?, text_lang2 = ?, text_lang3 = ?, text_lang4 = ?
+       SET segment_id = ?, verse_order = ?, ${LANG_COLUMNS.map(c => `${c} = ?`).join(', ')}
        WHERE id = ?`,
-      [
-        updated.segmentId,
-        updated.verseOrder,
-        updated.titleLang1 ?? null,
-        updated.titleLang2 ?? null,
-        updated.titleLang3 ?? null,
-        updated.titleLang4 ?? null,
-        updated.textLang1 ?? null,
-        updated.textLang2 ?? null,
-        updated.textLang3 ?? null,
-        updated.textLang4 ?? null,
-        id,
-      ]
+      [updated.segmentId, updated.verseOrder, ...langValues(updated), id]
     );
 
     return updated;

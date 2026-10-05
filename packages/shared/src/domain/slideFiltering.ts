@@ -1,5 +1,6 @@
 import { Slide } from './entities/Slide';
 import { Verse } from './entities/Verse';
+import { firstText, langFieldsToText } from './entities/Presentation';
 import { placeholderService } from '../services/PlaceholderService';
 
 /**
@@ -38,29 +39,18 @@ export function expandDynamicSlides(
         .filter(v => v.segmentId === segmentId)
         .sort((a, b) => a.verseOrder - b.verseOrder)
         .filter(v => {
-          const key = [v.titleLang1, v.titleLang2, v.titleLang3, v.titleLang4, v.textLang1, v.textLang2, v.textLang3, v.textLang4]
+          const key = [...Object.values(langFieldsToText('title', v)), ...Object.values(langFieldsToText('text', v))]
             .map(t => (t ?? '').replace(/\s+/g, ' ').trim()).join('\u0000');
           return !seen.has(key) && !!seen.add(key);
         });
 
       for (const verse of matchingVerses) {
+        const verseTitle = langFieldsToText('title', verse);
         expanded.push({
           ...slide,
           id: `${slide.id}__verse_${verse.id}`,
-          titleJson: (verse.titleLang1 || verse.titleLang2 || verse.titleLang3 || verse.titleLang4)
-            ? {
-                Lang1: verse.titleLang1,
-                Lang2: verse.titleLang2,
-                Lang3: verse.titleLang3,
-                Lang4: verse.titleLang4,
-              }
-            : slide.titleJson,
-          blocksJson: [{
-            Lang1: verse.textLang1,
-            Lang2: verse.textLang2,
-            Lang3: verse.textLang3,
-            Lang4: verse.textLang4,
-          }],
+          titleJson: firstText(verseTitle) ? verseTitle : slide.titleJson,
+          blocksJson: [langFieldsToText('text', verse)],
         });
       }
 

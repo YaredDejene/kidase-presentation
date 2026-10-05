@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { ExcelImportService, PresentationService, templateSeeds, createRuleDefinition } from '@kidase/shared';
+import { ExcelImportService, PresentationService, templateSeeds, createRuleDefinition, findDefaultTemplate } from '@kidase/shared';
 import type { TemplateDefinition } from '@kidase/shared';
 import { loadConfig } from './config';
 import { connectMongo } from './db/mongo';
@@ -45,7 +45,7 @@ async function main() {
         }
       }
       const templates = await repos.template.getAll();
-      const templateId = templates[0].id;
+      const templateId = findDefaultTemplate(templates)!.id;
 
       const excel = new ExcelImportService(repos);
       const presentationService = new PresentationService(repos, excel);

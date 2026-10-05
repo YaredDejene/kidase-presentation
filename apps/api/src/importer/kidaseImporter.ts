@@ -1,6 +1,7 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../repositories/mongo';
 import { Doc, stripUndefined } from '../repositories/mongo/base';
+import { LANG_SLOTS, langColumn, langField } from '@kidase/shared';
 
 /**
  * A `.kidase` backup: a `BackupService` dump of the 8 tables. Rows are raw
@@ -46,6 +47,17 @@ function toJson<T>(v: unknown, fallback: T): T {
   return v as T;
 }
 
+/** Per-slot fields, e.g. value_lang1 / valueLang1 -> valueLang1, for every slot. */
+function langFields(row: Row, ...prefixes: string[]): Doc {
+  const doc: Doc = {};
+  for (const prefix of prefixes) {
+    for (const slot of LANG_SLOTS) {
+      doc[langField(prefix, slot)] = toStr(pick(row, langColumn(prefix, slot), langField(prefix, slot)));
+    }
+  }
+  return doc;
+}
+
 const MAPPERS: Record<string, (row: Row) => Doc> = {
   [COLLECTIONS.templates]: row => ({
     _id: pick(row, 'id'),
@@ -85,10 +97,7 @@ const MAPPERS: Record<string, (row: Row) => Doc> = {
     presentationId: pick(row, 'presentation_id', 'presentationId'),
     name: pick(row, 'name'),
     value: pick(row, 'value'),
-    valueLang1: toStr(pick(row, 'value_lang1', 'valueLang1')),
-    valueLang2: toStr(pick(row, 'value_lang2', 'valueLang2')),
-    valueLang3: toStr(pick(row, 'value_lang3', 'valueLang3')),
-    valueLang4: toStr(pick(row, 'value_lang4', 'valueLang4')),
+    ...langFields(row, 'value'),
   }),
   [COLLECTIONS.rules]: row => ({
     _id: pick(row, 'id'),
@@ -122,14 +131,7 @@ const MAPPERS: Record<string, (row: Row) => Doc> = {
     _id: pick(row, 'id'),
     segmentId: pick(row, 'segment_id', 'segmentId'),
     verseOrder: Number(pick(row, 'verse_order', 'verseOrder') ?? 0),
-    titleLang1: toStr(pick(row, 'title_lang1', 'titleLang1')),
-    titleLang2: toStr(pick(row, 'title_lang2', 'titleLang2')),
-    titleLang3: toStr(pick(row, 'title_lang3', 'titleLang3')),
-    titleLang4: toStr(pick(row, 'title_lang4', 'titleLang4')),
-    textLang1: toStr(pick(row, 'text_lang1', 'textLang1')),
-    textLang2: toStr(pick(row, 'text_lang2', 'textLang2')),
-    textLang3: toStr(pick(row, 'text_lang3', 'textLang3')),
-    textLang4: toStr(pick(row, 'text_lang4', 'textLang4')),
+    ...langFields(row, 'title', 'text'),
     createdAt: pick(row, 'created_at', 'createdAt'),
   }),
   [COLLECTIONS.appSettings]: row => ({

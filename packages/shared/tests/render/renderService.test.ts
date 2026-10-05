@@ -43,11 +43,36 @@ describe('RenderService', () => {
     expect(result.slides[0].templateId).toBe('t1');
     expect(result.templates['t1']).toEqual(def());
     expect(result.languages).toEqual([
-      { slot: 'Lang1', name: "Ge'ez" },
-      { slot: 'Lang2', name: 'Amharic' },
+      { slot: 'Lang1', name: "Ge'ez", enabled: true },
+      { slot: 'Lang2', name: 'Amharic', enabled: true },
     ]);
     expect(result.presentation).toMatchObject({ id: 'p1', name: 'Kidase', type: 'Kidase' });
     expect(result.context.gregorian).toBe('2026-06-25');
+  });
+
+  it('offers disabled languages that have text, but not languages without text', async () => {
+    const repos = fakeRepositories({
+      templates: [{ id: 't1', name: 'Default', maxLangCount: 4, definitionJson: def(), createdAt: '' }],
+      presentations: [{
+        id: 'p1', name: 'Kidase', type: 'Kidase', templateId: 't1',
+        languageMap: { Lang1: "Ge'ez" },
+        languageSettings: {
+          Lang1: { name: "Ge'ez", enabled: true, order: 2 },
+          Lang3: { name: 'Tigrigna', enabled: false, order: 1 },
+          Lang7: { name: 'Language 7', enabled: false, order: 3 },
+        },
+        isPrimary: true, isActive: true, createdAt: '',
+      }],
+      slides: [
+        { id: 's1', presentationId: 'p1', slideOrder: 0, blocksJson: [{ Lang1: 'a', Lang3: 'c' }], isDisabled: false, isDynamic: false },
+      ],
+    });
+
+    const result = await new RenderService(repos).render({ presentationId: 'p1', date: '2026-06-25' });
+    expect(result.languages).toEqual([
+      { slot: 'Lang3', name: 'Tigrigna', enabled: false },
+      { slot: 'Lang1', name: "Ge'ez", enabled: true },
+    ]);
   });
 
   it('hides a slide whose enabled rule resolves visible:false', async () => {

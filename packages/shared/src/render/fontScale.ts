@@ -1,13 +1,10 @@
-import { TemplateDefinition } from '../domain/entities/Template';
+import { TemplateDefinition, type EnabledLanguage } from '../domain/entities/Template';
 import { SlideBlock } from '../domain/entities/Slide';
 import { computeFontScale } from '../domain/formatting';
 
 export const DESIGN_WIDTH = 1920;
 export const DESIGN_HEIGHT = 1080;
 export const AVG_CHAR_WIDTH_RATIO = 0.70;
-
-/** A template language definition, optionally carrying a display order. */
-export type EnabledLanguage = TemplateDefinition['languages'][number] & { order?: number };
 
 /** Count wrapped lines respecting explicit \n newlines in text */
 export function countLines(text: string, charsPerLine: number): number {

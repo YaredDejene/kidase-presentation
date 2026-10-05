@@ -39,17 +39,6 @@ export class MongoVariableRepository implements IVariableRepository {
     return updated;
   }
 
-  async upsert(
-    presentationId: string, name: string, value: string,
-    valueLang1?: string, valueLang2?: string, valueLang3?: string, valueLang4?: string,
-  ): Promise<Variable> {
-    const existing = await this.getByName(presentationId, name);
-    if (existing) {
-      return this.update(existing.id, { value, valueLang1, valueLang2, valueLang3, valueLang4 });
-    }
-    return this.create({ presentationId, name, value, valueLang1, valueLang2, valueLang3, valueLang4 });
-  }
-
   async delete(id: string): Promise<void> {
     await this.col.deleteOne({ _id: id as never });
   }

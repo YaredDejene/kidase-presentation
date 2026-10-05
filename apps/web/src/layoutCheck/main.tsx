@@ -4,7 +4,7 @@
 // presentation, optionally `&date=YYYY-MM-DD`.
 import ReactDOM from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import type { TemplateDefinition, LangSlot, SlideBlock, SlideTitle } from '@kidase/shared';
+import type { TemplateDefinition, OrderedLanguage, SlideBlock, SlideTitle } from '@kidase/shared';
 import { measureSlide, checkSlide, SlideMetrics } from '@kidase/shared/render/layoutMetrics';
 import { WebSlideRenderer } from '../components/WebSlideRenderer';
 import fixtures from './fixtures.json';
@@ -17,7 +17,7 @@ interface CheckSlide {
   block: SlideBlock;
 }
 interface CheckSet {
-  languages: { slot: LangSlot }[];
+  languages: OrderedLanguage[];
   templates: Record<string, TemplateDefinition>;
   slides: CheckSlide[];
 }
@@ -40,14 +40,13 @@ async function loadSet(): Promise<CheckSet> {
 
 async function run(): Promise<LayoutReport> {
   const set = await loadSet();
-  const slots = set.languages.map(l => l.slot);
   const host = document.getElementById('root')!;
 
   flushSync(() => ReactDOM.createRoot(host).render(
     <>
       {set.slides.map((s, i) => (
         <div key={i} data-check-slide={s.name} style={{ width: 1920, height: 1080 }}>
-          <WebSlideRenderer definition={set.templates[s.templateId]} activeSlots={slots} block={s.block} title={s.title} footer={s.footer} />
+          <WebSlideRenderer definition={set.templates[s.templateId]} languages={set.languages} block={s.block} title={s.title} footer={s.footer} />
         </div>
       ))}
     </>,

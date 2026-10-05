@@ -5,7 +5,8 @@ import {
   Variable,
   LanguageMap,
   LanguageSettings,
-  LANG_SLOTS,
+  getOrderedLanguages,
+  templateLanguages,
   placeholderService,
 } from '@kidase/shared';
 import { SlideView } from '@kidase/shared/render/SlideView';
@@ -36,18 +37,10 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
   const def = template.definitionJson;
   const metaContext = meta ?? undefined;
 
-  const enabledLanguages = useMemo(() => {
-    if (languageSettings) {
-      return LANG_SLOTS
-        .filter(slot => languageSettings[slot]?.enabled && def.languages.some(l => l.slot === slot))
-        .map(slot => ({
-          ...def.languages.find(l => l.slot === slot)!,
-          order: languageSettings[slot]?.order ?? 0,
-        }))
-        .sort((a, b) => a.order - b.order);
-    }
-    return def.languages.filter(lang => languageMap[lang.slot] !== undefined);
-  }, [def.languages, languageMap, languageSettings]);
+  const enabledLanguages = useMemo(
+    () => templateLanguages(def, getOrderedLanguages(languageSettings, languageMap)),
+    [def, languageMap, languageSettings],
+  );
 
   const block = useMemo(
     () => placeholderService.replaceInBlock(slide.blocksJson[0] || {}, variables, metaContext),

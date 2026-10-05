@@ -18,11 +18,6 @@ export function themeVars(theme: ThemeName): CSSProperties {
   } as CSSProperties;
 }
 
-/** Language slot → dot color (matches the design's per-language colors). */
-export const SLOT_COLOR: Record<string, string> = {
-  Lang1: '#FFFFFF', Lang2: '#FFFF00', Lang3: '#00FF00', Lang4: '#00BFFF',
-};
-
 export const iconBtn: CSSProperties = {
   width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
   borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--text2)', cursor: 'pointer',

@@ -1,8 +1,9 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import '@fontsource-variable/noto-serif-ethiopic';
-import type { TemplateDefinition } from '../domain/entities/Template';
+import type { TemplateDefinition, EnabledLanguage } from '../domain/entities/Template';
 import type { SlideBlock, SlideTitle } from '../domain/entities/Slide';
-import { computeFontScaleFactor, EnabledLanguage } from './fontScale';
+import { firstText } from '../domain/entities/Presentation';
+import { computeFontScaleFactor } from './fontScale';
 import { wordGapEm } from './layoutMetrics';
 
 /** Bundled with both apps so text wraps identically on every platform. */
@@ -129,10 +130,8 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
   scale = 1,
 }) => {
   const fontScaleFactor = useMemo(() => {
-    const firstText = (t?: SlideTitle | SlideBlock | null) =>
-      (t && (t.Lang1 || t.Lang2 || t.Lang3 || t.Lang4)) || '';
-    const titleFooterChars =
-      firstText(title).length + firstText(footer?.title).length + firstText(footer?.text).length;
+    const chars = (t?: SlideTitle | SlideBlock | null) => (firstText(t) || '').length;
+    const titleFooterChars = chars(title) + chars(footer?.title) + chars(footer?.text);
 
     return computeFontScaleFactor({
       def,

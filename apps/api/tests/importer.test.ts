@@ -85,6 +85,6 @@ describe('.kidase importer', () => {
     expect(result.slides.map(s => s.id)).toEqual(['s2', 's1']);
     expect(result.slides[1].block.Lang1).toBe('Hello World'); // placeholder resolved
     expect(result.templates['t1']).toMatchObject({ layout: { columns: 1 } });
-    expect(result.languages).toEqual([{ slot: 'Lang1', name: "Ge'ez" }]);
+    expect(result.languages).toEqual([{ slot: 'Lang1', name: "Ge'ez", enabled: true }]);
   });
 });

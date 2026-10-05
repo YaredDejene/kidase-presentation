@@ -46,10 +46,7 @@
   "deleteAllVerses": "Delete All Verse Records",
   "deleteAllVersesConfirm": "Delete all {{count}} Verse records? This cannot be undone.",
   "segmentId": "Segment ID",
-  "textLang1": "Text Lang1",
-  "textLang2": "Text Lang2",
-  "textLang3": "Text Lang3",
-  "textLang4": "Text Lang4",
+  "textLang": "Text {{slot}}",
 
   "templates": "Templates",
   "templateCount": "{{count}} template",

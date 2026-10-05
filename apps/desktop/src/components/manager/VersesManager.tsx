@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVerses } from '../../hooks/useVerses';
+import { LANG_SLOTS, langField } from '@kidase/shared/domain/entities/Presentation';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import '../../styles/verses-manager.css';
@@ -72,20 +73,16 @@ export const VersesManager: React.FC = () => {
             <thead>
               <tr>
                 <th>{t('segmentId')}</th>
-                <th>{t('textLang1')}</th>
-                <th>{t('textLang2')}</th>
-                <th>{t('textLang3')}</th>
-                <th>{t('textLang4')}</th>
+                {LANG_SLOTS.map(slot => <th key={slot}>{t('textLang', { slot })}</th>)}
               </tr>
             </thead>
             <tbody>
               {verses.map((v) => (
                 <tr key={v.id} className="verses-row">
                   <td className="verses-cell-segment">{v.segmentId}</td>
-                  <td className="verses-cell-text">{truncate(v.textLang1, 60)}</td>
-                  <td className="verses-cell-text">{truncate(v.textLang2, 60)}</td>
-                  <td className="verses-cell-text">{truncate(v.textLang3, 60)}</td>
-                  <td className="verses-cell-text">{truncate(v.textLang4, 60)}</td>
+                  {LANG_SLOTS.map(slot => (
+                    <td key={slot} className="verses-cell-text">{truncate(v[langField('text', slot)], 60)}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>

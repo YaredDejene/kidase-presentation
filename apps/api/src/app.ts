@@ -7,7 +7,7 @@ import swagger from '@fastify/swagger';
 import scalarApiReference from '@scalar/fastify-api-reference';
 import { Db } from 'mongodb';
 import type { Repositories, Presentation, LangSlot } from '@kidase/shared';
-import { RenderService, getOrderedLanguages } from '@kidase/shared';
+import { RenderService, getOrderedLanguages, LANG_SLOTS } from '@kidase/shared';
 import { getContentVersion, bumpContentVersion } from './contentVersion';
 import { RenderCache } from './renderCache';
 import { createBackup, BackupData } from './backup';
@@ -24,18 +24,16 @@ export interface BuildAppOptions {
   appVersion?: string;
 }
 
-/** Viewer language codes for the picker badges, by slot. */
-const LANG_CODE: Record<LangSlot, string> = {
+/** Viewer language codes for the picker badges, by slot. Other slots use the language name. */
+const LANG_CODE: Partial<Record<LangSlot, string>> = {
   Lang1: 'geez',
   Lang2: 'amharic',
-  Lang3: 'english',
-  Lang4: 'tigrinya',
+  Lang3: 'tigrinya',
+  Lang4: 'english',
 };
 
-const LANG_SLOTS: LangSlot[] = ['Lang1', 'Lang2', 'Lang3', 'Lang4'];
-
 function langCodes(p: Presentation): string[] {
-  return LANG_SLOTS.filter(s => p.languageMap[s]).map(s => LANG_CODE[s]);
+  return LANG_SLOTS.filter(s => p.languageMap[s]).map(s => LANG_CODE[s] ?? p.languageMap[s]!.toLowerCase());
 }
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {

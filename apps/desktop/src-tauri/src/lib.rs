@@ -213,6 +213,25 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 13,
+            description: "add_language_slots_5_to_8",
+            sql: r#"
+                ALTER TABLE variables ADD COLUMN value_lang5 TEXT NOT NULL DEFAULT '';
+                ALTER TABLE variables ADD COLUMN value_lang6 TEXT NOT NULL DEFAULT '';
+                ALTER TABLE variables ADD COLUMN value_lang7 TEXT NOT NULL DEFAULT '';
+                ALTER TABLE variables ADD COLUMN value_lang8 TEXT NOT NULL DEFAULT '';
+                ALTER TABLE verses ADD COLUMN title_lang5 TEXT;
+                ALTER TABLE verses ADD COLUMN title_lang6 TEXT;
+                ALTER TABLE verses ADD COLUMN title_lang7 TEXT;
+                ALTER TABLE verses ADD COLUMN title_lang8 TEXT;
+                ALTER TABLE verses ADD COLUMN text_lang5 TEXT;
+                ALTER TABLE verses ADD COLUMN text_lang6 TEXT;
+                ALTER TABLE verses ADD COLUMN text_lang7 TEXT;
+                ALTER TABLE verses ADD COLUMN text_lang8 TEXT;
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { Presentation, LanguageMap } from '../domain/entities/Presentation';
+import { Presentation, LanguageMap, LANG_SLOTS, langField, type LangSlot, type LangText } from '../domain/entities/Presentation';
 import { Slide, SlideBlock, SlideTitle, SlideFooter } from '../domain/entities/Slide';
 import { Variable } from '../domain/entities/Variable';
 import { Gitsawe } from '../domain/entities/Gitsawe';
@@ -12,45 +12,30 @@ interface ImportMetadata {
   presentationType: string;
   templateName?: string;
   isPrimary: boolean;
-  lang1Name?: string;
-  lang2Name?: string;
-  lang3Name?: string;
-  lang4Name?: string;
+  languageMap?: LanguageMap;
 }
 
-interface ImportedSlideRow {
+/** Sheet rows: language columns are named per slot, e.g. Title_Lang1, FooterText_Lang3. */
+type SheetRow = Record<string, string | undefined>;
+
+/** Reads `${prefix}${slot}` for every slot, e.g. langColumns(row, 'Title_') -> { Lang1: row.Title_Lang1, ... }. */
+function langColumns(row: SheetRow, prefix: string): LangText {
+  const rec: LangText = {};
+  for (const slot of LANG_SLOTS) {
+    const value = row[`${prefix}${slot}`];
+    if (value) rec[slot] = value;
+  }
+  return rec;
+}
+
+const isEmpty = (rec: LangText) => Object.keys(rec).length === 0;
+
+interface ImportedSlideRow extends SheetRow {
   // Line ID
   LineID?: string;
   LineId?: string;
-  // Title columns
-  Title_Lang1?: string;
-  Title_Lang2?: string;
-  Title_Lang3?: string;
-  Title_Lang4?: string;
-  // Text columns (new format: Text_Lang1)
-  Text_Lang1?: string;
-  Text_Lang2?: string;
-  Text_Lang3?: string;
-  Text_Lang4?: string;
-  // Legacy format (Lang1Text)
-  Lang1Text?: string;
-  Lang2Text?: string;
-  Lang3Text?: string;
-  Lang4Text?: string;
-  // Original format (Lang1)
-  Lang1?: string;
-  Lang2?: string;
-  Lang3?: string;
-  Lang4?: string;
-  // Footer columns
-  FooterTitle_Lang1?: string;
-  FooterTitle_Lang2?: string;
-  FooterTitle_Lang3?: string;
-  FooterTitle_Lang4?: string;
-  FooterText_Lang1?: string;
-  FooterText_Lang2?: string;
-  FooterText_Lang3?: string;
-  FooterText_Lang4?: string;
+  // Language columns per slot: Title_LangN, Text_LangN (legacy LangNText, original LangN),
+  // FooterTitle_LangN, FooterText_LangN
   // Notes
   Notes?: string;
   // Layout override
@@ -81,25 +66,15 @@ interface ImportedGitsaweRow {
   SelectionRule?: string;
 }
 
-interface ImportedVerseRow {
+interface ImportedVerseRow extends SheetRow {
   LineId?: string;
   SegmentId?: string;
-  Title_Lang1?: string;
-  Title_Lang2?: string;
-  Title_Lang3?: string;
-  Title_Lang4?: string;
-  Text_Lang1?: string;
-  Text_Lang2?: string;
-  Text_Lang3?: string;
-  Text_Lang4?: string;
+  // Title_LangN, Text_LangN per slot
 }
 
-interface ImportedVariableRow {
+interface ImportedVariableRow extends SheetRow {
   VariableName?: string;
-  Variable_Lang1?: string;
-  Variable_Lang2?: string;
-  Variable_Lang3?: string;
-  Variable_Lang4?: string;
+  // Variable_LangN per slot
 }
 
 export interface ImportedDisplayRule {
@@ -216,11 +191,7 @@ export class ExcelImportService {
     onProgress?.(1, totalSteps); // Metadata parsed
 
     // Build language map
-    const languageMap: LanguageMap = {};
-    if (metadata.lang1Name) languageMap.Lang1 = metadata.lang1Name;
-    if (metadata.lang2Name) languageMap.Lang2 = metadata.lang2Name;
-    if (metadata.lang3Name) languageMap.Lang3 = metadata.lang3Name;
-    if (metadata.lang4Name) languageMap.Lang4 = metadata.lang4Name;
+    const languageMap: LanguageMap = metadata.languageMap ?? {};
 
     // Resolve metadata template name to ID if provided
     let resolvedTemplateId = templateId;
@@ -310,10 +281,11 @@ export class ExcelImportService {
       presentationType: metadata['PresentationType'] || metadata['Type'] || 'Custom',
       templateName: metadata['TemplateName'] || metadata['Template'],
       isPrimary,
-      lang1Name: metadata['Lang1Name'] || metadata['Lang1'] || metadata['Language1'],
-      lang2Name: metadata['Lang2Name'] || metadata['Lang2'] || metadata['Language2'],
-      lang3Name: metadata['Lang3Name'] || metadata['Lang3'] || metadata['Language3'],
-      lang4Name: metadata['Lang4Name'] || metadata['Lang4'] || metadata['Language4'],
+      languageMap: Object.fromEntries(
+        LANG_SLOTS
+          .map((slot: LangSlot) => [slot, metadata[`${slot}Name`] || metadata[slot] || metadata[slot.replace('Lang', 'Language')]])
+          .filter(([, name]) => name),
+      ),
     };
   }
 
@@ -328,49 +300,23 @@ export class ExcelImportService {
   private parseSlides(rows: ImportedSlideRow[], templateNameMap: Map<string, string>, warnings: string[], onSlide?: (index: number) => void): Omit<Slide, 'id'>[] {
     return rows.map((row, index) => {
       onSlide?.(index);
-      // Parse title
-      const title: SlideTitle = {};
-      if (row.Title_Lang1) title.Lang1 = row.Title_Lang1;
-      if (row.Title_Lang2) title.Lang2 = row.Title_Lang2;
-      if (row.Title_Lang3) title.Lang3 = row.Title_Lang3;
-      if (row.Title_Lang4) title.Lang4 = row.Title_Lang4;
+      const title: SlideTitle = langColumns(row, 'Title_');
 
-      // Parse text content - support multiple column naming conventions
+      // Text supports several column namings: Text_LangN, legacy LangNText, original LangN
       const block: SlideBlock = {};
-      const lang1 = row.Text_Lang1 || row.Lang1Text || row.Lang1;
-      const lang2 = row.Text_Lang2 || row.Lang2Text || row.Lang2;
-      const lang3 = row.Text_Lang3 || row.Lang3Text || row.Lang3;
-      const lang4 = row.Text_Lang4 || row.Lang4Text || row.Lang4;
-      if (lang1) block.Lang1 = lang1;
-      if (lang2) block.Lang2 = lang2;
-      if (lang3) block.Lang3 = lang3;
-      if (lang4) block.Lang4 = lang4;
+      for (const slot of LANG_SLOTS) {
+        const text = row[`Text_${slot}`] || row[`${slot}Text`] || row[slot];
+        if (text) block[slot] = text;
+      }
 
       // Parse footer (optional)
       let footerJson: SlideFooter | undefined;
-      const hasFooterTitle = row.FooterTitle_Lang1 || row.FooterTitle_Lang2 ||
-                            row.FooterTitle_Lang3 || row.FooterTitle_Lang4;
-      const hasFooterText = row.FooterText_Lang1 || row.FooterText_Lang2 ||
-                           row.FooterText_Lang3 || row.FooterText_Lang4;
-
-      if (hasFooterTitle || hasFooterText) {
+      const footerTitle = langColumns(row, 'FooterTitle_');
+      const footerText = langColumns(row, 'FooterText_');
+      if (!isEmpty(footerTitle) || !isEmpty(footerText)) {
         footerJson = {};
-
-        if (hasFooterTitle) {
-          footerJson.title = {};
-          if (row.FooterTitle_Lang1) footerJson.title.Lang1 = row.FooterTitle_Lang1;
-          if (row.FooterTitle_Lang2) footerJson.title.Lang2 = row.FooterTitle_Lang2;
-          if (row.FooterTitle_Lang3) footerJson.title.Lang3 = row.FooterTitle_Lang3;
-          if (row.FooterTitle_Lang4) footerJson.title.Lang4 = row.FooterTitle_Lang4;
-        }
-
-        if (hasFooterText) {
-          footerJson.text = {};
-          if (row.FooterText_Lang1) footerJson.text.Lang1 = row.FooterText_Lang1;
-          if (row.FooterText_Lang2) footerJson.text.Lang2 = row.FooterText_Lang2;
-          if (row.FooterText_Lang3) footerJson.text.Lang3 = row.FooterText_Lang3;
-          if (row.FooterText_Lang4) footerJson.text.Lang4 = row.FooterText_Lang4;
-        }
+        if (!isEmpty(footerTitle)) footerJson.title = footerTitle;
+        if (!isEmpty(footerText)) footerJson.text = footerText;
       }
 
       const isDynamicRaw = row.IsDymanic || row.IsDynamic;
@@ -443,10 +389,7 @@ export class ExcelImportService {
         presentationId: '', // Set after presentation creation
         name,
         value: row.Variable_Lang1 || '', // Default single value to Lang1
-        valueLang1: row.Variable_Lang1 || '',
-        valueLang2: row.Variable_Lang2 || '',
-        valueLang3: row.Variable_Lang3 || '',
-        valueLang4: row.Variable_Lang4 || '',
+        ...Object.fromEntries(LANG_SLOTS.map(slot => [langField('value', slot), row[`Variable_${slot}`] || ''])),
       });
     }
 
@@ -520,14 +463,10 @@ export class ExcelImportService {
       results.push({
         segmentId,
         verseOrder: orderCounter,
-        titleLang1: row.Title_Lang1?.trim() || undefined,
-        titleLang2: row.Title_Lang2?.trim() || undefined,
-        titleLang3: row.Title_Lang3?.trim() || undefined,
-        titleLang4: row.Title_Lang4?.trim() || undefined,
-        textLang1: row.Text_Lang1?.trim() || undefined,
-        textLang2: row.Text_Lang2?.trim() || undefined,
-        textLang3: row.Text_Lang3?.trim() || undefined,
-        textLang4: row.Text_Lang4?.trim() || undefined,
+        ...Object.fromEntries(LANG_SLOTS.flatMap(slot => [
+          [langField('title', slot), row[`Title_${slot}`]?.trim() || undefined],
+          [langField('text', slot), row[`Text_${slot}`]?.trim() || undefined],
+        ])),
       });
     }
 
