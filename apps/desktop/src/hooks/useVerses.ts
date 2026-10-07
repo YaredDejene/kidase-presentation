@@ -48,16 +48,7 @@ export function useVerses() {
 
       progress.update(60, t('savingRecords'));
 
-      // Clear existing verses
-      const existing = await verseRepository.getAll();
-      for (const v of existing) {
-        await verseRepository.delete(v.id);
-      }
-
-      progress.update(80, t('savingRecords'));
-
-      // Create new records
-      await verseRepository.createMany(result.verses);
+      await verseRepository.upsertMany(result.verses);
 
       const loaded = await loadVerses();
       setStoreVerses(loaded);

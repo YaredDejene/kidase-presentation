@@ -85,4 +85,14 @@ describe('Mongo repositories', () => {
     const vs = await repos.verse.getBySegmentId('seg');
     expect(vs.map(v => v.textLang1)).toEqual(['V1', 'V2']);
   });
+
+  it('upserts verses by (segmentId, verseOrder) and leaves other rows alone', async () => {
+    await repos.verse.createMany([{ segmentId: 'up', verseOrder: 1, textLang1: 'old' }, { segmentId: 'keep', verseOrder: 1, textLang1: 'k' }]);
+    const before = (await repos.verse.getBySegmentId('up'))[0];
+    await repos.verse.upsertMany([{ segmentId: 'up', verseOrder: 1, textLang1: 'new' }, { segmentId: 'up', verseOrder: 2, textLang1: 'added' }]);
+    const up = await repos.verse.getBySegmentId('up');
+    expect(up.map(v => v.textLang1)).toEqual(['new', 'added']);
+    expect(up[0].id).toBe(before.id);
+    expect((await repos.verse.getBySegmentId('keep')).map(v => v.textLang1)).toEqual(['k']);
+  });
 });

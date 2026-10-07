@@ -232,6 +232,21 @@ pub fn run() {
             "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 14,
+            description: "unique_verse_per_segment_order",
+            sql: r#"
+                UPDATE verses SET verse_order = (
+                    SELECT COUNT(*) FROM verses v2
+                    WHERE v2.segment_id = verses.segment_id
+                      AND (v2.verse_order < verses.verse_order
+                           OR (v2.verse_order = verses.verse_order AND v2.rowid <= verses.rowid))
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_verses_segment_order
+                    ON verses(segment_id, verse_order);
+            "#,
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

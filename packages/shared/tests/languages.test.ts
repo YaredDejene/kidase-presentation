@@ -70,4 +70,11 @@ describe('Excel import language columns', () => {
     expect(verses[0]).toMatchObject({ segmentId: 'Ps 1', titleLang1: 't1', textLang2: 'v2' });
     expect(verses[0].textLang1).toBeUndefined();
   });
+
+  it('numbers verses per segment, even when segments interleave', async () => {
+    const { verses } = await service.importVersesFromArrayBuffer(book({
+      Verses: [['SegmentId', 'Text_Lang1'], ['A', 'a1'], ['B', 'b1'], ['A', 'a2']],
+    }));
+    expect(verses.map(v => [v.segmentId, v.verseOrder])).toEqual([['A', 1], ['B', 1], ['A', 2]]);
+  });
 });

@@ -33,6 +33,21 @@ export class MongoVerseRepository implements IVerseRepository {
     return entities;
   }
 
+  async upsertMany(verses: Omit<Verse, 'id' | 'createdAt'>[]): Promise<void> {
+    if (verses.length === 0) return;
+    const now = new Date().toISOString();
+    await this.col.bulkWrite(verses.map(v => ({
+      updateOne: {
+        filter: { segmentId: v.segmentId, verseOrder: v.verseOrder },
+        update: {
+          $set: stripUndefined({ ...v }),
+          $setOnInsert: { _id: uuidv4(), createdAt: now },
+        },
+        upsert: true,
+      },
+    })) as never);
+  }
+
   async update(id: string, verse: Partial<Omit<Verse, 'id' | 'createdAt'>>): Promise<Verse> {
     const existing = await this.getById(id);
     if (!existing) throw new Error('Verse not found');
