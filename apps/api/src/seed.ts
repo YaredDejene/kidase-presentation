@@ -70,7 +70,7 @@ async function main() {
       }
       try {
         const { verses } = await excel.importVersesFromArrayBuffer(arrayBuffer);
-        await repos.verse.createMany(verses);
+        await repos.verse.upsertMany(verses);
         console.log(`Imported ${verses.length} verses.`);
       } catch (e) {
         console.log(`No Verses sheet: ${(e as Error).message}`);

@@ -452,17 +452,19 @@ export class ExcelImportService {
     const rows = XLSX.utils.sheet_to_json<ImportedVerseRow>(sheet);
     const results: Omit<Verse, 'id' | 'createdAt'>[] = [];
 
-    let orderCounter = 0;
+    // Order is per segment so (segmentId, verseOrder) is a stable key across imports.
+    const orderBySegment = new Map<string, number>();
 
     for (const row of rows) {
       const segmentId = row.SegmentId?.trim();
       if (!segmentId) continue;
 
-      orderCounter++;
+      const verseOrder = (orderBySegment.get(segmentId) ?? 0) + 1;
+      orderBySegment.set(segmentId, verseOrder);
 
       results.push({
         segmentId,
-        verseOrder: orderCounter,
+        verseOrder,
         ...Object.fromEntries(LANG_SLOTS.flatMap(slot => [
           [langField('title', slot), row[`Title_${slot}`]?.trim() || undefined],
           [langField('text', slot), row[`Text_${slot}`]?.trim() || undefined],

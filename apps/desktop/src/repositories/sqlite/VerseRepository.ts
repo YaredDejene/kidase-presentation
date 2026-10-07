@@ -82,6 +82,21 @@ export class VerseRepository implements IVerseRepository {
     return results;
   }
 
+  async upsertMany(verses: Omit<Verse, 'id' | 'createdAt'>[]): Promise<void> {
+    const db = await getDatabase();
+    const createdAt = new Date().toISOString();
+    for (const verse of verses) {
+      await db.execute(
+        `INSERT INTO verses
+         (id, segment_id, verse_order, ${LANG_COLUMNS.join(', ')}, created_at)
+         VALUES (?, ?, ?, ${LANG_COLUMNS.map(() => '?').join(', ')}, ?)
+         ON CONFLICT(segment_id, verse_order) DO UPDATE SET
+         ${LANG_COLUMNS.map(c => `${c} = excluded.${c}`).join(', ')}`,
+        [uuidv4(), verse.segmentId, verse.verseOrder, ...langValues(verse), createdAt]
+      );
+    }
+  }
+
   async update(id: string, verse: Partial<Omit<Verse, 'id' | 'createdAt'>>): Promise<Verse> {
     const db = await getDatabase();
     const existing = await this.getById(id);
