@@ -51,6 +51,7 @@ export class AppBootstrapService {
         const existingDef = JSON.stringify(existing.definitionJson);
         if (seedDef !== existingDef) {
           await templateRepository.update(existing.id, {
+            maxLangCount: seed.maxLangCount,
             definitionJson: seed.definitionJson as unknown as TemplateDefinition,
           });
         }
