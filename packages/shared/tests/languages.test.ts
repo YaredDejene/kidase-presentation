@@ -32,7 +32,7 @@ describe('language slots', () => {
     expect(shown.map(l => [l.slot, l.fontSize, l.color])).toEqual([
       ['Lang2', 62, 'yellow'],  // row 1 size, its slot's color in the template
       ['Lang6', 46, 'pink'],    // its own color setting
-      ['Lang7', 40, '#B388FF'], // not in the template: default palette, not the row's grey
+      ['Lang7', 40, '#F0E68C'], // not in the template: default palette, not the row's grey
     ]);                          // Lang3 is beyond the 3 rows
   });
 });

@@ -42,6 +42,11 @@ async function main() {
             maxLangCount: seed.maxLangCount,
             definitionJson: seed.definitionJson as unknown as TemplateDefinition,
           });
+        } else if (JSON.stringify(existing.definitionJson) !== JSON.stringify(seed.definitionJson)) {
+          await repos.template.update(existing.id, {
+            maxLangCount: seed.maxLangCount,
+            definitionJson: seed.definitionJson as unknown as TemplateDefinition,
+          });
         }
       }
       const templates = await repos.template.getAll();

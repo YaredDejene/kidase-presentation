@@ -1,7 +1,7 @@
 [
   {
     "name": "Default Template",
-    "maxLangCount": 4,
+    "maxLangCount": 5,
     "definitionJson": {
       "layout": { "columns": 1, "rows": 1, "gap": 20, "verticalAlign": "center" },
       "title": {
@@ -13,7 +13,7 @@
       "languages": [
         {
           "slot": "Lang1",
-          "fontSize": 62,
+          "fontSize": 58,
           "fontFamily": "Nyala, serif",
           "color": "#FFFFFF",
           "alignment": "justify",
@@ -21,7 +21,7 @@
         },
         {
           "slot": "Lang2",
-          "fontSize": 46,
+          "fontSize": 42,
           "fontFamily": "Nyala, serif",
           "color": "#FFFF00",
           "alignment": "justify",
@@ -29,7 +29,7 @@
         },
         {
           "slot": "Lang3",
-          "fontSize": 46,
+          "fontSize": 42,
           "fontFamily": "Nyala, serif",
           "color": "#00FF00",
           "alignment": "justify",
@@ -37,9 +37,17 @@
         },
         {
           "slot": "Lang4",
-          "fontSize": 46,
+          "fontSize": 42,
           "fontFamily": "Nyala, serif",
           "color": "#00BFFF",
+          "alignment": "justify",
+          "lineHeight": 1.15
+        },
+        {
+          "slot": "Lang5",
+          "fontSize": 42,
+          "fontFamily": "Nyala, serif",
+          "color": "#FFC000",
           "alignment": "justify",
           "lineHeight": 1.15
         }
@@ -191,64 +199,6 @@
           "fontFamily": "Nyala, serif",
           "color": "#00BFFF",
           "alignment": "center",
-          "lineHeight": 1.15
-        }
-      ],
-      "background": { "color": "#000000" },
-      "margins": { "top": 20, "right": 40, "bottom": 20, "left": 40 },
-      "safeArea": { "horizontal": 5, "vertical": 5 }
-    }
-  },
-  {
-    "name": "Default Template (5 Languages)",
-    "maxLangCount": 5,
-    "definitionJson": {
-      "layout": { "columns": 1, "rows": 1, "gap": 20, "verticalAlign": "center" },
-      "title": {
-        "show": true,
-        "fontSize": 64,
-        "color": "#FFD700",
-        "alignment": "left"
-      },
-      "languages": [
-        {
-          "slot": "Lang1",
-          "fontSize": 58,
-          "fontFamily": "Nyala, serif",
-          "color": "#FFFFFF",
-          "alignment": "justify",
-          "lineHeight": 1.15
-        },
-        {
-          "slot": "Lang2",
-          "fontSize": 42,
-          "fontFamily": "Nyala, serif",
-          "color": "#FFFF00",
-          "alignment": "justify",
-          "lineHeight": 1.15
-        },
-        {
-          "slot": "Lang3",
-          "fontSize": 42,
-          "fontFamily": "Nyala, serif",
-          "color": "#00FF00",
-          "alignment": "justify",
-          "lineHeight": 1.15
-        },
-        {
-          "slot": "Lang4",
-          "fontSize": 42,
-          "fontFamily": "Nyala, serif",
-          "color": "#00BFFF",
-          "alignment": "justify",
-          "lineHeight": 1.15
-        },
-        {
-          "slot": "Lang5",
-          "fontSize": 42,
-          "fontFamily": "Nyala, serif",
-          "color": "#FFA500",
-          "alignment": "justify",
           "lineHeight": 1.15
         }
       ],
