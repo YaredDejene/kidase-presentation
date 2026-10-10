@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import type { WorkBook, WorkSheet } from 'xlsx';
 import { Presentation, LanguageMap, LANG_SLOTS, langField, type LangSlot, type LangText } from '../domain/entities/Presentation';
 import { Slide, SlideBlock, SlideTitle, SlideFooter } from '../domain/entities/Slide';
 import { Variable } from '../domain/entities/Variable';
@@ -97,6 +97,12 @@ export interface ImportResult {
 }
 
 export class ExcelImportService {
+  private xlsx!: typeof import('xlsx');
+  /** The xlsx library is large and only needed for imports, so it loads on first use. */
+  private async lib() {
+    return (this.xlsx ??= await import('xlsx'));
+  }
+
   constructor(private readonly repos: Repositories) {}
 
   async importFromArrayBuffer(
@@ -104,7 +110,7 @@ export class ExcelImportService {
     templateId: string,
     onProgress?: (current: number, total: number) => void,
   ): Promise<ImportResult> {
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    const workbook = (await this.lib()).read(buffer, { type: 'array' });
 
     // Pre-fetch all templates for LayoutOverride name→ID resolution
     const allTemplates = await this.repos.template.getAll();
@@ -123,7 +129,7 @@ export class ExcelImportService {
 
   async importGitsaweFromArrayBuffer(buffer: ArrayBuffer, onProgress?: (current: number, total: number) => void): Promise<{ gitsawes: ImportedGitsawe[]; warnings: string[] }> {
     onProgress?.(1, 3); // Reading file
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    const workbook = (await this.lib()).read(buffer, { type: 'array' });
     onProgress?.(2, 3); // Parsing
 
     const warnings: string[] = [];
@@ -139,7 +145,7 @@ export class ExcelImportService {
 
   async importVersesFromArrayBuffer(buffer: ArrayBuffer, onProgress?: (current: number, total: number) => void): Promise<{ verses: Omit<Verse, 'id' | 'createdAt'>[]; warnings: string[] }> {
     onProgress?.(1, 3); // Reading file
-    const workbook = XLSX.read(buffer, { type: 'array' });
+    const workbook = (await this.lib()).read(buffer, { type: 'array' });
     onProgress?.(2, 3); // Parsing
 
     const warnings: string[] = [];
@@ -153,7 +159,7 @@ export class ExcelImportService {
     return { verses, warnings };
   }
 
-  private parseWorkbook(workbook: XLSX.WorkBook, templateId: string, templateNameMap: Map<string, string>, onProgress?: (current: number, total: number) => void): ImportResult {
+  private parseWorkbook(workbook: WorkBook, templateId: string, templateNameMap: Map<string, string>, onProgress?: (current: number, total: number) => void): ImportResult {
     const warnings: string[] = [];
 
     // Read metadata sheet
@@ -180,7 +186,7 @@ export class ExcelImportService {
       throw new Error('Content sheet not found in Excel file');
     }
 
-    const rows = XLSX.utils.sheet_to_json<ImportedSlideRow>(contentSheet);
+    const rows = this.xlsx.utils.sheet_to_json<ImportedSlideRow>(contentSheet);
 
     if (rows.length === 0) {
       throw new Error('No content rows found in Excel file');
@@ -245,8 +251,8 @@ export class ExcelImportService {
     return { presentation, slides, variables, displayRules, warnings };
   }
 
-  private parseMetadata(sheet: XLSX.WorkSheet): ImportMetadata {
-    const data = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
+  private parseMetadata(sheet: WorkSheet): ImportMetadata {
+    const data = this.xlsx.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
     const metadata: Record<string, string> = {};
 
     // Check if first row looks like headers (has multiple columns)
@@ -372,8 +378,8 @@ export class ExcelImportService {
     }));
   }
 
-  private parseVariablesSheet(sheet: XLSX.WorkSheet): Omit<Variable, 'id'>[] {
-    const rows = XLSX.utils.sheet_to_json<ImportedVariableRow>(sheet);
+  private parseVariablesSheet(sheet: WorkSheet): Omit<Variable, 'id'>[] {
+    const rows = this.xlsx.utils.sheet_to_json<ImportedVariableRow>(sheet);
     const variables: Omit<Variable, 'id'>[] = [];
 
     for (const row of rows) {
@@ -396,8 +402,8 @@ export class ExcelImportService {
     return variables;
   }
 
-  private parseGitsaweSheet(sheet: XLSX.WorkSheet, warnings: string[]): ImportedGitsawe[] {
-    const rows = XLSX.utils.sheet_to_json<ImportedGitsaweRow>(sheet);
+  private parseGitsaweSheet(sheet: WorkSheet, warnings: string[]): ImportedGitsawe[] {
+    const rows = this.xlsx.utils.sheet_to_json<ImportedGitsaweRow>(sheet);
     const results: ImportedGitsawe[] = [];
 
     rows.forEach((row, index) => {
@@ -448,8 +454,8 @@ export class ExcelImportService {
     return results;
   }
 
-  private parseVersesSheet(sheet: XLSX.WorkSheet): Omit<Verse, 'id' | 'createdAt'>[] {
-    const rows = XLSX.utils.sheet_to_json<ImportedVerseRow>(sheet);
+  private parseVersesSheet(sheet: WorkSheet): Omit<Verse, 'id' | 'createdAt'>[] {
+    const rows = this.xlsx.utils.sheet_to_json<ImportedVerseRow>(sheet);
     const results: Omit<Verse, 'id' | 'createdAt'>[] = [];
 
     // Order is per segment so (segmentId, verseOrder) is a stable key across imports.

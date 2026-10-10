@@ -1,7 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
-import { pdfExportService } from '../services/PdfExportService';
-import { pptxExportService } from '../services/PptxExportService';
 import { save } from '@tauri-apps/plugin-dialog';
 import { toast } from '../store/toastStore';
 import { Template } from '@kidase/shared/domain/entities/Template';
@@ -52,6 +50,7 @@ export function useExport(displaySlides: Slide[]) {
     const { templateMap, variablesMap, languagesMap } = buildPerSlideMaps(displaySlides);
 
     try {
+      const { pdfExportService } = await import('../services/PdfExportService');
       const blob = await pdfExportService.exportToPdf(
         displaySlides,
         currentTemplate,
@@ -92,6 +91,7 @@ export function useExport(displaySlides: Slide[]) {
     const { templateMap, variablesMap, languagesMap } = buildPerSlideMaps(displaySlides);
 
     try {
+      const { pptxExportService } = await import('../services/PptxExportService');
       const blob = await pptxExportService.exportToPptx(
         displaySlides,
         currentTemplate,

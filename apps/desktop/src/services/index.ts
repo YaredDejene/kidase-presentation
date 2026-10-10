@@ -57,8 +57,6 @@ export type {
 } from '@kidase/shared';
 
 // Desktop-only services
-export { PdfExportService, pdfExportService } from './PdfExportService';
-export { PptxExportService, pptxExportService } from './PptxExportService';
 export { BackupService, backupService } from './BackupService';
 export type { BackupData } from './BackupService';
 export { AppBootstrapService } from './AppBootstrapService';
