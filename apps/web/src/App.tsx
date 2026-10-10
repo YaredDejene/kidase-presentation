@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LangSlot } from '@kidase/shared';
 import { isVerseSlide, DEFAULT_LANG_COLORS } from '@kidase/shared';
 import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
@@ -168,7 +168,8 @@ export const App: React.FC = () => {
   const capacity = render ? languageCapacity(render) : 0;
   const toggleLang = (slot: LangSlot) => setActiveSlots(prev =>
     prev.includes(slot) ? prev.filter(s => s !== slot) : prev.length < capacity ? [...prev, slot] : prev);
-  const activeLanguages = (render?.languages ?? []).filter(l => activeSlots.includes(l.slot));
+  // Stable identity so the memoized slide renderers skip work when the selection is unchanged.
+  const activeLanguages = useMemo(() => (render?.languages ?? []).filter(l => activeSlots.includes(l.slot)), [render, activeSlots]);
 
   // Sync shareable view state into the URL hash so "Copy share link" reproduces the view.
   useEffect(() => {
@@ -239,7 +240,7 @@ export const App: React.FC = () => {
                   <div key={s.id} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, boxShadow: isVerse ? 'inset 3px 0 0 #4a6a4a' : undefined, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
                     <span style={{ fontSize: 11, color: isVerse ? '#9a8acd' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
                     <div style={{ width: 150, height: 84, flexShrink: 0, borderRadius: 5, overflow: 'hidden', background: '#000' }}>
-                      {def && <Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} /></Stage>}
+                      {def && <LazyMount><Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} /></Stage></LazyMount>}
                     </div>
                   </div>
                 );
@@ -321,6 +322,20 @@ export const App: React.FC = () => {
       )}
     </div>
   );
+};
+
+/** Mounts its children the first time they scroll near the viewport, so a long thumbnail rail only lays out what is visible. */
+const LazyMount: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || shown) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setShown(true); }, { rootMargin: '400px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shown]);
+  return <div ref={ref} style={{ width: '100%', height: '100%' }}>{shown && children}</div>;
 };
 
 const fsBtn: React.CSSProperties = { width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer' };

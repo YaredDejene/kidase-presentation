@@ -153,7 +153,8 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
     let cancelled = false;
     document.fonts?.ready.then(() => { if (!cancelled) fitSlide(root); });
     return () => { cancelled = true; };
-  });
+    // Measuring forces layout, so only refit when the content or styling changed.
+  }, [def, enabledLanguages, block, title, footer, scale]);
 
   const renderLanguageContent = (langDef: EnabledLanguage) => {
     const text = block[langDef.slot];
