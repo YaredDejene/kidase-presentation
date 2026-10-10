@@ -19,10 +19,10 @@ export const DEFAULT_LANG_COLORS: Record<LangSlot, string> = {
   Lang2: '#FFFF00',
   Lang3: '#00FF00',
   Lang4: '#00BFFF',
-  Lang5: '#FFC000',
-  Lang6: '#00FFFF',
+  Lang5: '#FFA500',
+  Lang6: '#7FFFD4',
   Lang7: '#F0E68C',
-  Lang8: '#87CEFA',
+  Lang8: '#FF6347',
 };
 
 /** Any per-slot record of text: slide title/blocks/footer, language names, etc. */
