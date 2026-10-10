@@ -12,7 +12,7 @@ interface Props {
   isDark: boolean;
 }
 
-const LOGO: React.CSSProperties = { width: 32, height: 32, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16, fontFamily: "'Noto Serif Ethiopic',serif" };
+const LOGO: React.CSSProperties = { width: 32, height: 32, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16, fontFamily: "'Noto Serif Ethiopic Variable',serif" };
 const overlay: React.CSSProperties = { position: 'fixed', inset: 0, zIndex: 110, background: 'var(--bg)', color: 'var(--text)', overflow: 'auto' };
 
 export const Admin: React.FC<Props> = ({ token, setToken, onBack, theme, toggleTheme, isDark }) => {

@@ -10,7 +10,7 @@ import {
 } from '../domain/entities/Presentation';
 import { Gitsawe } from '../domain/entities/Gitsawe';
 import { RuleDefinition } from '../domain/entities/RuleDefinition';
-import { getMergedEnabledSlides } from '../domain/slideFiltering';
+import { getMergedEnabledSlides, dynamicSegmentId } from '../domain/slideFiltering';
 import { placeholderService } from './PlaceholderService';
 import { ruleEngine } from '../engine';
 import { buildContext, BuildContextArgs } from '../engine/contextBuilder';
@@ -111,9 +111,8 @@ export class RenderService {
     const overrideDate = args.date ? new Date(args.date + 'T12:00:00') : undefined;
 
     // Reference data
-    const [allTemplates, allVerses, allGitsawes, enabledRules] = await Promise.all([
+    const [allTemplates, allGitsawes, enabledRules] = await Promise.all([
       this.repos.template.getAll(),
-      this.repos.verse.getAll(),
       this.repos.gitsawe.getAll(),
       this.repos.rule.getEnabled(),
     ]);
@@ -163,6 +162,10 @@ export class RenderService {
 
     const secondarySlides = secondary?.slides ?? [];
     const allSlides = [...primary.slides, ...secondarySlides];
+
+    // Only the handful of segments the dynamic slides reference; the whole verse table is megabytes.
+    const segmentIds = [...new Set(allSlides.map(s => dynamicSegmentId(s, meta)).filter((id): id is string => !!id))];
+    const allVerses = (await Promise.all(segmentIds.map(id => this.repos.verse.getBySegmentId(id)))).flat();
     const ruleFilteredSlideIds = hiddenIds.size > 0
       ? allSlides.filter(s => !hiddenIds.has(s.id)).map(s => s.id)
       : null;

@@ -79,7 +79,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
                     <span style={{ width: 14, height: 14, borderRadius: '50%', background: l.color ?? DEFAULT_LANG_COLORS[l.slot], boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.25)', flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{l.name}</span>
-                      <span style={{ fontSize: 14, color: 'var(--text2)', fontFamily: "'Noto Serif Ethiopic',serif", marginLeft: 8 }}>{meta.amh}</span>
+                      <span style={{ fontSize: 14, color: 'var(--text2)', fontFamily: "'Noto Serif Ethiopic Variable',serif", marginLeft: 8 }}>{meta.amh}</span>
                     </div>
                     <div style={switchTrack(on)}><span style={switchKnob(on)} /></div>
                   </div>
@@ -92,7 +92,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
           <section style={{ ...card, padding: '18px 22px' }}>
             <div onClick={p.toggleMehella} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.t.mehella} <span style={{ fontFamily: "'Noto Serif Ethiopic',serif", fontWeight: 400, color: 'var(--text2)', marginLeft: 6 }}>መሐላ</span></div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.t.mehella} <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif", fontWeight: 400, color: 'var(--text2)', marginLeft: 6 }}>መሐላ</span></div>
                 <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 2 }}>{p.t.mehellaSub}</div>
               </div>
               <div style={switchTrack(p.isMehella)}><span style={switchKnob(p.isMehella)} /></div>

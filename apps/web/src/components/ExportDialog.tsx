@@ -3,7 +3,6 @@ import type { OrderedLanguage } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 import { iconBtn } from '../theme';
 import { Close, Download, Check } from '../icons';
-import { exportPdf, exportPptx } from '../export/exporters';
 
 type Status = 'idle' | 'running' | 'done';
 
@@ -33,6 +32,8 @@ export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) =
     setPct(0);
     const onProgress = (c: number, t: number) => setPct(Math.round((c / t) * 100));
     try {
+      // The PDF and PPTX libraries are over half the bundle; load them only when exporting.
+      const { exportPdf, exportPptx } = await import('../export/exporters');
       if (fmt === 'pdf') await exportPdf(payload, languages, name, onProgress);
       else await exportPptx(payload, languages, name, onProgress);
       setStatus('done');

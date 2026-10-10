@@ -62,6 +62,7 @@ export function fakeRepositories(seed: SeedData): Repositories {
     } as unknown as Repositories['gitsawe'],
     verse: {
       getAll: async () => verses,
+      getBySegmentId: async (segmentId: string) => verses.filter(v => v.segmentId === segmentId),
     } as unknown as Repositories['verse'],
     appSettings: {
       get: async () => appSettings,

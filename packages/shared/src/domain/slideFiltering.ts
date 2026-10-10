@@ -7,6 +7,23 @@ import { placeholderService } from '../services/PlaceholderService';
  * Expand dynamic slides by replacing them with matching verse entries.
  * Pure function — no store dependency.
  */
+/** The verse segment a dynamic slide shows: its lineId, or the @meta.X.Y placeholder resolved against the context. */
+export function dynamicSegmentId(slide: Slide, ruleContextMeta: Record<string, unknown> | null): string | null {
+  if (!slide.isDynamic || !slide.lineId) return null;
+  const segmentId = slide.lineId;
+  if (!segmentId.startsWith('@meta.')) return segmentId;
+  if (!ruleContextMeta) {
+    console.warn(`[Dynamic Slide] Cannot resolve "${segmentId}" — rule context meta not available yet`);
+    return segmentId;
+  }
+  const resolved = placeholderService.resolveMetaPlaceholder(segmentId, ruleContextMeta);
+  if (resolved === undefined) {
+    console.warn(`[Dynamic Slide] Failed to resolve "${segmentId}" from meta context`);
+    return segmentId;
+  }
+  return resolved;
+}
+
 export function expandDynamicSlides(
   slides: Slide[],
   verses: Verse[],
@@ -16,21 +33,8 @@ export function expandDynamicSlides(
 
   const expanded: Slide[] = [];
   for (const slide of slides) {
-    if (slide.isDynamic && slide.lineId) {
-      // Resolve @meta.X.Y placeholder to get the actual segmentId
-      let segmentId = slide.lineId;
-      if (segmentId.startsWith('@meta.')) {
-        if (!ruleContextMeta) {
-          console.warn(`[Dynamic Slide] Cannot resolve "${segmentId}" — rule context meta not available yet`);
-        } else {
-          const resolved = placeholderService.resolveMetaPlaceholder(segmentId, ruleContextMeta);
-          if (resolved === undefined) {
-            console.warn(`[Dynamic Slide] Failed to resolve "${segmentId}" from meta context`);
-          } else {
-            segmentId = resolved;
-          }
-        }
-      }
+    const segmentId = dynamicSegmentId(slide, ruleContextMeta);
+    if (segmentId) {
 
       // The verse sheet repeats a psalm once per date it is read, so the same
       // text often appears many times under one segment; show each text once.
