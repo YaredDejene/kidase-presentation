@@ -19,16 +19,16 @@ export const InfoPanel: React.FC<Props> = ({ t, onClose, render }) => (
       <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 22 }}>
         <div>
           <div style={eyebrow}>{t.date}</div>
-          <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)', fontFamily: "'Noto Serif Ethiopic',serif", marginBottom: 2 }}>{render?.context.ethDateLabel}</div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)', fontFamily: "'Noto Serif Ethiopic Variable',serif", marginBottom: 2 }}>{render?.context.ethDateLabel}</div>
           <div style={{ fontSize: 13, color: 'var(--text2)' }}>{render?.context.gregorian}</div>
         </div>
         {render?.context.feast && (
           <>
             <div style={{ height: 1, background: 'var(--border)' }} />
             <div>
-              <div style={eyebrow}>{t.feast} · <span style={{ fontFamily: "'Noto Serif Ethiopic',serif" }}>በዓል</span></div>
+              <div style={eyebrow}>{t.feast} · <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>በዓል</span></div>
               <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{render.context.feast}</div>
-              {render.context.feastAmh && <div style={{ fontSize: 16, color: 'var(--text2)', fontFamily: "'Noto Serif Ethiopic',serif" }}>{render.context.feastAmh}</div>}
+              {render.context.feastAmh && <div style={{ fontSize: 16, color: 'var(--text2)', fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>{render.context.feastAmh}</div>}
             </div>
           </>
         )}
@@ -36,13 +36,13 @@ export const InfoPanel: React.FC<Props> = ({ t, onClose, render }) => (
           <>
             <div style={{ height: 1, background: 'var(--border)' }} />
             <div>
-              <div style={eyebrow}>{t.readings} · <span style={{ fontFamily: "'Noto Serif Ethiopic',serif" }}>ግፃዌ</span></div>
+              <div style={eyebrow}>{t.readings} · <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>ግፃዌ</span></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {render.readings.map(r => (
                   <div key={r.key} style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)' }}>{r.label}</div>
-                      <div style={{ fontSize: 12.5, color: 'var(--muted)', fontFamily: "'Noto Serif Ethiopic',serif" }}>{r.labelAmh}</div>
+                      <div style={{ fontSize: 12.5, color: 'var(--muted)', fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>{r.labelAmh}</div>
                     </div>
                     <span style={{ fontSize: 13, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{r.ref || r.value}</span>
                   </div>

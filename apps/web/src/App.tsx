@@ -57,7 +57,7 @@ const HASH = readHash();
 
 const LOGO: React.CSSProperties = {
   borderRadius: 7, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: '#fff', fontWeight: 700, fontFamily: "'Noto Serif Ethiopic',serif", flexShrink: 0,
+  color: '#fff', fontWeight: 700, fontFamily: "'Noto Serif Ethiopic Variable',serif", flexShrink: 0,
 };
 
 /** Most languages any template in the payload shows at once; slides with smaller templates show the first ones. */
