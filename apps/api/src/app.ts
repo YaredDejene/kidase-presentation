@@ -10,6 +10,7 @@ import type { Repositories, Presentation, LangSlot } from '@kidase/shared';
 import { RenderService, getOrderedLanguages, LANG_SLOTS } from '@kidase/shared';
 import { getContentVersion, bumpContentVersion } from './contentVersion';
 import { RenderCache } from './renderCache';
+import { cachedRepositories } from './cachedRepos';
 import { createBackup, BackupData } from './backup';
 import { importKidaseBackup } from './importer/kidaseImporter';
 
@@ -39,7 +40,8 @@ function langCodes(p: Presentation): string[] {
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   // bodyLimit raised so /admin/restore can accept a full .kidase backup.
   const app = Fastify({ logger: false, bodyLimit: 64 * 1024 * 1024 });
-  const renderService = new RenderService(opts.repos);
+  const repoCache = cachedRepositories(opts.repos);
+  const renderService = new RenderService(repoCache.repos);
   const cache = new RenderCache();
   const maxAge = opts.renderMaxAge ?? 60;
   const adminEmail = opts.adminEmail ?? 'admin@church.org';
@@ -81,6 +83,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     schema: { tags: ['public'], summary: 'List the presentation catalog for the picker' },
   }, async (req, reply) => {
     const cv = await getContentVersion(opts.db);
+    const repos = repoCache.atVersion(cv);
     const etag = `"plist:${cv}"`;
     if (req.headers['if-none-match'] === etag) {
       cacheHeaders(reply, etag);
@@ -88,12 +91,12 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     }
     // Primary first (then active), so the viewer's default matches desktop bootstrap.
     const rank = (p: { isPrimary: boolean; isActive: boolean }) => (p.isPrimary ? 2 : 0) + (p.isActive ? 1 : 0);
-    const all = (await opts.repos.presentation.getAll()).sort((a, b) => rank(b) - rank(a));
+    const all = (await repos.presentation.getAll()).sort((a, b) => rank(b) - rank(a));
     const list = await Promise.all(all.map(async p => ({
       id: p.id,
       name: p.name,
       type: p.type,
-      slideCount: await opts.repos.slide.count(p.id),
+      slideCount: await repos.slide.count(p.id),
       langs: langCodes(p),
       languages: getOrderedLanguages(p.languageSettings, p.languageMap),
     })));
@@ -110,12 +113,13 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     },
   }, async (req, reply) => {
     const cv = await getContentVersion(opts.db);
+    const repos = repoCache.atVersion(cv);
     const etag = `"pmeta:${cv}:${req.params.id}"`;
     if (req.headers['if-none-match'] === etag) {
       cacheHeaders(reply, etag);
       return reply.code(304).send();
     }
-    const p = await opts.repos.presentation.getById(req.params.id);
+    const p = await repos.presentation.getById(req.params.id);
     if (!p) {
       return reply.code(404).send({ error: 'Presentation not found' });
     }
@@ -153,6 +157,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       const date = req.query.date;
       const mehella = req.query.mehella === '1' || req.query.mehella === 'true';
       const cv = await getContentVersion(opts.db);
+      repoCache.atVersion(cv);
       const key = `${cv}:${id}:${date ?? ''}:${mehella ? 1 : 0}`;
       const etag = `"${key}"`;
 

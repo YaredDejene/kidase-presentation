@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import { createMongoRepositories, ensureIndexes } from '../src/repositories/mongo';
 import { importKidaseBackup, KidaseBackup } from '../src/importer/kidaseImporter';
 import { buildApp } from '../src/app';
-import { bumpContentVersion } from '../src/contentVersion';
+import { bumpContentVersion, getContentVersion } from '../src/contentVersion';
 
 const templateDef = {
   layout: { columns: 1, rows: 1, gap: 16, verticalAlign: 'center' },
@@ -63,8 +63,10 @@ describe('public API', () => {
   it('GET /presentations lists the primary presentation first', async () => {
     const newer = { _id: 'p0', name: 'Anaphora', type: 'Kidase', templateId: 't1', languageMap: {}, isPrimary: false, isActive: false, createdAt: '2026-02-01' };
     await db.collection('presentations').insertOne(newer as never);
+    await bumpContentVersion(db); // direct writes must bump the version, like every API write does, to clear the read cache
     const res = await app.inject({ method: 'GET', url: '/api/v1/presentations' });
     await db.collection('presentations').deleteOne({ _id: 'p0' as never });
+    await bumpContentVersion(db);
     expect(res.json().map((p: { id: string }) => p.id)).toEqual(['p1', 'p0']);
   });
 
@@ -76,7 +78,7 @@ describe('public API', () => {
     expect(body.slides.map((s: { id: string }) => s.id)).toEqual(['s2', 's1']);
     expect(body.slides[1].block.Lang1).toBe('Hello World');
     expect(body.templates.t1).toBeTruthy();
-    expect(body.dataVersion).toBe('1');
+    expect(body.dataVersion).toBe(String(await getContentVersion(db)));
     // boundary: no engine/rule/variable data leaks
     expect(JSON.stringify(body)).not.toContain('ruleJson');
     expect(res.headers.etag).toBeTruthy();
@@ -93,7 +95,7 @@ describe('public API', () => {
     });
     expect(notModified.statusCode).toBe(304);
 
-    await bumpContentVersion(db);
+    const bumped = await bumpContentVersion(db);
     const afterBump = await app.inject({
       method: 'GET',
       url: '/api/v1/presentations/p1/render?date=2026-06-25',
@@ -101,7 +103,7 @@ describe('public API', () => {
     });
     expect(afterBump.statusCode).toBe(200);
     expect(afterBump.headers.etag).not.toBe(etag);
-    expect(afterBump.json().dataVersion).toBe('2');
+    expect(afterBump.json().dataVersion).toBe(String(bumped));
   });
 
   it('returns 404 for an unknown presentation', async () => {
