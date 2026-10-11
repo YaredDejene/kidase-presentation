@@ -30,14 +30,14 @@ const MAX_FIT = 2;
 const FLOOR_FIT = 0.2;
 /** Footer size relative to the template's title size. */
 const FOOTER_RATIO = 0.6;
-const clampFit = (v: number) => Math.min(MAX_FIT, Math.max(MIN_FIT, v));
 
 /**
  * One decision per slide, so every language looks the same: when all blocks
  * are long they keep the template alignment; if any is short (few lines, or
  * narrow columns), or justifying stretches a word gap too far, they all drop
- * justify for left and balance their lines so no word sits alone. Neither
- * change alters the line count.
+ * justify for left. Lines wrap "pretty" either way: the first line runs to
+ * the edge and no word sits alone on the last. Neither change alters the
+ * line count.
  */
 function alignTexts(root: HTMLElement): void {
   const texts = Array.from(root.querySelectorAll<HTMLElement>('[data-slide-text]'));
@@ -49,7 +49,7 @@ function alignTexts(root: HTMLElement): void {
   });
   const justified = texts.filter(el => el.dataset.slideText === 'justify');
   const apply = (justify: boolean) => {
-    for (const el of texts) el.style.setProperty('text-wrap-style', justify ? 'pretty' : 'balance');
+    for (const el of texts) el.style.setProperty('text-wrap-style', 'pretty');
     for (const el of justified) el.style.textAlign = justify ? 'justify' : 'left';
   };
   apply(allLong);
@@ -57,10 +57,10 @@ function alignTexts(root: HTMLElement): void {
 }
 
 /**
- * Size the text by measuring it: adjust the `--fit` font multiplier until the
- * rendered content fills the content area. Height grows roughly with the
- * square of the font size (taller lines and fewer characters per line), hence
- * the square-root step.
+ * Size the text by measuring it: find the largest `--fit` font multiplier
+ * whose rendered content fits the content area. Height only grows with the
+ * font (the footer scales with it too), so a bisection finds it, and a long
+ * line is allowed to wrap when the slide gains size overall.
  */
 function fitSlide(root: HTMLElement): void {
   const box = root.querySelector<HTMLElement>('[data-fit-box]');
@@ -70,30 +70,29 @@ function fitSlide(root: HTMLElement): void {
   const rows = Array.from(box.children) as HTMLElement[];
   const needed = () =>
     rows.reduce((h, row) => h + row.offsetHeight, 0) + gap * Math.max(0, rows.length - 1);
+  if (needed() === 0) return;
 
-  let fit = 1;
-  const setFit = (v: number) => {
-    fit = v;
-    root.style.setProperty('--fit', String(fit));
-  };
-  setFit(clampFit(parseFloat(root.style.getPropertyValue('--fit')) || 1));
+  const setFit = (v: number) => root.style.setProperty('--fit', String(v));
+  const fits = (v: number) => { setFit(v); return needed() <= box.clientHeight * FILL; };
 
-  for (let i = 0; i < 6; i++) {
-    const height = needed();
-    if (height === 0) return;
-    // The footer scales with --fit, so the box height moves too.
-    const ratio = height / (box.clientHeight * FILL);
-    if (ratio <= 1 && ratio >= 0.93) break;
-    const next = clampFit(fit / Math.sqrt(ratio));
-    if (Math.abs(next - fit) < 0.005) break;
-    setFit(next);
+  let fit = MIN_FIT;
+  if (fits(MAX_FIT)) fit = MAX_FIT;
+  else if (fits(MIN_FIT)) {
+    let lo = MIN_FIT, hi = MAX_FIT;
+    for (let i = 0; i < 9; i++) {
+      const mid = (lo + hi) / 2;
+      if (fits(mid)) lo = mid; else hi = mid;
+    }
+    fit = lo;
+    setFit(fit);
   }
 
   alignTexts(root);
 
   // Never overflow: step down until it fits.
   for (let i = 0; i < 40 && fit > FLOOR_FIT && needed() > box.clientHeight; i++) {
-    setFit(fit * 0.96);
+    fit *= 0.96;
+    setFit(fit);
   }
 }
 
