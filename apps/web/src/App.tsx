@@ -116,7 +116,9 @@ export const App: React.FC = () => {
   const [theme, setTheme] = useState<ThemeName>(PREFS.theme ?? 'dark');
   const [uiLang, setUiLang] = useState<UiLang>(PREFS.ui ?? 'en');
   const [defaultId, setDefaultId] = useState<string>('');
-  const [selectedId, setSelectedId] = useState<string>(LINK.presentation ?? SESSION?.presentation ?? '');
+  // The remembered liturgy is only used once the list confirms it still exists (data reloads change ids).
+  const [selectedId, setSelectedId] = useState<string>('');
+  const wantedId = useRef<string | undefined>(LINK.presentation ?? SESSION?.presentation);
   const [gregDate, setGregDate] = useState<string>(LINK.date ?? SESSION?.date ?? todayIso());
   const [isMehella, setIsMehella] = useState(LINK.mehella ?? PREFS.mehella ?? false);
   const [country, setCountry] = useState<Country>(LINK.country ?? PREFS.country ?? 'et');
@@ -154,7 +156,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     fetchPresentations().then(list => {
-      if (list.length) { setDefaultId(list[0].id); setSelectedId(prev => prev || list[0].id); }
+      if (list.length) { setDefaultId(list[0].id); setSelectedId(prev => prev || list.find(p => p.id === wantedId.current)?.id || list[0].id); }
     }).catch(e => setError(String(e.message ?? e)));
   }, []);
 
