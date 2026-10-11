@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LangSlot } from '@kidase/shared';
+import type { LangSlot, Country } from '@kidase/shared';
 import { isVerseSlide, DEFAULT_LANG_COLORS } from '@kidase/shared';
 import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
@@ -67,7 +67,7 @@ function useSwipe(onLeft: () => void, onRight: () => void) {
 
 /** Shareable view state encoded in the URL hash. */
 interface HashState {
-  p?: string; d?: string; m?: boolean; l?: LangSlot[]; s?: number; ui?: UiLang; th?: ThemeName;
+  p?: string; d?: string; m?: boolean; l?: LangSlot[]; s?: number; ui?: UiLang; th?: ThemeName; c?: Country;
 }
 function readHash(): HashState {
   try {
@@ -80,10 +80,14 @@ function readHash(): HashState {
     if (q.get('s')) out.s = parseInt(q.get('s')!, 10) || 0;
     if (q.get('ui')) out.ui = q.get('ui') as UiLang;
     if (q.get('th')) out.th = q.get('th') as ThemeName;
+    if (q.get('c') === 'et' || q.get('c') === 'er') out.c = q.get('c') as Country;
     return out;
   } catch { return {}; }
 }
 const HASH = readHash();
+function storedCountry(): Country | null {
+  try { const c = localStorage.getItem('kidase_country'); return c === 'er' || c === 'et' ? c : null; } catch { return null; }
+}
 
 const ETHIOPIC = "'Noto Serif Ethiopic Variable',serif";
 const LOGO: React.CSSProperties = {
@@ -103,6 +107,8 @@ export const App: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string>(HASH.p ?? '');
   const [gregDate, setGregDate] = useState<string>(HASH.d ?? todayIso());
   const [isMehella, setIsMehella] = useState(HASH.m ?? false);
+  const [country, setCountry] = useState<Country>(HASH.c ?? storedCountry() ?? 'et');
+  useEffect(() => { try { localStorage.setItem('kidase_country', country); } catch { /* ignore */ } }, [country]);
   const [activeSlots, setActiveSlots] = useState<LangSlot[]>(HASH.l ?? []);
   const pendingSlide = useRef<number>(HASH.s ?? 0);
   const [render, setRender] = useState<RenderPayload | null>(null);
@@ -143,11 +149,12 @@ export const App: React.FC = () => {
     if (!selectedId) return;
     let cancelled = false;
     setLoading(true); setError(null);
-    fetchRender(selectedId, gregDate, isMehella)
+    fetchRender(selectedId, gregDate, isMehella, country)
       .then(payload => {
         if (cancelled) return;
         setRender(payload);
-        setSlideIndex(Math.min(pendingSlide.current, Math.max(payload.slides.length - 1, 0)));
+        // First load honours the shared link's slide; later reloads (date, country, mehella) keep the place.
+        setSlideIndex(i => Math.min(pendingSlide.current || i, Math.max(payload.slides.length - 1, 0)));
         pendingSlide.current = 0;
         // Start with the presentation's own selection; viewers can switch to any other language.
         const avail = payload.languages.map(l => l.slot);
@@ -158,7 +165,7 @@ export const App: React.FC = () => {
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [selectedId, gregDate, isMehella]);
+  }, [selectedId, gregDate, isMehella, country]);
 
   const slideCount = render?.slides.length ?? 0;
   const next = useCallback(() => setSlideIndex(i => Math.min(i + 1, Math.max(slideCount - 1, 0))), [slideCount]);
@@ -227,8 +234,9 @@ export const App: React.FC = () => {
     q.set('s', String(slideIndex));
     if (uiLang !== 'en') q.set('ui', uiLang);
     if (theme !== 'dark') q.set('th', theme);
+    if (country !== 'et') q.set('c', country);
     try { history.replaceState(null, '', `#${q.toString()}`); } catch { /* ignore */ }
-  }, [selectedId, gregDate, isMehella, activeSlots, slideIndex, uiLang, theme]);
+  }, [selectedId, gregDate, isMehella, activeSlots, slideIndex, uiLang, theme, country]);
 
   // Keep the active thumbnail in view in the rail or the strip.
   const activeThumb = useRef<HTMLDivElement>(null);
@@ -398,10 +406,11 @@ export const App: React.FC = () => {
           languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
           isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
           uiLang={uiLang} setUiLang={setUiLang}
+          country={country} setCountry={setCountry}
           sections={[]}
         />
       )}
-      {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} />}
+      {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} onJump={i => { setSlideIndex(i); setInfoOpen(false); }} />}
       {exportOpen && render && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
       {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
 

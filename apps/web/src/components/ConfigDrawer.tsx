@@ -1,5 +1,5 @@
 import React from 'react';
-import { DEFAULT_LANG_COLORS, type LangSlot, type OrderedLanguage } from '@kidase/shared';
+import { DEFAULT_LANG_COLORS, COUNTRIES, type Country, type LangSlot, type OrderedLanguage } from '@kidase/shared';
 import { select, switchTrack, switchKnob, iconBtn } from '../theme';
 import { Strings, UiLang, UI_LANGS, LANG_BY_SLOT } from '../i18n';
 import { Gear, Close, Link } from '../icons';
@@ -22,6 +22,8 @@ interface Props {
   toggleMehella: () => void;
   uiLang: UiLang;
   setUiLang: (l: UiLang) => void;
+  country: Country;
+  setCountry: (c: Country) => void;
   sections: SectionItem[];
 }
 
@@ -97,6 +99,15 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
               </div>
               <div style={switchTrack(p.isMehella)}><span style={switchKnob(p.isMehella)} /></div>
             </div>
+          </section>
+
+          {/* country: patriarch and country placeholders */}
+          <section style={{ ...card, padding: '18px 22px' }}>
+            <h3 style={h3}>{p.t.country}</h3>
+            <p style={sub}>{p.t.countrySub}</p>
+            <select value={p.country} onChange={e => p.setCountry(e.target.value as Country)} style={{ ...sel, width: '100%' }}>
+              {COUNTRIES.map(c => <option key={c} value={c}>{p.t.countryNames[c]}</option>)}
+            </select>
           </section>
 
           {/* interface language */}
