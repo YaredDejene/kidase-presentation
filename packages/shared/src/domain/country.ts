@@ -23,4 +23,4 @@ export const COUNTRY_VARIABLES: Record<Country, Record<'@PATRIARCH_NAME' | '@COU
 /** Placeholders the public viewer leaves blank: it serves no single parish. */
 export const BLANK_FOR_COUNTRY = ['@CHURCH_NAME', '@ARCHBISHOP_NAME'];
 /** Shown in their place, so the gap is visible and the reader fills it in. */
-export const BLANK_VALUE = '__________';
+export const BLANK_VALUE = '_______';
