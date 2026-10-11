@@ -16,7 +16,7 @@ import { ruleEngine } from '../engine';
 import { buildContext, BuildContextArgs } from '../engine/contextBuilder';
 import { RuleEntry, RuleContext } from '../engine/types';
 import { formatEthiopianDate } from '../domain/formatting';
-import { BLANK_FOR_COUNTRY, COUNTRY_VARIABLES, type Country } from '../domain/country';
+import { BLANK_FOR_COUNTRY, BLANK_VALUE, COUNTRY_VARIABLES, type Country } from '../domain/country';
 
 export interface ResolvedReading {
   key: string;
@@ -98,7 +98,7 @@ interface LoadedSet {
   variables: Variable[];
 }
 
-/** Country-specific copies of the placeholder variables; the stored values stay untouched. */
+/** Country-specific copies of the placeholder variables, parish ones blanked; the stored values stay untouched. */
 export function applyCountry(variables: Variable[], country: Country): Variable[] {
   const values = COUNTRY_VARIABLES[country];
   return variables.map(v => {
@@ -108,8 +108,8 @@ export function applyCountry(variables: Variable[], country: Country): Variable[
       return { ...v, ...fields, value: langValues.Lang2 ?? langValues.Lang1 ?? '' };
     }
     if (BLANK_FOR_COUNTRY.includes(v.name)) {
-      const fields = Object.fromEntries(LANG_SLOTS.map(slot => [`value${slot}`, '']));
-      return { ...v, ...fields, value: '' };
+      const fields = Object.fromEntries(LANG_SLOTS.map(slot => [`value${slot}`, BLANK_VALUE]));
+      return { ...v, ...fields, value: BLANK_VALUE };
     }
     return v;
   });

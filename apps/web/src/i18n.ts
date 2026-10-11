@@ -1,3 +1,5 @@
+import type { Country } from '@kidase/shared';
+
 export type UiLang = 'en' | 'am' | 'ti';
 
 export interface Strings {
@@ -10,7 +12,7 @@ export interface Strings {
   noSlidesTitle: string; noSlidesSub: string; changeDate: string; copyLink: string; linkCopied: string;
   pdfSub: (n: number) => string; pptxSub: string; cancel: string; download: string; rendering: string;
   exportReady: string; exportAgain: string; exportFailed: string; slide: string;
-  country: string; countrySub: string; countryNames: Record<'et' | 'er', string>;
+  country: string; countrySub: string; countryNames: Record<Country, string>;
   /** One label per entry of SHORTCUTS, same order. */
   shortcutLabels: string[];
 }
@@ -23,7 +25,7 @@ export const T: Record<UiLang, Strings> = {
     noSlidesTitle: 'No slides for this date', noSlidesSub: 'This liturgy has no readings assigned to the selected gitsawe. Try another date.', changeDate: 'Change date', copyLink: 'Copy share link', linkCopied: 'Link copied',
     pdfSub: n => `All ${n} slides · print-ready`, pptxSub: 'Editable · one slide per page', cancel: 'Cancel', download: 'Download', rendering: 'Rendering slides & composing file…',
     exportReady: 'Export ready', exportAgain: 'Export again', exportFailed: 'Export failed', slide: 'Slide',
-    country: 'Country', countrySub: 'Sets the patriarch and country named in the prayers.', countryNames: { et: 'Ethiopia', er: 'Eritrea' },
+    country: 'Country', countrySub: 'Sets the patriarch and country named in the prayers.', countryNames: { et: 'Ethiopia', er: 'Eritrea', both: 'Ethiopia and Eritrea' },
     shortcutLabels: ['Previous / next slide', 'Next slide', 'Project fullscreen', 'Liturgical info', 'Exit fullscreen / close', 'Keyboard shortcuts'],
   },
   am: {
@@ -33,7 +35,7 @@ export const T: Record<UiLang, Strings> = {
     noSlidesTitle: 'ለዚህ ቀን ስላይድ የለም', noSlidesSub: 'ይህ ቅዳሴ ለተመረጠው ግፃዌ ምንባብ አልተመደበለትም። ሌላ ቀን ይሞክሩ።', changeDate: 'ቀን ቀይር', copyLink: 'የማጋሪያ አገናኝ ቅዳ', linkCopied: 'አገናኙ ተቀድቷል',
     pdfSub: n => `ሁሉም ${n} ስላይዶች · ለህትመት ዝግጁ`, pptxSub: 'ሊስተካከል የሚችል · በአንድ ገጽ አንድ ስላይድ', cancel: 'ሰርዝ', download: 'አውርድ', rendering: 'ስላይዶች እየተዘጋጁ ፋይሉ እየተሰራ ነው…',
     exportReady: 'ፋይሉ ዝግጁ ነው', exportAgain: 'እንደገና አውርድ', exportFailed: 'ማውረድ አልተሳካም', slide: 'ስላይድ',
-    country: 'ሀገር', countrySub: 'በጸሎቱ የሚጠሩትን ፓትርያርክና ሀገር ይወስናል።', countryNames: { et: 'ኢትዮጵያ', er: 'ኤርትራ' },
+    country: 'ሀገር', countrySub: 'በጸሎቱ የሚጠሩትን ፓትርያርክና ሀገር ይወስናል።', countryNames: { et: 'ኢትዮጵያ', er: 'ኤርትራ', both: 'ኢትዮጵያና ኤርትራ' },
     shortcutLabels: ['ቀዳሚ / ቀጣይ ስላይድ', 'ቀጣይ ስላይድ', 'በሙሉ ስክሪን አሳይ', 'የቅዳሴ መረጃ', 'ከሙሉ ስክሪን ውጣ / ዝጋ', 'የቁልፍ አቋራጮች'],
   },
   ti: {
@@ -43,7 +45,7 @@ export const T: Record<UiLang, Strings> = {
     noSlidesTitle: 'ነዛ ዕለት ስላይድ የለን', noSlidesSub: 'እዚ ቅዳሴ ነቲ ዝተመርጸ ግጻዌ ንባብ ኣይተመደበሉን። ካልእ ዕለት ፈትኑ።', changeDate: 'ዕለት ቀይር', copyLink: 'መካፈሊ ሊንክ ቅዳሕ', linkCopied: 'ሊንክ ተቐዲሑ',
     pdfSub: n => `ኩሎም ${n} ስላይዳት · ንሕትመት ድሉው`, pptxSub: 'ክእረም ዝኽእል · ኣብ ሓደ ገጽ ሓደ ስላይድ', cancel: 'ሰርዝ', download: 'ኣውርድ', rendering: 'ስላይዳት ይዳለዉ ፋይል ይስራሕ ኣሎ…',
     exportReady: 'ፋይል ድሉው እዩ', exportAgain: 'መሊስካ ኣውርድ', exportFailed: 'ምውራድ ኣይተዓወተን', slide: 'ስላይድ',
-    country: 'ሃገር', countrySub: 'ኣብ ጸሎት ዝጥቀሱ ፓትርያርክን ሃገርን ይውስን።', countryNames: { et: 'ኢትዮጵያ', er: 'ኤርትራ' },
+    country: 'ሃገር', countrySub: 'ኣብ ጸሎት ዝጥቀሱ ፓትርያርክን ሃገርን ይውስን።', countryNames: { et: 'ኢትዮጵያ', er: 'ኤርትራ', both: 'ኢትዮጵያን ኤርትራን' },
     shortcutLabels: ['ዝሓለፈ / ዝቕጽል ስላይድ', 'ዝቕጽል ስላይድ', 'ብምሉእ ስክሪን ኣርኢ', 'ሓበሬታ ቅዳሴ', 'ካብ ምሉእ ስክሪን ውጻእ / ዕጾ', 'ሓጸርቲ መንገድታት ቁልፊ'],
   },
 };

@@ -82,6 +82,7 @@ function readLink(): Link {
   if (q.get('slide')) out.slide = Math.max(0, (parseInt(q.get('slide')!, 10) || 1) - 1);
   if (q.get('country') === 'ethiopia') out.country = 'et';
   if (q.get('country') === 'eritrea') out.country = 'er';
+  if (q.get('country') === 'ethiopia-eritrea') out.country = 'both';
   if (q.get('languages')) out.languages = q.get('languages')!.split(',').filter(Boolean);
   if (q.get('mehella') === '1') out.mehella = true;
   return out;
@@ -89,7 +90,7 @@ function readLink(): Link {
 const LINK = readLink();
 if (location.search) { try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ } }
 const langSlug = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '-');
-const COUNTRY_WORD: Record<Country, string> = { et: 'ethiopia', er: 'eritrea' };
+const COUNTRY_WORD: Record<Country, string> = { et: 'ethiopia', er: 'eritrea', both: 'ethiopia-eritrea' };
 
 interface Prefs { ui?: UiLang; theme?: ThemeName; country?: Country; mehella?: boolean; languages?: LangSlot[] }
 interface Session { day: string; presentation?: string; date: string; slide: number }
