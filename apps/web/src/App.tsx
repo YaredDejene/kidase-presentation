@@ -131,6 +131,7 @@ export const App: React.FC = () => {
 
   const t = T[uiLang];
   const isDark = theme === 'dark';
+  useEffect(() => { document.documentElement.lang = uiLang; }, [uiLang]);
 
   useEffect(() => {
     fetchPresentations().then(list => {
@@ -266,24 +267,24 @@ export const App: React.FC = () => {
       <I.Calendar size={14} color="var(--muted)" />
       <span style={{ fontFamily: ETHIOPIC, color: 'var(--text)' }}>{render.context.ethDateLabel}</span>
       <span style={{ color: 'var(--muted)' }}>{render.context.gregorian}</span>
-      {!isMobile && <span style={{ color: 'var(--muted)' }}>· {slideCount} slides</span>}
+      {!isMobile && <span style={{ color: 'var(--muted)' }}>· {t.slides(slideCount)}</span>}
     </button>
   );
 
   const projectBtn = (
-    <button className="accent-btn" onClick={toggleFullscreen} title="Project fullscreen (F)" style={{ height: isMobile ? 40 : 36, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 7, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
-      <I.Project /> Project
+    <button className="accent-btn" onClick={toggleFullscreen} title={`${t.project} (F)`} style={{ height: isMobile ? 40 : 36, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 7, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
+      <I.Project /> {t.project}
     </button>
   );
   const themeBtn = (
-    <button className="ic" onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} title="Toggle theme" style={iconBtn}>{isDark ? <I.Sun /> : <I.Moon />}</button>
+    <button className="ic" onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} title={isDark ? t.themeLight : t.themeDark} style={iconBtn}>{isDark ? <I.Sun /> : <I.Moon />}</button>
   );
 
   const moreItems: { label: string; icon: React.ReactNode; run: () => void }[] = [
     { label: t.context, icon: <I.Info />, run: () => setInfoOpen(true) },
-    { label: 'Export / Download', icon: <I.Download />, run: () => setExportOpen(true) },
-    { label: isDark ? 'Light theme' : 'Dark theme', icon: isDark ? <I.Sun /> : <I.Moon />, run: () => setTheme(v => v === 'dark' ? 'light' : 'dark') },
-    { label: 'Admin', icon: <I.Users />, run: () => setScreen('admin') },
+    { label: t.exportTip, icon: <I.Download />, run: () => setExportOpen(true) },
+    { label: isDark ? t.themeLight : t.themeDark, icon: isDark ? <I.Sun /> : <I.Moon />, run: () => setTheme(v => v === 'dark' ? 'light' : 'dark') },
+    { label: t.admin, icon: <I.Users />, run: () => setScreen('admin') },
   ];
 
   return (
@@ -293,11 +294,11 @@ export const App: React.FC = () => {
         {/* floating nav pill (desktop) */}
         {!isMobile && (
           <div style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 20, display: 'flex', alignItems: 'center', gap: 2, background: 'var(--surface)', borderRadius: 11, padding: 4, boxShadow: '0 6px 22px rgb(0 0 0 / 0.32)' }}>
-            <button className="ic" onClick={() => setRailOpen(v => !v)} title="Toggle thumbnails" style={iconBtn}><I.Layout /></button>
+            <button className="ic" onClick={() => setRailOpen(v => !v)} title={t.toggleThumbs} style={iconBtn}><I.Layout /></button>
             <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
-            <button className="ic" onClick={prev} title="Previous (←)" style={iconBtn}><I.ChevronLeft /></button>
+            <button className="ic" onClick={prev} title={`${t.prevSlide} (←)`} style={iconBtn}><I.ChevronLeft /></button>
             <span style={{ fontSize: 13, color: 'var(--text)', minWidth: 52, textAlign: 'center', fontWeight: 500 }}>{slideCount ? slideIndex + 1 : 0} / {slideCount}</span>
-            <button className="ic" onClick={next} title="Next (→)" style={iconBtn}><I.ChevronRight /></button>
+            <button className="ic" onClick={next} title={`${t.nextSlide} (→)`} style={iconBtn}><I.ChevronRight /></button>
           </div>
         )}
 
@@ -310,13 +311,13 @@ export const App: React.FC = () => {
           </div>
           {!isMobile && (
             <>
-              <button className="ic" onClick={() => setHelpOpen(true)} title="Keyboard shortcuts (?)" style={iconBtn}><I.Help /></button>
-              <button className="ic" onClick={() => setInfoOpen(true)} title="Liturgical info (i)" style={iconBtn}><I.Info /></button>
-              <button className="ic" onClick={() => setExportOpen(true)} title="Export / Download" style={iconBtn}><I.Download /></button>
+              <button className="ic" onClick={() => setHelpOpen(true)} title={`${t.shortcuts} (?)`} style={iconBtn}><I.Help /></button>
+              <button className="ic" onClick={() => setInfoOpen(true)} title={`${t.context} (i)`} style={iconBtn}><I.Info /></button>
+              <button className="ic" onClick={() => setExportOpen(true)} title={t.exportTip} style={iconBtn}><I.Download /></button>
               <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
-              <button className="ic" onClick={() => setConfigOpen(true)} title="Settings (date & languages)" style={iconBtn}><I.Gear /></button>
+              <button className="ic" onClick={() => setConfigOpen(true)} title={t.settingsTip} style={iconBtn}><I.Gear /></button>
               {themeBtn}
-              <button className="ic" onClick={() => setScreen('admin')} title="Admin" style={iconBtn}><I.Users /></button>
+              <button className="ic" onClick={() => setScreen('admin')} title={t.admin} style={iconBtn}><I.Users /></button>
               {projectBtn}
             </>
           )}
@@ -349,9 +350,9 @@ export const App: React.FC = () => {
             {!loading && !error && render && render.slides.length === 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', maxWidth: 380 }}>
                 <div style={{ width: 54, height: 54, borderRadius: 14, background: 'var(--elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><I.Calendar color="var(--muted)" /></div>
-                <h3 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 6px', color: 'var(--text)' }}>No slides for this date</h3>
-                <p style={{ fontSize: 14, color: 'var(--text2)', margin: '0 0 18px' }}>This liturgy has no readings assigned to the selected gitsawe. Try another date.</p>
-                <button className="outline-btn" onClick={() => setConfigOpen(true)} style={{ height: 38, padding: '0 18px', borderRadius: 8, border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Change date</button>
+                <h3 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 6px', color: 'var(--text)' }}>{t.noSlidesTitle}</h3>
+                <p style={{ fontSize: 14, color: 'var(--text2)', margin: '0 0 18px' }}>{t.noSlidesSub}</p>
+                <button className="outline-btn" onClick={() => setConfigOpen(true)} style={{ height: 38, padding: '0 18px', borderRadius: 8, border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>{t.changeDate}</button>
               </div>
             )}
           </div>
@@ -366,14 +367,14 @@ export const App: React.FC = () => {
         {/* bottom action bar (mobile) */}
         {isMobile && (
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: '6px 8px', paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
-            <button className="ic" onClick={() => setRailOpen(v => !v)} title="Toggle thumbnails" style={mobileBtn}><I.Layout /></button>
-            <button className="ic" onClick={prev} title="Previous" style={mobileBtn}><I.ChevronLeft /></button>
+            <button className="ic" onClick={() => setRailOpen(v => !v)} title={t.toggleThumbs} style={mobileBtn}><I.Layout /></button>
+            <button className="ic" onClick={prev} title={t.prevSlide} style={mobileBtn}><I.ChevronLeft /></button>
             <span style={{ fontSize: 13, color: 'var(--text)', minWidth: 52, textAlign: 'center', fontWeight: 500 }}>{slideCount ? slideIndex + 1 : 0} / {slideCount}</span>
-            <button className="ic" onClick={next} title="Next" style={mobileBtn}><I.ChevronRight /></button>
+            <button className="ic" onClick={next} title={t.nextSlide} style={mobileBtn}><I.ChevronRight /></button>
             <div style={{ flex: 1 }} />
-            <button className="ic" onClick={() => setConfigOpen(true)} title="Settings (date & languages)" style={mobileBtn}><I.Gear /></button>
+            <button className="ic" onClick={() => setConfigOpen(true)} title={t.settingsTip} style={mobileBtn}><I.Gear /></button>
             {projectBtn}
-            <button className="ic" onClick={() => setMoreOpen(v => !v)} title="More" style={mobileBtn}><I.More /></button>
+            <button className="ic" onClick={() => setMoreOpen(v => !v)} title={t.more} style={mobileBtn}><I.More /></button>
             {moreOpen && (
               <>
                 <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
@@ -400,8 +401,8 @@ export const App: React.FC = () => {
           sections={[]}
         />
       )}
-      {infoOpen && <InfoPanel t={t} onClose={() => setInfoOpen(false)} render={render} />}
-      {exportOpen && render && <ExportDialog onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
+      {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} />}
+      {exportOpen && render && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
       {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
 
       {/* fullscreen projection */}
@@ -410,9 +411,9 @@ export const App: React.FC = () => {
           <div style={{ width: 'min(100cqw, calc(100cqh * 16 / 9))', aspectRatio: '16/9' }}>{slideStage(current, definition)}</div>
           <div style={{ position: 'fixed', bottom: 'calc(24px + env(safe-area-inset-bottom))', left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: controlsVisible ? 'auto' : 'none', opacity: controlsVisible ? 1 : 0, transform: controlsVisible ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity .25s ease, transform .25s ease' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 6, maxWidth: 'calc(100vw - 24px)', background: 'rgba(20,20,20,0.92)', border: '1px solid #333', borderRadius: 14, padding: '8px 10px', backdropFilter: 'blur(12px)', boxShadow: '0 12px 40px rgb(0 0 0 / 0.5)' }}>
-              <button onClick={prev} title="Previous (←)" style={fsBtn}><I.ChevronLeft size={20} /></button>
+              <button onClick={prev} title={`${t.prevSlide} (←)`} style={fsBtn}><I.ChevronLeft size={20} /></button>
               <span style={{ fontSize: 14, color: '#fff', minWidth: 64, textAlign: 'center', fontWeight: 500 }}>{slideIndex + 1} / {slideCount}</span>
-              <button onClick={next} title="Next (→)" style={fsBtn}><I.ChevronRight size={20} /></button>
+              <button onClick={next} title={`${t.nextSlide} (→)`} style={fsBtn}><I.ChevronRight size={20} /></button>
               <div style={{ width: 1, height: 22, background: '#333', margin: '0 4px' }} />
               {(render?.languages ?? []).map(l => {
                 const on = activeSlots.includes(l.slot);
@@ -425,7 +426,7 @@ export const App: React.FC = () => {
                 );
               })}
               <div style={{ width: 1, height: 22, background: '#333', margin: '0 4px' }} />
-              <button onClick={exitProjection} title="Exit (Esc)" style={fsBtn}><I.Minimize size={20} /></button>
+              <button onClick={exitProjection} title={`${t.exit} (Esc)`} style={fsBtn}><I.Minimize size={20} /></button>
             </div>
           </div>
         </div>

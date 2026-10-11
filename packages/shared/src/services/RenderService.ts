@@ -21,6 +21,7 @@ export interface ResolvedReading {
   key: string;
   label: string;
   labelAmh: string;
+  labelTi: string;
   ref?: string;
   value: string;
 }
@@ -76,13 +77,13 @@ export interface RenderArgs {
 }
 
 /** Maps Gitsawe record fields to the viewer's info panel. */
-const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string }[] = [
-  { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: '' },
-  { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ' },
-  { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት' },
-  { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት' },
-  { key: 'misbak', field: 'misbak', label: 'Misbak', labelAmh: 'ምስባክ' },
-  { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል' },
+const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string; labelTi: string }[] = [
+  { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: 'የቅዳሴ ዓይነት', labelTi: 'ዓይነት ቅዳሴ' },
+  { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ', labelTi: 'መልእኽቲ ጳውሎስ' },
+  { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት', labelTi: 'መልእኽቲ ሓዋርያት' },
+  { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት', labelTi: 'ግብሪ ሓዋርያት' },
+  { key: 'misbak', field: 'misbak', label: 'Misbak', labelAmh: 'ምስባክ', labelTi: 'ምስባክ' },
+  { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል', labelTi: 'ወንጌል' },
 ];
 
 interface LoadedSet {
@@ -304,7 +305,7 @@ export class RenderService {
     for (const r of READING_FIELDS) {
       const value = gitsaweMeta[r.field as string];
       if (value !== undefined && value !== null && String(value).trim() !== '') {
-        readings.push({ key: r.key, label: r.label, labelAmh: r.labelAmh, value: String(value) });
+        readings.push({ key: r.key, label: r.label, labelAmh: r.labelAmh, labelTi: r.labelTi, value: String(value) });
       }
     }
     return readings;
