@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@kidase/shared": "workspace:*",
-    "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",
     "kenat": "^3.2.0",
     "pptxgenjs": "^4.0.1",
