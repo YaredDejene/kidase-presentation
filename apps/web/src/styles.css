@@ -1,5 +1,11 @@
 * { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+body { overscroll-behavior: none; }
+/* Full viewport on phones too, where the browser chrome comes and goes. */
+.app-root { height: 100vh; height: 100dvh; }
+button { touch-action: manipulation; }
+/* iOS zooms into inputs smaller than 16px. */
+@media (max-width: 768px) { input, select, .dp-trigger { font-size: 16px; } }
 body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 textarea, input, select, button { font-family: inherit; }
 ::selection { background: rgba(59,130,246,0.3); }

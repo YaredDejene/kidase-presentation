@@ -34,7 +34,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 80 }}>
       <div onClick={p.onClose} style={{ position: 'absolute', inset: 0, background: 'rgb(0 0 0 / 0.45)' }} />
-      <div style={{ position: 'absolute', top: 0, right: 0, height: '100%', width: 440, maxWidth: '92vw', display: 'flex', flexDirection: 'column', background: 'var(--surface)', borderLeft: '1px solid var(--border)', boxShadow: '-14px 0 50px rgb(0 0 0 / 0.35)', animation: 'slidein .22s ease', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: 0, right: 0, height: '100%', width: 'min(440px, 100vw)', display: 'flex', flexDirection: 'column', background: 'var(--surface)', borderLeft: '1px solid var(--border)', boxShadow: '-14px 0 50px rgb(0 0 0 / 0.35)', animation: 'slidein .22s ease', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Gear size={18} color="var(--accent)" />

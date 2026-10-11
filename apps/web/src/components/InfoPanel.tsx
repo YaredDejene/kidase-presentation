@@ -11,7 +11,7 @@ const eyebrow: React.CSSProperties = { fontSize: 11, fontWeight: 600, textTransf
 export const InfoPanel: React.FC<Props> = ({ t, onClose, render }) => (
   <div style={{ position: 'fixed', inset: 0, zIndex: 60 }}>
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgb(0 0 0 / 0.45)' }} />
-    <aside style={{ position: 'absolute', top: 0, right: 0, height: '100%', width: 384, maxWidth: '90vw', background: 'var(--surface)', borderLeft: '1px solid var(--border)', overflowY: 'auto', animation: 'slidein .22s ease', boxShadow: '-12px 0 40px rgb(0 0 0 / 0.3)' }}>
+    <aside style={{ position: 'absolute', top: 0, right: 0, height: '100%', width: 'min(384px, 100vw)', background: 'var(--surface)', borderLeft: '1px solid var(--border)', overflowY: 'auto', animation: 'slidein .22s ease', boxShadow: '-12px 0 40px rgb(0 0 0 / 0.3)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 22px', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--surface)' }}>
         <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text)' }}>{t.context}</h3>
         <button className="ic" onClick={onClose} style={iconBtn}><Close /></button>
