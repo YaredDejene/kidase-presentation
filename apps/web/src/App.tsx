@@ -77,7 +77,7 @@ function readHash(): HashState {
     if (q.get('d')) out.d = q.get('d')!;
     if (q.get('m')) out.m = q.get('m') === '1';
     if (q.get('l')) out.l = q.get('l')!.split(',').filter(Boolean) as LangSlot[];
-    if (q.get('s')) out.s = parseInt(q.get('s')!, 10) || 0;
+    if (q.get('s')) out.s = Math.max(0, parseInt(q.get('s')!, 10) || 0);
     if (q.get('ui')) out.ui = q.get('ui') as UiLang;
     if (q.get('th')) out.th = q.get('th') as ThemeName;
     if (q.get('c') === 'et' || q.get('c') === 'er') out.c = q.get('c') as Country;
@@ -272,8 +272,8 @@ export const App: React.FC = () => {
   };
 
   const dateLine = render && (
-    <button className="ic" onClick={() => setConfigOpen(true)} title={t.serviceDate} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 20, padding: '0 5px', margin: '0 -5px', borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text2)', fontSize: 12, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-      <I.Calendar size={13} color="var(--muted)" />
+    <button className="ic" onClick={() => setConfigOpen(true)} title={t.serviceDate} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 18, padding: '0 5px', margin: '0 -5px', borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text2)', fontSize: 11, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+      <I.Calendar size={12} color="var(--muted)" />
       <span style={{ fontFamily: ETHIOPIC }}>{render.context.ethDateLabel}</span>
       <span style={{ color: 'var(--muted)' }}>· {render.context.gregorian}</span>
     </button>
