@@ -43,6 +43,8 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const repoCache = cachedRepositories(opts.repos);
   const renderService = new RenderService(repoCache.repos);
   const cache = new RenderCache();
+  // Part of every render ETag so a new build invalidates what browsers kept under stale-while-revalidate.
+  const build = Date.now().toString(36);
   const maxAge = opts.renderMaxAge ?? 60;
   const adminEmail = opts.adminEmail ?? 'admin@church.org';
   const adminPassword = opts.adminPassword ?? 'changeme';
@@ -160,7 +162,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       const country = req.query.country;
       const cv = await getContentVersion(opts.db);
       repoCache.atVersion(cv);
-      const key = `${cv}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}`;
+      const key = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}`;
       const etag = `"${key}"`;
 
       if (req.headers['if-none-match'] === etag) {
