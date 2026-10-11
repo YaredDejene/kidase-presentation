@@ -27,7 +27,8 @@ interface Props {
   sections: SectionItem[];
 }
 
-const card: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 22 };
+/** One plain section per setting, separated by a rule; no cards. */
+const card: React.CSSProperties = { padding: '0 6px 18px', borderBottom: '1px solid var(--border)' };
 const h3: React.CSSProperties = { fontSize: 14, fontWeight: 600, margin: '0 0 3px', color: 'var(--text)' };
 const sub: React.CSSProperties = { fontSize: 12.5, color: 'var(--muted)', margin: '0 0 14px' };
 
@@ -45,7 +46,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
           <button className="ic" onClick={p.onClose} style={iconBtn}><Close /></button>
         </div>
 
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
           {/* sections (shown when the API provides them) */}
           {p.sections.length > 0 && (
             <section style={card}>
@@ -90,19 +91,8 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
             </div>
           </section>
 
-          {/* mehella */}
-          <section style={{ ...card, padding: '18px 22px' }}>
-            <div onClick={p.toggleMehella} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.t.mehella} <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif", fontWeight: 400, color: 'var(--text2)', marginLeft: 6 }}>መሐላ</span></div>
-                <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 2 }}>{p.t.mehellaSub}</div>
-              </div>
-              <div style={switchTrack(p.isMehella)}><span style={switchKnob(p.isMehella)} /></div>
-            </div>
-          </section>
-
           {/* country: patriarch and country placeholders */}
-          <section style={{ ...card, padding: '18px 22px' }}>
+          <section style={card}>
             <h3 style={h3}>{p.t.country}</h3>
             <p style={sub}>{p.t.countrySub}</p>
             <select value={p.country} onChange={e => p.setCountry(e.target.value as Country)} style={{ ...sel, width: '100%' }}>
@@ -111,11 +101,22 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
           </section>
 
           {/* interface language */}
-          <section style={{ ...card, padding: '18px 22px' }}>
+          <section style={card}>
             <h3 style={{ ...h3, marginBottom: 12 }}>{p.t.uiLang}</h3>
             <select value={p.uiLang} onChange={e => p.setUiLang(e.target.value as UiLang)} style={{ ...sel, width: '100%' }}>
               {UI_LANGS.map(u => <option key={u.key} value={u.key}>{u.label}</option>)}
             </select>
+          </section>
+
+          {/* mehella */}
+          <section style={card}>
+            <div onClick={p.toggleMehella} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.t.mehella} <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif", fontWeight: 400, color: 'var(--text2)', marginLeft: 6 }}>ምህላ</span></div>
+                <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 2 }}>{p.t.mehellaSub}</div>
+              </div>
+              <div style={switchTrack(p.isMehella)}><span style={switchKnob(p.isMehella)} /></div>
+            </div>
           </section>
         </div>
 

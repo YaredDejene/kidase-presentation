@@ -154,8 +154,9 @@ export const App: React.FC = () => {
         if (cancelled) return;
         setRender(payload);
         // First load honours the shared link's slide; later reloads (date, country, mehella) keep the place.
-        setSlideIndex(i => Math.min(pendingSlide.current || i, Math.max(payload.slides.length - 1, 0)));
+        const wanted = pendingSlide.current;
         pendingSlide.current = 0;
+        setSlideIndex(i => Math.min(wanted || i, Math.max(payload.slides.length - 1, 0)));
         // Start with the presentation's own selection; viewers can switch to any other language.
         const avail = payload.languages.map(l => l.slot);
         const defaults = payload.languages.filter(l => l.enabled !== false).map(l => l.slot); // older payloads have no flag
@@ -271,11 +272,10 @@ export const App: React.FC = () => {
   };
 
   const dateLine = render && (
-    <button className="ic" onClick={() => setConfigOpen(true)} title={t.serviceDate} style={{ display: 'flex', alignItems: 'center', gap: 6, height: isMobile ? 20 : 28, padding: '0 6px', margin: '0 -6px', borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text2)', fontSize: isMobile ? 12 : 13, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-      <I.Calendar size={14} color="var(--muted)" />
-      <span style={{ fontFamily: ETHIOPIC, color: 'var(--text)' }}>{render.context.ethDateLabel}</span>
-      <span style={{ color: 'var(--muted)' }}>{render.context.gregorian}</span>
-      {!isMobile && <span style={{ color: 'var(--muted)' }}>· {t.slides(slideCount)}</span>}
+    <button className="ic" onClick={() => setConfigOpen(true)} title={t.serviceDate} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 20, padding: '0 5px', margin: '0 -5px', borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text2)', fontSize: 12, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+      <I.Calendar size={13} color="var(--muted)" />
+      <span style={{ fontFamily: ETHIOPIC }}>{render.context.ethDateLabel}</span>
+      <span style={{ color: 'var(--muted)' }}>· {render.context.gregorian}</span>
     </button>
   );
 
@@ -311,9 +311,9 @@ export const App: React.FC = () => {
         )}
 
         {/* toolbar */}
-        <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '8px 12px' : '0 12px 0 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
+        <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px 6px 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
           <div style={{ ...LOGO, width: 28, height: 28, fontSize: 15 }}>ቅ</div>
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 2 : 12, minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, minWidth: 0, flex: 1 }}>
             <span style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: '-0.01em', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render?.presentation.name ?? 'Kidase'}{render?.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>
             {dateLine}
           </div>

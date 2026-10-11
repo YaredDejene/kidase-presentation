@@ -14,7 +14,7 @@ interface WebSlideRendererProps {
   block: SlideBlock;
   title: SlideTitle | null;
   footer: ResolvedFooter | null;
-  /** Slide counter drawn in the top-right corner (viewer, projection and exports; not thumbnails). */
+  /** Slide counter drawn in the bottom-right corner (viewer, projection and exports; not thumbnails). */
   pageLabel?: string;
 }
 
@@ -37,7 +37,7 @@ export const WebSlideRenderer: React.FC<WebSlideRendererProps> = React.memo(({
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <SlideView definition={def} enabledLanguages={enabledLanguages} block={block} title={title} footer={footer} />
       {pageLabel && (
-        <div style={{ position: 'absolute', top: 20, right: 40, fontSize: 28, lineHeight: 1, color: '#888888', fontFamily: `${SLIDE_FONT}, serif` }}>{pageLabel}</div>
+        <div style={{ position: 'absolute', bottom: 20, right: 40, fontSize: 28, lineHeight: 1, color: '#888888', fontFamily: `${SLIDE_FONT}, serif` }}>{pageLabel}</div>
       )}
     </div>
   );
