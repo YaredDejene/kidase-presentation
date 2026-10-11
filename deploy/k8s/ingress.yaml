@@ -1,5 +1,6 @@
 # Single domain: / -> web, /api -> api. TLS via cert-manager + Let's Encrypt.
-# Replace kidase.online with your domain.
+# Public traffic arrives through the Cloudflare proxy (SSL mode Full strict);
+# kidase.online is kept only until its edge redirect to kidase.org has bedded in.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -10,9 +11,24 @@ metadata:
 spec:
   ingressClassName: traefik
   tls:
-    - hosts: [kidase.online]
+    - hosts: [kidase.org, kidase.online]
       secretName: kidase-tls
   rules:
+    - host: kidase.org
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: kidase-api
+                port: { number: 3001 }
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kidase-web
+                port: { number: 80 }
     - host: kidase.online
       http:
         paths:

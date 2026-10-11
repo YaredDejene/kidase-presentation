@@ -39,7 +39,7 @@ function langCodes(p: Presentation): string[] {
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   // bodyLimit raised so /admin/restore can accept a full .kidase backup.
-  const app = Fastify({ logger: false, bodyLimit: 64 * 1024 * 1024 });
+  const app = Fastify({ logger: false, bodyLimit: 64 * 1024 * 1024, trustProxy: true });
   const repoCache = cachedRepositories(opts.repos);
   const renderService = new RenderService(repoCache.repos);
   const cache = new RenderCache();
