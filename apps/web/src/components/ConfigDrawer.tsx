@@ -24,6 +24,8 @@ interface Props {
   setUiLang: (l: UiLang) => void;
   country: Country;
   setCountry: (c: Country) => void;
+  /** Full link reproducing the current view. */
+  shareUrl: string;
   sections: SectionItem[];
 }
 
@@ -121,7 +123,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-          <CopyLink t={p.t} />
+          <CopyLink t={p.t} url={p.shareUrl} />
           <button className="accent-btn" onClick={p.onClose} style={{ height: 42, padding: '0 26px', borderRadius: 9, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{p.t.done}</button>
         </div>
       </div>
@@ -129,10 +131,10 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
   );
 };
 
-const CopyLink: React.FC<{ t: Strings }> = ({ t }) => {
+const CopyLink: React.FC<{ t: Strings; url: string }> = ({ t, url }) => {
   const [copied, setCopied] = React.useState(false);
   const copy = async () => {
-    try { await navigator.clipboard.writeText(location.href); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* ignore */ }
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* ignore */ }
   };
   return (
     <button className="outline-btn" onClick={copy} style={{ height: 42, padding: '0 16px', borderRadius: 9, border: '1px solid var(--border2)', background: 'transparent', color: copied ? 'var(--accent)' : 'var(--text2)', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>

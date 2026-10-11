@@ -65,29 +65,39 @@ function useSwipe(onLeft: () => void, onRight: () => void) {
   };
 }
 
-/** Shareable view state encoded in the URL hash. */
-interface HashState {
-  p?: string; d?: string; m?: boolean; l?: LangSlot[]; s?: number; ui?: UiLang; th?: ThemeName; c?: Country;
+/**
+ * The address bar stays clean. A share link carries the view in readable
+ * query words (date, slide, country, languages, mehella, presentation), is
+ * applied once on load and then removed from the address bar. Preferences
+ * live in localStorage; the date and slide of the current tab in
+ * sessionStorage, for today only, so a refresh during a service keeps the
+ * place while tomorrow starts fresh.
+ */
+interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean }
+function readLink(): Link {
+  const q = new URLSearchParams(location.search);
+  const out: Link = {};
+  if (q.get('presentation')) out.presentation = q.get('presentation')!;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(q.get('date') ?? '')) out.date = q.get('date')!;
+  if (q.get('slide')) out.slide = Math.max(0, (parseInt(q.get('slide')!, 10) || 1) - 1);
+  if (q.get('country') === 'ethiopia') out.country = 'et';
+  if (q.get('country') === 'eritrea') out.country = 'er';
+  if (q.get('languages')) out.languages = q.get('languages')!.split(',').filter(Boolean);
+  if (q.get('mehella') === '1') out.mehella = true;
+  return out;
 }
-function readHash(): HashState {
-  try {
-    const q = new URLSearchParams((location.hash || '').replace(/^#/, ''));
-    const out: HashState = {};
-    if (q.get('p')) out.p = q.get('p')!;
-    if (q.get('d')) out.d = q.get('d')!;
-    if (q.get('m')) out.m = q.get('m') === '1';
-    if (q.get('l')) out.l = q.get('l')!.split(',').filter(Boolean) as LangSlot[];
-    if (q.get('s')) out.s = Math.max(0, parseInt(q.get('s')!, 10) || 0);
-    if (q.get('ui')) out.ui = q.get('ui') as UiLang;
-    if (q.get('th')) out.th = q.get('th') as ThemeName;
-    if (q.get('c') === 'et' || q.get('c') === 'er') out.c = q.get('c') as Country;
-    return out;
-  } catch { return {}; }
+const LINK = readLink();
+if (location.search) { try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ } }
+const langSlug = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '-');
+const COUNTRY_WORD: Record<Country, string> = { et: 'ethiopia', er: 'eritrea' };
+
+interface Prefs { ui?: UiLang; theme?: ThemeName; country?: Country; mehella?: boolean; languages?: LangSlot[] }
+interface Session { day: string; presentation?: string; date: string; slide: number }
+function readJson<T>(store: Storage, key: string): T | null {
+  try { return JSON.parse(store.getItem(key) ?? 'null'); } catch { return null; }
 }
-const HASH = readHash();
-function storedCountry(): Country | null {
-  try { const c = localStorage.getItem('kidase_country'); return c === 'er' || c === 'et' ? c : null; } catch { return null; }
-}
+const PREFS: Prefs = readJson<Prefs>(localStorage, 'kidase_prefs') ?? {};
+const SESSION: Session | null = (() => { const s = readJson<Session>(sessionStorage, 'kidase_session'); return s?.day === todayIso() ? s : null; })();
 
 const ETHIOPIC = "'Noto Serif Ethiopic Variable',serif";
 const LOGO: React.CSSProperties = {
@@ -102,15 +112,17 @@ const languageCapacity = (payload: RenderPayload) =>
 
 export const App: React.FC = () => {
   const isMobile = useMediaQuery(MOBILE_QUERY);
-  const [theme, setTheme] = useState<ThemeName>(HASH.th ?? 'dark');
-  const [uiLang, setUiLang] = useState<UiLang>(HASH.ui ?? 'en');
-  const [selectedId, setSelectedId] = useState<string>(HASH.p ?? '');
-  const [gregDate, setGregDate] = useState<string>(HASH.d ?? todayIso());
-  const [isMehella, setIsMehella] = useState(HASH.m ?? false);
-  const [country, setCountry] = useState<Country>(HASH.c ?? storedCountry() ?? 'et');
-  useEffect(() => { try { localStorage.setItem('kidase_country', country); } catch { /* ignore */ } }, [country]);
-  const [activeSlots, setActiveSlots] = useState<LangSlot[]>(HASH.l ?? []);
-  const pendingSlide = useRef<number>(HASH.s ?? 0);
+  const [theme, setTheme] = useState<ThemeName>(PREFS.theme ?? 'dark');
+  const [uiLang, setUiLang] = useState<UiLang>(PREFS.ui ?? 'en');
+  const [defaultId, setDefaultId] = useState<string>('');
+  const [selectedId, setSelectedId] = useState<string>(LINK.presentation ?? SESSION?.presentation ?? '');
+  const [gregDate, setGregDate] = useState<string>(LINK.date ?? SESSION?.date ?? todayIso());
+  const [isMehella, setIsMehella] = useState(LINK.mehella ?? PREFS.mehella ?? false);
+  const [country, setCountry] = useState<Country>(LINK.country ?? PREFS.country ?? 'et');
+  const [activeSlots, setActiveSlots] = useState<LangSlot[]>(PREFS.languages ?? []);
+  const pendingSlide = useRef<number>(LINK.slide ?? SESSION?.slide ?? 0);
+  // Language names from a share link, resolved against the payload once it arrives.
+  const pendingLanguages = useRef<string[] | undefined>(LINK.languages);
   const [render, setRender] = useState<RenderPayload | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -141,7 +153,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     fetchPresentations().then(list => {
-      if (list.length) setSelectedId(prev => prev || list[0].id);
+      if (list.length) { setDefaultId(list[0].id); setSelectedId(prev => prev || list[0].id); }
     }).catch(e => setError(String(e.message ?? e)));
   }, []);
 
@@ -161,7 +173,9 @@ export const App: React.FC = () => {
         const avail = payload.languages.map(l => l.slot);
         const defaults = payload.languages.filter(l => l.enabled !== false).map(l => l.slot); // older payloads have no flag
         const cap = languageCapacity(payload);
-        setActiveSlots(prev => { const kept = prev.filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : defaults.slice(0, cap); });
+        const linked = pendingLanguages.current?.map(n => payload.languages.find(l => langSlug(l.name) === n)?.slot).filter((s): s is LangSlot => !!s);
+        pendingLanguages.current = undefined;
+        setActiveSlots(prev => { const kept = (linked?.length ? linked : prev).filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : defaults.slice(0, cap); });
       })
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
@@ -225,19 +239,26 @@ export const App: React.FC = () => {
   // Stable identity so the memoized slide renderers skip work when the selection is unchanged.
   const activeLanguages = useMemo(() => (render?.languages ?? []).filter(l => activeSlots.includes(l.slot)), [render, activeSlots]);
 
-  // Sync shareable view state into the URL hash so "Copy share link" reproduces the view.
   useEffect(() => {
+    const prefs: Prefs = { ui: uiLang, theme, country, mehella: isMehella, languages: activeSlots };
+    try { localStorage.setItem('kidase_prefs', JSON.stringify(prefs)); } catch { /* ignore */ }
+  }, [uiLang, theme, country, isMehella, activeSlots]);
+  useEffect(() => {
+    const session: Session = { day: todayIso(), presentation: selectedId, date: gregDate, slide: slideIndex };
+    try { sessionStorage.setItem('kidase_session', JSON.stringify(session)); } catch { /* ignore */ }
+  }, [selectedId, gregDate, slideIndex]);
+
+  // Built on demand for "Copy share link"; the address bar itself stays clean.
+  const shareUrl = useMemo(() => {
     const q = new URLSearchParams();
-    if (selectedId) q.set('p', selectedId);
-    q.set('d', gregDate);
-    q.set('m', isMehella ? '1' : '0');
-    if (activeSlots.length) q.set('l', activeSlots.join(','));
-    q.set('s', String(slideIndex));
-    if (uiLang !== 'en') q.set('ui', uiLang);
-    if (theme !== 'dark') q.set('th', theme);
-    if (country !== 'et') q.set('c', country);
-    try { history.replaceState(null, '', `#${q.toString()}`); } catch { /* ignore */ }
-  }, [selectedId, gregDate, isMehella, activeSlots, slideIndex, uiLang, theme, country]);
+    q.set('date', gregDate);
+    q.set('slide', String(slideIndex + 1));
+    q.set('country', COUNTRY_WORD[country]);
+    if (activeLanguages.length) q.set('languages', activeLanguages.map(l => langSlug(l.name)).join(','));
+    if (isMehella) q.set('mehella', '1');
+    if (selectedId && selectedId !== defaultId) q.set('presentation', selectedId);
+    return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',')}`;
+  }, [gregDate, slideIndex, country, activeLanguages, isMehella, selectedId, defaultId]);
 
   // Keep the active thumbnail in view in the rail or the strip.
   const activeThumb = useRef<HTMLDivElement>(null);
@@ -407,6 +428,7 @@ export const App: React.FC = () => {
           isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
           uiLang={uiLang} setUiLang={setUiLang}
           country={country} setCountry={setCountry}
+          shareUrl={shareUrl}
           sections={[]}
         />
       )}
