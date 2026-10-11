@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LangSlot } from '@kidase/shared';
+import type { LangSlot, Country } from '@kidase/shared';
 import { isVerseSlide, DEFAULT_LANG_COLORS } from '@kidase/shared';
 import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
@@ -26,63 +26,121 @@ function fsElement(): Element | null {
   const d = document as FsDoc;
   return document.fullscreenElement ?? d.webkitFullscreenElement ?? null;
 }
-function requestFs(el: HTMLElement) {
+/** iPhone Safari has no element fullscreen; the caller then shows the overlay without it. */
+function requestFs(el: HTMLElement): boolean {
   const e = el as FsEl;
-  (e.requestFullscreen ?? e.webkitRequestFullscreen)?.call(e);
+  const fn = e.requestFullscreen ?? e.webkitRequestFullscreen;
+  if (!fn) return false;
+  fn.call(e);
+  return true;
 }
 function exitFs() {
   const d = document as FsDoc;
   (d.exitFullscreen ?? d.webkitExitFullscreen)?.call(d);
 }
 
-/** Shareable view state encoded in the URL hash. */
-interface HashState {
-  p?: string; d?: string; m?: boolean; l?: LangSlot[]; s?: number; ui?: UiLang; th?: ThemeName;
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setMatches(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [query]);
+  return matches;
 }
-function readHash(): HashState {
-  try {
-    const q = new URLSearchParams((location.hash || '').replace(/^#/, ''));
-    const out: HashState = {};
-    if (q.get('p')) out.p = q.get('p')!;
-    if (q.get('d')) out.d = q.get('d')!;
-    if (q.get('m')) out.m = q.get('m') === '1';
-    if (q.get('l')) out.l = q.get('l')!.split(',').filter(Boolean) as LangSlot[];
-    if (q.get('s')) out.s = parseInt(q.get('s')!, 10) || 0;
-    if (q.get('ui')) out.ui = q.get('ui') as UiLang;
-    if (q.get('th')) out.th = q.get('th') as ThemeName;
-    return out;
-  } catch { return {}; }
-}
-const HASH = readHash();
 
+/** Horizontal swipe handlers: a clear sideways move (over 50px) turns the page. */
+function useSwipe(onLeft: () => void, onRight: () => void) {
+  const start = useRef<{ x: number; y: number } | null>(null);
+  return {
+    onTouchStart: (e: React.TouchEvent) => { const t = e.touches[0]; start.current = { x: t.clientX, y: t.clientY }; },
+    onTouchEnd: (e: React.TouchEvent) => {
+      const s = start.current; start.current = null;
+      if (!s) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - s.x, dy = t.clientY - s.y;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) (dx < 0 ? onLeft : onRight)();
+    },
+  };
+}
+
+/**
+ * The address bar stays clean. A share link carries the view in readable
+ * query words (date, slide, country, languages, mehella, presentation), is
+ * applied once on load and then removed from the address bar. Preferences
+ * live in localStorage; the date and slide of the current tab in
+ * sessionStorage, for today only, so a refresh during a service keeps the
+ * place while tomorrow starts fresh.
+ */
+interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean }
+function readLink(): Link {
+  const q = new URLSearchParams(location.search);
+  const out: Link = {};
+  if (q.get('presentation')) out.presentation = q.get('presentation')!;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(q.get('date') ?? '')) out.date = q.get('date')!;
+  if (q.get('slide')) out.slide = Math.max(0, (parseInt(q.get('slide')!, 10) || 1) - 1);
+  if (q.get('country') === 'ethiopia') out.country = 'et';
+  if (q.get('country') === 'eritrea') out.country = 'er';
+  if (q.get('country') === 'ethiopia-eritrea') out.country = 'both';
+  if (q.get('languages')) out.languages = q.get('languages')!.split(',').filter(Boolean);
+  if (q.get('mehella') === '1') out.mehella = true;
+  return out;
+}
+const LINK = readLink();
+if (location.search) { try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ } }
+const langSlug = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '-');
+const COUNTRY_WORD: Record<Country, string> = { et: 'ethiopia', er: 'eritrea', both: 'ethiopia-eritrea' };
+
+interface Prefs { ui?: UiLang; theme?: ThemeName; country?: Country; mehella?: boolean; languages?: LangSlot[] }
+interface Session { day: string; presentation?: string; date: string; slide: number }
+function readJson<T>(store: Storage, key: string): T | null {
+  try { return JSON.parse(store.getItem(key) ?? 'null'); } catch { return null; }
+}
+const PREFS: Prefs = readJson<Prefs>(localStorage, 'kidase_prefs') ?? {};
+const SESSION: Session | null = (() => { const s = readJson<Session>(sessionStorage, 'kidase_session'); return s?.day === todayIso() ? s : null; })();
+
+const ETHIOPIC = "'Noto Serif Ethiopic Variable',serif";
 const LOGO: React.CSSProperties = {
   borderRadius: 7, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: '#fff', fontWeight: 700, fontFamily: "'Noto Serif Ethiopic Variable',serif", flexShrink: 0,
+  color: '#fff', fontWeight: 700, fontFamily: ETHIOPIC, flexShrink: 0,
 };
+const MOBILE_QUERY = '(max-width: 768px)';
 
 /** Most languages any template in the payload shows at once; slides with smaller templates show the first ones. */
 const languageCapacity = (payload: RenderPayload) =>
   Math.max(0, ...Object.values(payload.templates).map(def => def.languages.length));
 
 export const App: React.FC = () => {
-  const [theme, setTheme] = useState<ThemeName>(HASH.th ?? 'dark');
-  const [uiLang, setUiLang] = useState<UiLang>(HASH.ui ?? 'en');
-  const [selectedId, setSelectedId] = useState<string>(HASH.p ?? '');
-  const [gregDate, setGregDate] = useState<string>(HASH.d ?? todayIso());
-  const [isMehella, setIsMehella] = useState(HASH.m ?? false);
-  const [activeSlots, setActiveSlots] = useState<LangSlot[]>(HASH.l ?? []);
-  const pendingSlide = useRef<number>(HASH.s ?? 0);
+  const isMobile = useMediaQuery(MOBILE_QUERY);
+  const [theme, setTheme] = useState<ThemeName>(PREFS.theme ?? 'dark');
+  const [uiLang, setUiLang] = useState<UiLang>(PREFS.ui ?? 'en');
+  const [defaultId, setDefaultId] = useState<string>('');
+  // The remembered liturgy is only used once the list confirms it still exists (data reloads change ids).
+  const [selectedId, setSelectedId] = useState<string>('');
+  const wantedId = useRef<string | undefined>(LINK.presentation ?? SESSION?.presentation);
+  const [gregDate, setGregDate] = useState<string>(LINK.date ?? SESSION?.date ?? todayIso());
+  const [isMehella, setIsMehella] = useState(LINK.mehella ?? PREFS.mehella ?? false);
+  const [country, setCountry] = useState<Country>(LINK.country ?? PREFS.country ?? 'et');
+  const [activeSlots, setActiveSlots] = useState<LangSlot[]>(PREFS.languages ?? []);
+  const pendingSlide = useRef<number>(LINK.slide ?? SESSION?.slide ?? 0);
+  // Language names from a share link, resolved against the payload once it arrives.
+  const pendingLanguages = useRef<string[] | undefined>(LINK.languages);
   const [render, setRender] = useState<RenderPayload | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [railOpen, setRailOpen] = useState(true);
+  const [railOpen, setRailOpen] = useState(() => !window.matchMedia(MOBILE_QUERY).matches);
   const [configOpen, setConfigOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [apiFullscreen, setApiFullscreen] = useState(false);
+  // Projection without the Fullscreen API (iPhone): the same overlay, inside the browser window.
+  const [manualFullscreen, setManualFullscreen] = useState(false);
+  const fullscreen = apiFullscreen || manualFullscreen;
   const [screen, setScreen] = useState<'viewer' | 'admin'>('viewer');
   const [adminToken, setAdminToken] = useState<string | null>(() => { try { return localStorage.getItem('kidase_admin_token'); } catch { return null; } });
   const updateToken = useCallback((tk: string | null) => {
@@ -94,10 +152,11 @@ export const App: React.FC = () => {
 
   const t = T[uiLang];
   const isDark = theme === 'dark';
+  useEffect(() => { document.documentElement.lang = uiLang; }, [uiLang]);
 
   useEffect(() => {
     fetchPresentations().then(list => {
-      if (list.length) setSelectedId(prev => prev || list[0].id);
+      if (list.length) { setDefaultId(list[0].id); setSelectedId(prev => prev || list.find(p => p.id === wantedId.current)?.id || list[0].id); }
     }).catch(e => setError(String(e.message ?? e)));
   }, []);
 
@@ -105,41 +164,53 @@ export const App: React.FC = () => {
     if (!selectedId) return;
     let cancelled = false;
     setLoading(true); setError(null);
-    fetchRender(selectedId, gregDate, isMehella)
+    fetchRender(selectedId, gregDate, isMehella, country)
       .then(payload => {
         if (cancelled) return;
         setRender(payload);
-        setSlideIndex(Math.min(pendingSlide.current, Math.max(payload.slides.length - 1, 0)));
+        // First load honours the shared link's slide; later reloads (date, country, mehella) keep the place.
+        const wanted = pendingSlide.current;
         pendingSlide.current = 0;
+        setSlideIndex(i => Math.min(wanted || i, Math.max(payload.slides.length - 1, 0)));
         // Start with the presentation's own selection; viewers can switch to any other language.
         const avail = payload.languages.map(l => l.slot);
         const defaults = payload.languages.filter(l => l.enabled !== false).map(l => l.slot); // older payloads have no flag
         const cap = languageCapacity(payload);
-        setActiveSlots(prev => { const kept = prev.filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : defaults.slice(0, cap); });
+        const linked = pendingLanguages.current?.map(n => payload.languages.find(l => langSlug(l.name) === n)?.slot).filter((s): s is LangSlot => !!s);
+        pendingLanguages.current = undefined;
+        setActiveSlots(prev => { const kept = (linked?.length ? linked : prev).filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : defaults.slice(0, cap); });
       })
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [selectedId, gregDate, isMehella]);
+  }, [selectedId, gregDate, isMehella, country]);
 
   const slideCount = render?.slides.length ?? 0;
   const next = useCallback(() => setSlideIndex(i => Math.min(i + 1, Math.max(slideCount - 1, 0))), [slideCount]);
   const prev = useCallback(() => setSlideIndex(i => Math.max(i - 1, 0)), []);
+  const swipe = useSwipe(next, prev);
 
   const bumpControls = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     setControlsVisible(true);
     hideTimer.current = setTimeout(() => setControlsVisible(false), 2800);
   }, []);
-  // "Project" enters real browser fullscreen (hides the address bar / OS chrome).
-  const toggleFullscreen = useCallback(() => {
-    if (fsElement()) exitFs(); else requestFs(document.documentElement);
+  const exitProjection = useCallback(() => {
+    if (fsElement()) exitFs();
+    setManualFullscreen(false);
   }, []);
+  // "Project" enters real browser fullscreen (hides the address bar / OS chrome) where the browser allows it.
+  const toggleFullscreen = useCallback(() => {
+    if (fullscreen) { exitProjection(); return; }
+    if (!requestFs(document.documentElement)) setManualFullscreen(true);
+    // Phones: ask for landscape; only Android honours it, elsewhere it rejects quietly.
+    try { (screen as unknown as { orientation?: { lock?: (o: string) => Promise<void> } }).orientation?.lock?.('landscape')?.catch(() => { /* ignore */ }); } catch { /* ignore */ }
+  }, [fullscreen, exitProjection]);
 
   // Keep the projection overlay in sync with the actual fullscreen state
   // (covers Esc, F11, and the OS exiting fullscreen).
   useEffect(() => {
-    const onChange = () => { setFullscreen(!!fsElement()); setControlsVisible(true); bumpControls(); };
+    const onChange = () => { setApiFullscreen(!!fsElement()); setControlsVisible(true); bumpControls(); };
     document.addEventListener('fullscreenchange', onChange);
     document.addEventListener('webkitfullscreenchange', onChange);
     return () => {
@@ -158,12 +229,12 @@ export const App: React.FC = () => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); next(); }
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
       else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
-      else if (e.key === 'Escape' && fullscreen) exitFs();
+      else if (e.key === 'Escape' && fullscreen) exitProjection();
       else if (e.key === 'i' || e.key === 'I') setInfoOpen(v => !v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [helpOpen, configOpen, exportOpen, infoOpen, fullscreen, next, prev, toggleFullscreen]);
+  }, [helpOpen, configOpen, exportOpen, infoOpen, fullscreen, next, prev, toggleFullscreen, exitProjection]);
 
   const capacity = render ? languageCapacity(render) : 0;
   const toggleLang = (slot: LangSlot) => setActiveSlots(prev =>
@@ -171,84 +242,128 @@ export const App: React.FC = () => {
   // Stable identity so the memoized slide renderers skip work when the selection is unchanged.
   const activeLanguages = useMemo(() => (render?.languages ?? []).filter(l => activeSlots.includes(l.slot)), [render, activeSlots]);
 
-  // Sync shareable view state into the URL hash so "Copy share link" reproduces the view.
   useEffect(() => {
+    const prefs: Prefs = { ui: uiLang, theme, country, mehella: isMehella, languages: activeSlots };
+    try { localStorage.setItem('kidase_prefs', JSON.stringify(prefs)); } catch { /* ignore */ }
+  }, [uiLang, theme, country, isMehella, activeSlots]);
+  useEffect(() => {
+    const session: Session = { day: todayIso(), presentation: selectedId, date: gregDate, slide: slideIndex };
+    try { sessionStorage.setItem('kidase_session', JSON.stringify(session)); } catch { /* ignore */ }
+  }, [selectedId, gregDate, slideIndex]);
+
+  // Built on demand for "Copy share link"; the address bar itself stays clean.
+  const shareUrl = useMemo(() => {
     const q = new URLSearchParams();
-    if (selectedId) q.set('p', selectedId);
-    q.set('d', gregDate);
-    q.set('m', isMehella ? '1' : '0');
-    if (activeSlots.length) q.set('l', activeSlots.join(','));
-    q.set('s', String(slideIndex));
-    if (uiLang !== 'en') q.set('ui', uiLang);
-    if (theme !== 'dark') q.set('th', theme);
-    try { history.replaceState(null, '', `#${q.toString()}`); } catch { /* ignore */ }
-  }, [selectedId, gregDate, isMehella, activeSlots, slideIndex, uiLang, theme]);
+    q.set('date', gregDate);
+    q.set('slide', String(slideIndex + 1));
+    q.set('country', COUNTRY_WORD[country]);
+    if (activeLanguages.length) q.set('languages', activeLanguages.map(l => langSlug(l.name)).join(','));
+    if (isMehella) q.set('mehella', '1');
+    if (selectedId && selectedId !== defaultId) q.set('presentation', selectedId);
+    return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',')}`;
+  }, [gregDate, slideIndex, country, activeLanguages, isMehella, selectedId, defaultId]);
+
+  // Keep the active thumbnail in view in the rail or the strip.
+  const activeThumb = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    activeThumb.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [slideIndex, railOpen, isMobile]);
 
   const current = render?.slides[slideIndex];
   const definition = current ? render?.templates[current.templateId] : undefined;
+  const pageLabel = slideCount ? `${slideIndex + 1} / ${slideCount}` : '';
 
-  const rootStyle: React.CSSProperties = { minHeight: '100vh', height: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'system-ui,-apple-system,"Segoe UI",sans-serif', ...themeVars(theme) };
+  const rootStyle: React.CSSProperties = { background: 'var(--bg)', color: 'var(--text)', fontFamily: 'system-ui,-apple-system,"Segoe UI",sans-serif', ...themeVars(theme) };
 
   const slideStage = (slide: NonNullable<typeof current>, def: NonNullable<typeof definition>) => (
     <Stage>
-      <WebSlideRenderer definition={def} languages={activeLanguages} block={slide.block} title={slide.title} footer={slide.footer} />
+      <WebSlideRenderer definition={def} languages={activeLanguages} block={slide.block} title={slide.title} footer={slide.footer} pageLabel={pageLabel} />
     </Stage>
   );
 
-  return (
-    <div style={rootStyle}>
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden', position: 'relative' }}>
-
-        {/* floating nav pill */}
-        <div style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 20, display: 'flex', alignItems: 'center', gap: 2, background: 'var(--surface)', borderRadius: 11, padding: 4, boxShadow: '0 6px 22px rgb(0 0 0 / 0.32)' }}>
-          <button className="ic" onClick={() => setRailOpen(v => !v)} title="Toggle thumbnails" style={iconBtn}><I.Layout /></button>
-          <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
-          <button className="ic" onClick={prev} title="Previous (←)" style={iconBtn}><I.ChevronLeft /></button>
-          <span style={{ fontSize: 13, color: 'var(--text)', minWidth: 52, textAlign: 'center', fontWeight: 500 }}>{slideCount ? slideIndex + 1 : 0} / {slideCount}</span>
-          <button className="ic" onClick={next} title="Next (→)" style={iconBtn}><I.ChevronRight /></button>
+  const thumbnail = (s: RenderPayload['slides'][number], i: number) => {
+    const def = render!.templates[s.templateId];
+    const activeRow = i === slideIndex;
+    const isVerse = isVerseSlide(s.id); // dynamically loaded verse, marked like desktop
+    return (
+      <div key={s.id} ref={activeRow ? activeThumb : undefined} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', flexShrink: 0, border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, boxShadow: isVerse ? 'inset 3px 0 0 #4a6a4a' : undefined, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
+        <span style={{ fontSize: 11, color: isVerse ? '#9a8acd' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
+        <div style={{ width: 150, height: 84, flexShrink: 0, borderRadius: 5, overflow: 'hidden', background: '#000' }}>
+          {def && <LazyMount><Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} /></Stage></LazyMount>}
         </div>
+      </div>
+    );
+  };
+
+  const dateLine = render && (
+    <button className="ic" onClick={() => setConfigOpen(true)} title={t.serviceDate} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 18, padding: '0 5px', margin: '0 -5px', borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text2)', fontSize: 11, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+      <I.Calendar size={12} color="var(--muted)" />
+      <span style={{ fontFamily: ETHIOPIC }}>{render.context.ethDateLabel}</span>
+      <span style={{ color: 'var(--muted)' }}>· {render.context.gregorian}</span>
+    </button>
+  );
+
+  const projectBtn = (
+    <button className="accent-btn" onClick={toggleFullscreen} title={`${t.project} (F)`} style={{ height: isMobile ? 40 : 36, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 7, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
+      <I.Project /> {t.project}
+    </button>
+  );
+  const themeBtn = (
+    <button className="ic" onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} title={isDark ? t.themeLight : t.themeDark} style={iconBtn}>{isDark ? <I.Sun /> : <I.Moon />}</button>
+  );
+
+  const moreItems: { label: string; icon: React.ReactNode; run: () => void }[] = [
+    { label: t.context, icon: <I.Info />, run: () => setInfoOpen(true) },
+    { label: t.exportTip, icon: <I.Download />, run: () => setExportOpen(true) },
+    { label: isDark ? t.themeLight : t.themeDark, icon: isDark ? <I.Sun /> : <I.Moon />, run: () => setTheme(v => v === 'dark' ? 'light' : 'dark') },
+    { label: t.admin, icon: <I.Users />, run: () => setScreen('admin') },
+  ];
+
+  return (
+    <div className="app-root" style={rootStyle}>
+      <div className="app-root" style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden', position: 'relative' }}>
+
+        {/* floating nav pill (desktop) */}
+        {!isMobile && (
+          <div style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 20, display: 'flex', alignItems: 'center', gap: 2, background: 'var(--surface)', borderRadius: 11, padding: 4, boxShadow: '0 6px 22px rgb(0 0 0 / 0.32)' }}>
+            <button className="ic" onClick={() => setRailOpen(v => !v)} title={t.toggleThumbs} style={iconBtn}><I.Layout /></button>
+            <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
+            <button className="ic" onClick={prev} title={`${t.prevSlide} (←)`} style={iconBtn}><I.ChevronLeft /></button>
+            <span style={{ fontSize: 13, color: 'var(--text)', minWidth: 52, textAlign: 'center', fontWeight: 500 }}>{slideCount ? slideIndex + 1 : 0} / {slideCount}</span>
+            <button className="ic" onClick={next} title={`${t.nextSlide} (→)`} style={iconBtn}><I.ChevronRight /></button>
+          </div>
+        )}
 
         {/* toolbar */}
-        <div style={{ height: 56, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px 0 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-            <div style={{ ...LOGO, width: 28, height: 28, fontSize: 15 }}>ቅ</div>
-            <span style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: '-0.01em', color: 'var(--text)' }}>{render?.presentation.name ?? 'Kidase'}{render?.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>
-            {render && <span style={{ fontSize: 13, color: 'var(--muted)' }}>{slideCount} slides</span>}
+        <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px 6px 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
+          <div style={{ ...LOGO, width: 28, height: 28, fontSize: 15 }}>ቅ</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, minWidth: 0, flex: 1 }}>
+            <span style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: '-0.01em', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render?.presentation.name ?? 'Kidase'}{render?.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>
+            {dateLine}
           </div>
-          <div style={{ flex: 1 }} />
-          <button className="ic" onClick={() => setHelpOpen(true)} title="Keyboard shortcuts (?)" style={iconBtn}><I.Help /></button>
-          <button className="ic" onClick={() => setInfoOpen(true)} title="Liturgical info (i)" style={iconBtn}><I.Info /></button>
-          <button className="ic" onClick={() => setExportOpen(true)} title="Export / Download" style={iconBtn}><I.Download /></button>
-          <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
-          <button className="ic" onClick={() => setConfigOpen(true)} title="Settings (date & languages)" style={iconBtn}><I.Gear /></button>
-          <button className="ic" onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} title="Toggle theme" style={iconBtn}>{isDark ? <I.Sun /> : <I.Moon />}</button>
-          <button className="ic" onClick={() => setScreen('admin')} title="Admin" style={iconBtn}><I.Users /></button>
-          <button className="accent-btn" onClick={toggleFullscreen} title="Project fullscreen (F)" style={{ height: 36, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 7, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
-            <I.Project /> Project
-          </button>
+          {!isMobile && (
+            <>
+              <button className="ic" onClick={() => setHelpOpen(true)} title={`${t.shortcuts} (?)`} style={iconBtn}><I.Help /></button>
+              <button className="ic" onClick={() => setInfoOpen(true)} title={`${t.context} (i)`} style={iconBtn}><I.Info /></button>
+              <button className="ic" onClick={() => setExportOpen(true)} title={t.exportTip} style={iconBtn}><I.Download /></button>
+              <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
+              <button className="ic" onClick={() => setConfigOpen(true)} title={t.settingsTip} style={iconBtn}><I.Gear /></button>
+              {themeBtn}
+              <button className="ic" onClick={() => setScreen('admin')} title={t.admin} style={iconBtn}><I.Users /></button>
+              {projectBtn}
+            </>
+          )}
         </div>
 
         {/* body */}
-        <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-          {railOpen && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', minHeight: 0 }}>
+          {railOpen && !isMobile && (
             <div style={{ width: 214, borderRight: '1px solid var(--border)', background: 'var(--surface)', overflowX: 'hidden', overflowY: 'auto', padding: '10px 10px 64px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-              {render?.slides.map((s, i) => {
-                const def = render.templates[s.templateId];
-                const activeRow = i === slideIndex;
-                const isVerse = isVerseSlide(s.id); // dynamically loaded verse, marked like desktop
-                return (
-                  <div key={s.id} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, boxShadow: isVerse ? 'inset 3px 0 0 #4a6a4a' : undefined, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
-                    <span style={{ fontSize: 11, color: isVerse ? '#9a8acd' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
-                    <div style={{ width: 150, height: 84, flexShrink: 0, borderRadius: 5, overflow: 'hidden', background: '#000' }}>
-                      {def && <LazyMount><Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} /></Stage></LazyMount>}
-                    </div>
-                  </div>
-                );
-              })}
+              {render?.slides.map(thumbnail)}
             </div>
           )}
 
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 36, minWidth: 0, containerType: 'size' }}>
+          <div {...swipe} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 12 : 36, minWidth: 0, minHeight: 0, containerType: 'size' }}>
             {loading && (
               <div style={{ width: 'min(100cqw, calc(100cqh * 16 / 9))', aspectRatio: '16/9', borderRadius: 10, background: '#0c0c0c', outline: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: 13 }}>{t.loadingSlide}</div>
             )}
@@ -267,13 +382,45 @@ export const App: React.FC = () => {
             {!loading && !error && render && render.slides.length === 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', maxWidth: 380 }}>
                 <div style={{ width: 54, height: 54, borderRadius: 14, background: 'var(--elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><I.Calendar color="var(--muted)" /></div>
-                <h3 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 6px', color: 'var(--text)' }}>No slides for this date</h3>
-                <p style={{ fontSize: 14, color: 'var(--text2)', margin: '0 0 18px' }}>This liturgy has no readings assigned to the selected gitsawe. Try another date.</p>
-                <button className="outline-btn" onClick={() => setConfigOpen(true)} style={{ height: 38, padding: '0 18px', borderRadius: 8, border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Change date</button>
+                <h3 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 6px', color: 'var(--text)' }}>{t.noSlidesTitle}</h3>
+                <p style={{ fontSize: 14, color: 'var(--text2)', margin: '0 0 18px' }}>{t.noSlidesSub}</p>
+                <button className="outline-btn" onClick={() => setConfigOpen(true)} style={{ height: 38, padding: '0 18px', borderRadius: 8, border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>{t.changeDate}</button>
               </div>
             )}
           </div>
+
+          {railOpen && isMobile && (
+            <div style={{ display: 'flex', flexDirection: 'row', gap: 6, padding: '6px 10px', overflowX: 'auto', overflowY: 'hidden', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
+              {render?.slides.map(thumbnail)}
+            </div>
+          )}
         </div>
+
+        {/* bottom action bar (mobile) */}
+        {isMobile && (
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: '6px 8px', paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
+            <button className="ic" onClick={() => setRailOpen(v => !v)} title={t.toggleThumbs} style={mobileBtn}><I.Layout /></button>
+            <button className="ic" onClick={prev} title={t.prevSlide} style={mobileBtn}><I.ChevronLeft /></button>
+            <span style={{ fontSize: 13, color: 'var(--text)', minWidth: 52, textAlign: 'center', fontWeight: 500 }}>{slideCount ? slideIndex + 1 : 0} / {slideCount}</span>
+            <button className="ic" onClick={next} title={t.nextSlide} style={mobileBtn}><I.ChevronRight /></button>
+            <div style={{ flex: 1 }} />
+            <button className="ic" onClick={() => setConfigOpen(true)} title={t.settingsTip} style={mobileBtn}><I.Gear /></button>
+            {projectBtn}
+            <button className="ic" onClick={() => setMoreOpen(v => !v)} title={t.more} style={mobileBtn}><I.More /></button>
+            {moreOpen && (
+              <>
+                <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
+                <div style={{ position: 'absolute', bottom: '100%', right: 8, marginBottom: 6, zIndex: 31, minWidth: 200, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 12px 40px rgb(0 0 0 / 0.4)', padding: 6, animation: 'fadeup .15s ease' }}>
+                  {moreItems.map(item => (
+                    <button key={item.label} className="row-hover" onClick={() => { setMoreOpen(false); item.run(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', height: 44, padding: '0 12px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 14, cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ color: 'var(--text2)', display: 'flex' }}>{item.icon}</span>{item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {configOpen && (
@@ -283,22 +430,24 @@ export const App: React.FC = () => {
           languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
           isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
           uiLang={uiLang} setUiLang={setUiLang}
+          country={country} setCountry={setCountry}
+          shareUrl={shareUrl}
           sections={[]}
         />
       )}
-      {infoOpen && <InfoPanel t={t} onClose={() => setInfoOpen(false)} render={render} />}
-      {exportOpen && render && <ExportDialog onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
+      {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} onJump={i => { setSlideIndex(i); setInfoOpen(false); }} />}
+      {exportOpen && render && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
       {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
 
       {/* fullscreen projection */}
       {fullscreen && current && definition && (
-        <div onMouseMove={bumpControls} style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', containerType: 'size', cursor: controlsVisible ? 'default' : 'none' }}>
+        <div {...swipe} onMouseMove={bumpControls} onPointerDown={bumpControls} style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', containerType: 'size', cursor: controlsVisible ? 'default' : 'none' }}>
           <div style={{ width: 'min(100cqw, calc(100cqh * 16 / 9))', aspectRatio: '16/9' }}>{slideStage(current, definition)}</div>
-          <div style={{ position: 'fixed', bottom: 24, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: controlsVisible ? 'auto' : 'none', opacity: controlsVisible ? 1 : 0, transform: controlsVisible ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity .25s ease, transform .25s ease' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(20,20,20,0.92)', border: '1px solid #333', borderRadius: 14, padding: '8px 10px', backdropFilter: 'blur(12px)', boxShadow: '0 12px 40px rgb(0 0 0 / 0.5)' }}>
-              <button onClick={prev} title="Previous (←)" style={fsBtn}><I.ChevronLeft size={20} /></button>
+          <div style={{ position: 'fixed', bottom: 'calc(24px + env(safe-area-inset-bottom))', left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: controlsVisible ? 'auto' : 'none', opacity: controlsVisible ? 1 : 0, transform: controlsVisible ? 'translateY(0)' : 'translateY(12px)', transition: 'opacity .25s ease, transform .25s ease' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 6, maxWidth: 'calc(100vw - 24px)', background: 'rgba(20,20,20,0.92)', border: '1px solid #333', borderRadius: 14, padding: '8px 10px', backdropFilter: 'blur(12px)', boxShadow: '0 12px 40px rgb(0 0 0 / 0.5)' }}>
+              <button onClick={prev} title={`${t.prevSlide} (←)`} style={fsBtn}><I.ChevronLeft size={20} /></button>
               <span style={{ fontSize: 14, color: '#fff', minWidth: 64, textAlign: 'center', fontWeight: 500 }}>{slideIndex + 1} / {slideCount}</span>
-              <button onClick={next} title="Next (→)" style={fsBtn}><I.ChevronRight size={20} /></button>
+              <button onClick={next} title={`${t.nextSlide} (→)`} style={fsBtn}><I.ChevronRight size={20} /></button>
               <div style={{ width: 1, height: 22, background: '#333', margin: '0 4px' }} />
               {(render?.languages ?? []).map(l => {
                 const on = activeSlots.includes(l.slot);
@@ -311,7 +460,7 @@ export const App: React.FC = () => {
                 );
               })}
               <div style={{ width: 1, height: 22, background: '#333', margin: '0 4px' }} />
-              <button onClick={exitFs} title="Exit (Esc)" style={fsBtn}><I.Minimize size={20} /></button>
+              <button onClick={exitProjection} title={`${t.exit} (Esc)`} style={fsBtn}><I.Minimize size={20} /></button>
             </div>
           </div>
         </div>
@@ -338,4 +487,5 @@ const LazyMount: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <div ref={ref} style={{ width: '100%', height: '100%' }}>{shown && children}</div>;
 };
 
+const mobileBtn: React.CSSProperties = { ...iconBtn, width: 44, height: 44 };
 const fsBtn: React.CSSProperties = { width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer' };

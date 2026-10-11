@@ -1,5 +1,5 @@
 import React from 'react';
-import { DEFAULT_LANG_COLORS, type LangSlot, type OrderedLanguage } from '@kidase/shared';
+import { DEFAULT_LANG_COLORS, COUNTRIES, type Country, type LangSlot, type OrderedLanguage } from '@kidase/shared';
 import { select, switchTrack, switchKnob, iconBtn } from '../theme';
 import { Strings, UiLang, UI_LANGS, LANG_BY_SLOT } from '../i18n';
 import { Gear, Close, Link } from '../icons';
@@ -22,10 +22,15 @@ interface Props {
   toggleMehella: () => void;
   uiLang: UiLang;
   setUiLang: (l: UiLang) => void;
+  country: Country;
+  setCountry: (c: Country) => void;
+  /** Full link reproducing the current view. */
+  shareUrl: string;
   sections: SectionItem[];
 }
 
-const card: React.CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 22 };
+/** One plain section per setting, separated by a rule; no cards. */
+const card: React.CSSProperties = { padding: '0 6px 18px', borderBottom: '1px solid var(--border)' };
 const h3: React.CSSProperties = { fontSize: 14, fontWeight: 600, margin: '0 0 3px', color: 'var(--text)' };
 const sub: React.CSSProperties = { fontSize: 12.5, color: 'var(--muted)', margin: '0 0 14px' };
 
@@ -34,7 +39,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 80 }}>
       <div onClick={p.onClose} style={{ position: 'absolute', inset: 0, background: 'rgb(0 0 0 / 0.45)' }} />
-      <div style={{ position: 'absolute', top: 0, right: 0, height: '100%', width: 440, maxWidth: '92vw', display: 'flex', flexDirection: 'column', background: 'var(--surface)', borderLeft: '1px solid var(--border)', boxShadow: '-14px 0 50px rgb(0 0 0 / 0.35)', animation: 'slidein .22s ease', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: 0, right: 0, height: '100%', width: 'min(440px, 100vw)', display: 'flex', flexDirection: 'column', background: 'var(--surface)', borderLeft: '1px solid var(--border)', boxShadow: '-14px 0 50px rgb(0 0 0 / 0.35)', animation: 'slidein .22s ease', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Gear size={18} color="var(--accent)" />
@@ -43,7 +48,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
           <button className="ic" onClick={p.onClose} style={iconBtn}><Close /></button>
         </div>
 
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
           {/* sections (shown when the API provides them) */}
           {p.sections.length > 0 && (
             <section style={card}>
@@ -88,28 +93,37 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
             </div>
           </section>
 
-          {/* mehella */}
-          <section style={{ ...card, padding: '18px 22px' }}>
-            <div onClick={p.toggleMehella} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.t.mehella} <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif", fontWeight: 400, color: 'var(--text2)', marginLeft: 6 }}>መሐላ</span></div>
-                <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 2 }}>{p.t.mehellaSub}</div>
-              </div>
-              <div style={switchTrack(p.isMehella)}><span style={switchKnob(p.isMehella)} /></div>
-            </div>
+          {/* country: patriarch and country placeholders */}
+          <section style={card}>
+            <h3 style={h3}>{p.t.country}</h3>
+            <p style={sub}>{p.t.countrySub}</p>
+            <select value={p.country} onChange={e => p.setCountry(e.target.value as Country)} style={{ ...sel, width: '100%' }}>
+              {COUNTRIES.map(c => <option key={c} value={c}>{p.t.countryNames[c]}</option>)}
+            </select>
           </section>
 
           {/* interface language */}
-          <section style={{ ...card, padding: '18px 22px' }}>
+          <section style={card}>
             <h3 style={{ ...h3, marginBottom: 12 }}>{p.t.uiLang}</h3>
             <select value={p.uiLang} onChange={e => p.setUiLang(e.target.value as UiLang)} style={{ ...sel, width: '100%' }}>
               {UI_LANGS.map(u => <option key={u.key} value={u.key}>{u.label}</option>)}
             </select>
           </section>
+
+          {/* mehella */}
+          <section style={card}>
+            <div onClick={p.toggleMehella} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.t.mehella} <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif", fontWeight: 400, color: 'var(--text2)', marginLeft: 6 }}>ምህላ</span></div>
+                <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 2 }}>{p.t.mehellaSub}</div>
+              </div>
+              <div style={switchTrack(p.isMehella)}><span style={switchKnob(p.isMehella)} /></div>
+            </div>
+          </section>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-          <CopyLink />
+          <CopyLink t={p.t} url={p.shareUrl} />
           <button className="accent-btn" onClick={p.onClose} style={{ height: 42, padding: '0 26px', borderRadius: 9, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{p.t.done}</button>
         </div>
       </div>
@@ -117,14 +131,14 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
   );
 };
 
-const CopyLink: React.FC = () => {
+const CopyLink: React.FC<{ t: Strings; url: string }> = ({ t, url }) => {
   const [copied, setCopied] = React.useState(false);
   const copy = async () => {
-    try { await navigator.clipboard.writeText(location.href); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* ignore */ }
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* ignore */ }
   };
   return (
     <button className="outline-btn" onClick={copy} style={{ height: 42, padding: '0 16px', borderRadius: 9, border: '1px solid var(--border2)', background: 'transparent', color: copied ? 'var(--accent)' : 'var(--text2)', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-      <Link /> {copied ? 'Link copied' : 'Copy share link'}
+      <Link /> {copied ? t.linkCopied : t.copyLink}
     </button>
   );
 };

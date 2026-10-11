@@ -92,7 +92,16 @@ bumps the content version (which busts the render cache).
 ```bash
 # Restore a desktop .kidase backup (the supported desktop -> server content path):
 pnpm --filter api seed /absolute/path/to/backup.kidase
+```
 
+On the machine that runs the desktop app, sync its database straight into local Mongo
+(dumps the SQLite file to `/tmp/desktop.kidase`, then seeds it):
+
+```bash
+pnpm --filter api sync-desktop
+```
+
+```bash
 # Or import an Excel workbook (seeds the default templates, then imports):
 pnpm --filter api seed "$PWD/samples/Kidase Presentation Template.xlsx"
 ```

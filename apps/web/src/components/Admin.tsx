@@ -44,9 +44,9 @@ const SignIn: React.FC<{ onAuthed: (t: string) => void; onBack: () => void; isDa
           <h1 style={{ fontSize: 22, fontWeight: 600, margin: '0 0 4px', color: 'var(--text)' }}>Admin sign in</h1>
           <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '0 0 24px' }}>Manage backups and restores.</p>
           <label style={lbl}>Email</label>
-          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@church.org" style={{ ...fld, width: '100%', marginBottom: 16 }} />
+          <input value={email} onChange={e => setEmail(e.target.value)} style={{ ...fld, width: '100%', marginBottom: 16 }} />
           <label style={lbl}>Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} placeholder="••••••••" style={{ ...fld, width: '100%', marginBottom: 24 }} />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} style={{ ...fld, width: '100%', marginBottom: 24 }} />
           {error && <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: '#ff8a80', fontSize: 13 }}>{error}</div>}
           <button className="accent-btn" disabled={busy} onClick={submit} style={{ height: 44, width: '100%', borderRadius: 9, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>{busy ? 'Signing in…' : 'Sign in'}</button>
         </div>

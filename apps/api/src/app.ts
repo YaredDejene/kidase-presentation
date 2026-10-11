@@ -7,7 +7,7 @@ import swagger from '@fastify/swagger';
 import scalarApiReference from '@scalar/fastify-api-reference';
 import { Db } from 'mongodb';
 import type { Repositories, Presentation, LangSlot } from '@kidase/shared';
-import { RenderService, getOrderedLanguages, LANG_SLOTS } from '@kidase/shared';
+import { RenderService, getOrderedLanguages, LANG_SLOTS, COUNTRIES, type Country } from '@kidase/shared';
 import { getContentVersion, bumpContentVersion } from './contentVersion';
 import { RenderCache } from './renderCache';
 import { cachedRepositories } from './cachedRepos';
@@ -39,10 +39,12 @@ function langCodes(p: Presentation): string[] {
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   // bodyLimit raised so /admin/restore can accept a full .kidase backup.
-  const app = Fastify({ logger: false, bodyLimit: 64 * 1024 * 1024 });
+  const app = Fastify({ logger: false, bodyLimit: 64 * 1024 * 1024, trustProxy: true });
   const repoCache = cachedRepositories(opts.repos);
   const renderService = new RenderService(repoCache.repos);
   const cache = new RenderCache();
+  // Part of every render ETag so a new build invalidates what browsers kept under stale-while-revalidate.
+  const build = Date.now().toString(36);
   const maxAge = opts.renderMaxAge ?? 60;
   const adminEmail = opts.adminEmail ?? 'admin@church.org';
   const adminPassword = opts.adminPassword ?? 'changeme';
@@ -136,7 +138,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   // The heavy, deterministic, cacheable render.
-  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string } }>(
+  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string; country?: Country } }>(
     '/api/v1/presentations/:id/render',
     {
       schema: {
@@ -148,6 +150,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
           properties: {
             date: { type: 'string', description: 'Service date, YYYY-MM-DD (defaults to today)' },
             mehella: { type: 'string', description: '"1"/"true" for the Mehella variant', enum: ['0', '1', 'true', 'false'] },
+            country: { type: 'string', description: 'Patriarch and country placeholders for this country; parish placeholders left blank', enum: COUNTRIES },
           },
         },
       },
@@ -156,9 +159,10 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       const { id } = req.params;
       const date = req.query.date;
       const mehella = req.query.mehella === '1' || req.query.mehella === 'true';
+      const country = req.query.country;
       const cv = await getContentVersion(opts.db);
       repoCache.atVersion(cv);
-      const key = `${cv}:${id}:${date ?? ''}:${mehella ? 1 : 0}`;
+      const key = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}`;
       const etag = `"${key}"`;
 
       if (req.headers['if-none-match'] === etag) {
@@ -175,7 +179,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
       let result;
       try {
-        result = await renderService.render({ presentationId: id, date, isMehella: mehella });
+        result = await renderService.render({ presentationId: id, date, isMehella: mehella, country });
       } catch {
         return reply.code(404).send({ error: 'Presentation not found' });
       }

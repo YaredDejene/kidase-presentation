@@ -16,13 +16,17 @@ import { ruleEngine } from '../engine';
 import { buildContext, BuildContextArgs } from '../engine/contextBuilder';
 import { RuleEntry, RuleContext } from '../engine/types';
 import { formatEthiopianDate } from '../domain/formatting';
+import { BLANK_FOR_COUNTRY, BLANK_VALUE, COUNTRY_VARIABLES, type Country } from '../domain/country';
 
 export interface ResolvedReading {
   key: string;
   label: string;
   labelAmh: string;
+  labelTi: string;
   ref?: string;
   value: string;
+  /** Position of the slide showing this reading, when one is displayed. */
+  slideIndex?: number;
 }
 
 export interface ResolvedSection {
@@ -73,16 +77,18 @@ export interface RenderArgs {
   /** YYYY-MM-DD; defaults to today when omitted. */
   date?: string;
   isMehella?: boolean;
+  /** Swaps the patriarch and country placeholders and blanks the parish ones (public viewer). */
+  country?: Country;
 }
 
 /** Maps Gitsawe record fields to the viewer's info panel. */
-const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string }[] = [
-  { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: '' },
-  { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ' },
-  { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት' },
-  { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት' },
-  { key: 'misbak', field: 'misbak', label: 'Misbak', labelAmh: 'ምስባክ' },
-  { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል' },
+const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string; labelTi: string }[] = [
+  { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: 'የቅዳሴ ዓይነት', labelTi: 'ዓይነት ቅዳሴ' },
+  { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ', labelTi: 'መልእኽቲ ጳውሎስ' },
+  { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት', labelTi: 'መልእኽቲ ሓዋርያት' },
+  { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት', labelTi: 'ግብሪ ሓዋርያት' },
+  { key: 'misbak', field: 'misbak', label: 'Misbak', labelAmh: 'ምስባክ', labelTi: 'ምስባክ' },
+  { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል', labelTi: 'ወንጌል' },
 ];
 
 interface LoadedSet {
@@ -90,6 +96,23 @@ interface LoadedSet {
   slides: Slide[];
   template: Template | null;
   variables: Variable[];
+}
+
+/** Country-specific copies of the placeholder variables, parish ones blanked; the stored values stay untouched. */
+export function applyCountry(variables: Variable[], country: Country): Variable[] {
+  const values = COUNTRY_VARIABLES[country];
+  return variables.map(v => {
+    const langValues = values[v.name as keyof typeof values];
+    if (langValues) {
+      const fields = Object.fromEntries(LANG_SLOTS.map(slot => [`value${slot}`, langValues[slot] ?? '']));
+      return { ...v, ...fields, value: langValues.Lang2 ?? langValues.Lang1 ?? '' };
+    }
+    if (BLANK_FOR_COUNTRY.includes(v.name)) {
+      const fields = Object.fromEntries(LANG_SLOTS.map(slot => [`value${slot}`, BLANK_VALUE]));
+      return { ...v, ...fields, value: BLANK_VALUE };
+    }
+    return v;
+  });
 }
 
 /**
@@ -102,7 +125,7 @@ export class RenderService {
   constructor(private readonly repos: Repositories) {}
 
   async render(args: RenderArgs): Promise<RenderResult> {
-    const primary = await this.loadSet(args.presentationId);
+    const primary = await this.loadSet(args.presentationId, args.country);
     if (!primary) {
       throw new Error(`Presentation ${args.presentationId} not found`);
     }
@@ -139,7 +162,7 @@ export class RenderService {
     if (kidaseType && kidaseType !== primary.presentation.name) {
       const secPres = await this.repos.presentation.getByName(kidaseType);
       if (secPres) {
-        secondary = await this.loadSet(secPres.id);
+        secondary = await this.loadSet(secPres.id, args.country);
       }
     }
 
@@ -235,7 +258,7 @@ export class RenderService {
         secondaryName: secondary?.presentation.name,
       },
       context: this.buildRenderedContext(meta, isMehella, gitsaweMeta, overrideDate),
-      readings: this.buildReadings(gitsaweMeta),
+      readings: this.buildReadings(gitsaweMeta, displaySlides),
       languages: getAllLanguages(primary.presentation.languageSettings, primary.presentation.languageMap)
         .filter(lang => slotsWithText.has(lang.slot)),
       templates,
@@ -244,7 +267,7 @@ export class RenderService {
     };
   }
 
-  private async loadSet(presentationId: string): Promise<LoadedSet | null> {
+  private async loadSet(presentationId: string, country?: Country): Promise<LoadedSet | null> {
     const presentation = await this.repos.presentation.getById(presentationId);
     if (!presentation) return null;
     const [slides, template, variables] = await Promise.all([
@@ -252,7 +275,7 @@ export class RenderService {
       this.repos.template.getById(presentation.templateId),
       this.repos.variable.getByPresentationId(presentationId),
     ]);
-    return { presentation, slides, template, variables };
+    return { presentation, slides, template, variables: country ? applyCountry(variables, country) : variables };
   }
 
   private evaluateRules(
@@ -298,13 +321,15 @@ export class RenderService {
     };
   }
 
-  private buildReadings(gitsaweMeta: Record<string, unknown> | undefined): ResolvedReading[] {
+  private buildReadings(gitsaweMeta: Record<string, unknown> | undefined, displaySlides: Slide[]): ResolvedReading[] {
     if (!gitsaweMeta) return [];
     const readings: ResolvedReading[] = [];
     for (const r of READING_FIELDS) {
       const value = gitsaweMeta[r.field as string];
       if (value !== undefined && value !== null && String(value).trim() !== '') {
-        readings.push({ key: r.key, label: r.label, labelAmh: r.labelAmh, value: String(value) });
+        // The dynamic slide for a reading names its gitsawe field, e.g. @meta.gitsawe.wengel.
+        const slideIndex = displaySlides.findIndex(s => s.lineId === `@meta.gitsawe.${r.field}`);
+        readings.push({ key: r.key, label: r.label, labelAmh: r.labelAmh, labelTi: r.labelTi, value: String(value), ...(slideIndex >= 0 ? { slideIndex } : {}) });
       }
     }
     return readings;

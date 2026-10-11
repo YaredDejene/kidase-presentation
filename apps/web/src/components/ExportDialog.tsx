@@ -3,21 +3,20 @@ import type { OrderedLanguage } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 import { iconBtn } from '../theme';
 import { Close, Download, Check } from '../icons';
+import type { Strings } from '../i18n';
 
 type Status = 'idle' | 'running' | 'done';
 
 interface Props {
+  t: Strings;
   onClose: () => void;
   payload: RenderPayload;
   languages: OrderedLanguage[];
 }
 
-const FORMATS = [
-  { key: 'pdf', label: 'PDF', sub: (n: number) => `All ${n} slides · print-ready` },
-  { key: 'pptx', label: 'PowerPoint', sub: () => 'Editable · one slide per page' },
-] as const;
+const FORMATS = ['pdf', 'pptx'] as const;
 
-export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) => {
+export const ExportDialog: React.FC<Props> = ({ t, onClose, payload, languages }) => {
   const [fmt, setFmt] = useState<'pdf' | 'pptx'>('pdf');
   const [status, setStatus] = useState<Status>('idle');
   const [pct, setPct] = useState(0);
@@ -40,7 +39,7 @@ export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) =
     } catch (e) {
       setStatus('idle');
       // eslint-disable-next-line no-alert
-      alert(`Export failed: ${(e as Error).message}`);
+      alert(`${t.exportFailed}: ${(e as Error).message}`);
     }
   };
 
@@ -51,7 +50,7 @@ export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) =
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Download size={18} color="var(--accent)" />
-            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0, color: 'var(--text)' }}>Export presentation</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0, color: 'var(--text)' }}>{t.exportTitle}</h2>
           </div>
           <button className="ic" onClick={onClose} style={iconBtn}><Close /></button>
         </div>
@@ -59,22 +58,22 @@ export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) =
         {status === 'idle' && (
           <>
             <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {FORMATS.map(f => {
-                const on = fmt === f.key;
+              {FORMATS.map(key => {
+                const on = fmt === key;
                 return (
-                  <div key={f.key} onClick={() => setFmt(f.key)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--elevated)' : 'transparent' }}>
+                  <div key={key} onClick={() => setFmt(key)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--elevated)' : 'transparent' }}>
                     <span style={{ width: 18, height: 18, borderRadius: '50%', flexShrink: 0, border: `2px solid ${on ? 'var(--accent)' : 'var(--border2)'}`, background: on ? 'var(--accent)' : 'transparent', boxShadow: on ? 'inset 0 0 0 3px var(--surface)' : 'none' }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{f.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{f.sub(payload.slides.length)}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{key === 'pdf' ? 'PDF' : 'PowerPoint'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{key === 'pdf' ? t.pdfSub(payload.slides.length) : t.pptxSub}</div>
                     </div>
                   </div>
                 );
               })}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '14px 22px', borderTop: '1px solid var(--border)' }}>
-              <button className="outline-btn" onClick={onClose} style={btnOutline}>Cancel</button>
-              <button className="accent-btn" onClick={run} style={btnAccent}><Download size={16} /> Download</button>
+              <button className="outline-btn" onClick={onClose} style={btnOutline}>{t.cancel}</button>
+              <button className="accent-btn" onClick={run} style={btnAccent}><Download size={16} /> {t.download}</button>
             </div>
           </>
         )}
@@ -88,7 +87,7 @@ export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) =
             <div style={{ height: 8, borderRadius: 4, background: 'var(--elevated)', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${pct}%`, background: 'var(--accent)', borderRadius: 4, transition: 'width .16s ease' }} />
             </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>Rendering slides &amp; composing file…</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{t.rendering}</div>
           </div>
         )}
 
@@ -97,13 +96,13 @@ export const ExportDialog: React.FC<Props> = ({ onClose, payload, languages }) =
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', marginBottom: 16 }}>
               <Check size={22} color="#10b981" />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)' }}>Export ready</div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)' }}>{t.exportReady}</div>
                 <div style={{ fontSize: 12, color: 'var(--text2)' }}>{fileName}</div>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-              <button className="outline-btn" onClick={() => setStatus('idle')} style={btnOutline}>Export again</button>
-              <button className="accent-btn" onClick={onClose} style={btnAccent}>Done</button>
+              <button className="outline-btn" onClick={() => setStatus('idle')} style={btnOutline}>{t.exportAgain}</button>
+              <button className="accent-btn" onClick={onClose} style={btnAccent}>{t.done}</button>
             </div>
           </div>
         )}

@@ -1,4 +1,4 @@
-import type { RenderResult, LangSlot } from '@kidase/shared';
+import type { RenderResult, LangSlot, Country } from '@kidase/shared';
 
 export interface PresentationSummary {
   id: string;
@@ -24,10 +24,12 @@ export async function fetchRender(
   id: string,
   date: string | null,
   isMehella: boolean,
+  country: Country,
 ): Promise<RenderPayload> {
   const q = new URLSearchParams();
   if (date) q.set('date', date);
   if (isMehella) q.set('mehella', '1');
+  q.set('country', country);
   const res = await fetch(`${BASE}/api/v1/presentations/${id}/render?${q.toString()}`);
   if (!res.ok) throw new Error(`Failed to render (${res.status})`);
   return res.json();

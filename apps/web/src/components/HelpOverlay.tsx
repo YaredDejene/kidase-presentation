@@ -12,11 +12,11 @@ export const HelpOverlay: React.FC<{ t: Strings; onClose: () => void }> = ({ t, 
         <button className="ic" onClick={onClose} style={iconBtn}><Close /></button>
       </div>
       <div style={{ padding: '8px 22px 18px', display: 'flex', flexDirection: 'column' }}>
-        {SHORTCUTS.map((sc, i) => (
+        {SHORTCUTS.map((keys, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: '11px 0', borderBottom: '1px solid var(--border)' }}>
-            <span style={{ fontSize: 13.5, color: 'var(--text)' }}>{sc.label}</span>
+            <span style={{ fontSize: 13.5, color: 'var(--text)' }}>{t.shortcutLabels[i]}</span>
             <div style={{ display: 'flex', gap: 5 }}>
-              {sc.keys.map(k => <kbd key={k} style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: 'var(--text2)', background: 'var(--elevated)', border: '1px solid var(--border2)', borderRadius: 6, padding: '3px 9px', minWidth: 22, textAlign: 'center', lineHeight: 1.4 }}>{k}</kbd>)}
+              {keys.map(k => <kbd key={k} style={{ fontFamily: 'inherit', fontSize: 12, fontWeight: 600, color: 'var(--text2)', background: 'var(--elevated)', border: '1px solid var(--border2)', borderRadius: 6, padding: '3px 9px', minWidth: 22, textAlign: 'center', lineHeight: 1.4 }}>{k}</kbd>)}
             </div>
           </div>
         ))}

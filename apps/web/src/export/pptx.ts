@@ -18,7 +18,7 @@ const mapAlign = (a: string): 'left' | 'center' | 'right' => (a === 'center' || 
 
 
 /** Ported from the desktop PptxExportService, fed with already-resolved slide data. */
-function addPptxSlide(pptx: PptxGenJS, slide: RSlide, def: TemplateDefinition | undefined, languages: OrderedLanguage[]): void {
+function addPptxSlide(pptx: PptxGenJS, slide: RSlide, def: TemplateDefinition | undefined, languages: OrderedLanguage[], pageLabel: string): void {
   if (!def) return;
   const enabled = templateLanguages(def, languages);
 
@@ -42,6 +42,9 @@ function addPptxSlide(pptx: PptxGenJS, slide: RSlide, def: TemplateDefinition | 
   const slideWidth = 13.333, slideHeight = 7.5;
   const contentWidth = slideWidth - marginLeft - marginRight;
   let y = marginTop;
+
+  // Page counter in the bottom-right corner, like the viewer.
+  ps.addText(pageLabel, { x: slideWidth - 1.6, y: slideHeight - 0.45, w: 1.5, h: 0.35, fontSize: 12, color: '888888', align: 'right', valign: 'bottom', margin: 0 });
 
   if (slide.title && def.title.show && titleText) {
     const titleFontSize = pxToPoints(def.title.fontSize) * fontScale;
@@ -87,7 +90,7 @@ export function buildPptx(payload: RenderPayload, languages: OrderedLanguage[], 
   pptx.layout = 'LAYOUT_WIDE';
   for (let i = 0; i < payload.slides.length; i++) {
     onProgress?.(i + 1, payload.slides.length);
-    addPptxSlide(pptx, payload.slides[i], payload.templates[payload.slides[i].templateId], languages);
+    addPptxSlide(pptx, payload.slides[i], payload.templates[payload.slides[i].templateId], languages, `${i + 1} / ${payload.slides.length}`);
   }
   return pptx;
 }

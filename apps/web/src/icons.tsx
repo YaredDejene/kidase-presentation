@@ -66,3 +66,6 @@ export const LogOut: React.FC<IconProps> = ({ size = 15, stroke = 1.8, color = '
 export const Refresh: React.FC<IconProps> = ({ size = 16, stroke = 1.8, color = 'currentColor' }) => (
   <svg {...base(size, stroke, color)}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5" /></svg>
 );
+export const More: React.FC<IconProps> = ({ size = 18, stroke = 2, color = 'currentColor' }) => (
+  <svg {...base(size, stroke, color)}><circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /></svg>
+);
