@@ -298,14 +298,12 @@ export const App: React.FC = () => {
     const [y, m, d] = g.split('-').map(Number);
     return toEC(y, m, d);
   }, [render?.context.gregorian]);
-  const dateChip = render && ec && (
-    <button className="ic" onClick={() => setConfigOpen(true)} title={`${t.serviceDate}: ${render.context.ethDateLabel} · ${render.context.gregorian}`} style={{ display: 'flex', alignItems: 'stretch', height: 36, padding: 0, borderRadius: 8, border: '1px solid var(--border2)', background: 'transparent', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
-      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 34, padding: '0 6px', background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 700, fontSize: 17 }}>{ec.day}</span>
-      <span style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', padding: '0 9px', lineHeight: 1.25 }}>
-        <span style={{ fontFamily: ETHIOPIC, fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{ETH_MONTHS_SHORT[ec.month - 1]} {ec.year}</span>
-        <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>{render.context.gregorian}</span>
-      </span>
-    </button>
+  /** Liturgy name (desktop) and date, shown as plain text. */
+  const contextText = render && ec && (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0, lineHeight: 1.3, flexShrink: isMobile ? 0 : 1 }}>
+      {!isMobile && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render.presentation.name}{render.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>}
+      <span style={{ fontSize: 11, color: 'var(--text2)', whiteSpace: 'nowrap' }}><span style={{ fontFamily: ETHIOPIC }}>{ETH_MONTHS_SHORT[ec.month - 1]} {ec.day}, {ec.year}</span><span style={{ color: 'var(--muted)' }}> · {render.context.gregorian}</span></span>
+    </div>
   );
 
   const secondaryStart = render?.slides.findIndex(sl => sl.isSecondary) ?? -1;
@@ -339,15 +337,31 @@ export const App: React.FC = () => {
       <I.Project /> {t.project}
     </button>
   );
-  const themeBtn = (
-    <button className="ic" onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} title={isDark ? t.themeLight : t.themeDark} style={iconBtn}>{isDark ? <I.Sun /> : <I.Moon />}</button>
+  type MenuItem = { label: string; icon: React.ReactNode; run: () => void };
+  const themeItem: MenuItem = { label: isDark ? t.themeLight : t.themeDark, icon: isDark ? <I.Sun /> : <I.Moon />, run: () => setTheme(v => v === 'dark' ? 'light' : 'dark') };
+  const adminItem: MenuItem = { label: t.admin, icon: <I.Users />, run: () => setScreen('admin') };
+  const desktopMoreItems: MenuItem[] = [
+    { label: `${t.shortcuts} (?)`, icon: <I.Help />, run: () => setHelpOpen(true) },
+    themeItem,
+    adminItem,
+  ];
+  const moreMenu = (items: MenuItem[], pos: React.CSSProperties) => moreOpen && (
+    <>
+      <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
+      <div style={{ position: 'absolute', ...pos, zIndex: 31, minWidth: 220, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 12px 40px rgb(0 0 0 / 0.4)', padding: 6, animation: 'fadeup .15s ease' }}>
+        {items.map(item => (
+          <button key={item.label} className="row-hover" onClick={() => { setMoreOpen(false); item.run(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', height: 44, padding: '0 12px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 14, cursor: 'pointer', textAlign: 'left' }}>
+            <span style={{ color: 'var(--text2)', display: 'flex' }}>{item.icon}</span>{item.label}
+          </button>
+        ))}
+      </div>
+    </>
   );
-
-  const moreItems: { label: string; icon: React.ReactNode; run: () => void }[] = [
+  const moreItems: MenuItem[] = [
     { label: t.context, icon: <I.Info />, run: () => setInfoOpen(true) },
     { label: t.exportTip, icon: <I.Download />, run: () => setExportOpen(true) },
-    { label: isDark ? t.themeLight : t.themeDark, icon: isDark ? <I.Sun /> : <I.Moon />, run: () => setTheme(v => v === 'dark' ? 'light' : 'dark') },
-    { label: t.admin, icon: <I.Users />, run: () => setScreen('admin') },
+    themeItem,
+    adminItem,
   ];
 
   return (
@@ -374,21 +388,21 @@ export const App: React.FC = () => {
             <img src={isDark ? '/mark-dark.svg' : '/mark-light.svg'} alt="" width={34} height={34} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <span style={{ fontFamily: ETHIOPIC, fontWeight: 700, fontSize: 19, lineHeight: 1, color: 'var(--text)' }}>ቅዳሴ</span>
-              {!isMobile && <span style={{ fontSize: 8.5, letterSpacing: '0.22em', color: 'var(--text2)', whiteSpace: 'nowrap' }}>KIDASE PRESENTATION</span>}
+              {!isMobile && <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.32em', color: 'var(--text)', opacity: 0.8, whiteSpace: 'nowrap' }}>KIDASE</span>}
             </div>
           </div>
           <div style={{ flex: 1 }} />
-          {!isMobile && liturgyInfo}
-          {dateChip}
+          {contextText}
           {!isMobile && (
             <>
-              <button className="ic" onClick={() => setHelpOpen(true)} title={`${t.shortcuts} (?)`} style={iconBtn}><I.Help /></button>
-              <button className="ic" onClick={() => setInfoOpen(true)} title={`${t.context} (i)`} style={iconBtn}><I.Info /></button>
+              <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 2px' }} />
+              <button className="ic" onClick={() => setInfoOpen(true)} title={`${t.context} (I)`} style={iconBtn}><I.Info /></button>
               <button className="ic" onClick={() => setExportOpen(true)} title={t.exportTip} style={iconBtn}><I.Download /></button>
-              <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 4px' }} />
               <button className="ic" onClick={() => setConfigOpen(true)} title={t.settingsTip} style={iconBtn}><I.Gear /></button>
-              {themeBtn}
-              <button className="ic" onClick={() => setScreen('admin')} title={t.admin} style={iconBtn}><I.Users /></button>
+              <div style={{ position: 'relative' }}>
+                <button className="ic" onClick={() => setMoreOpen(v => !v)} title={t.more} style={iconBtn}><I.More /></button>
+                {moreMenu(desktopMoreItems, { top: '100%', right: 0, marginTop: 6 })}
+              </div>
               {projectBtn}
             </>
           )}
@@ -454,18 +468,7 @@ export const App: React.FC = () => {
             <button className="ic" onClick={() => setConfigOpen(true)} title={t.settingsTip} style={mobileBtn}><I.Gear /></button>
             {projectBtn}
             <button className="ic" onClick={() => setMoreOpen(v => !v)} title={t.more} style={mobileBtn}><I.More /></button>
-            {moreOpen && (
-              <>
-                <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
-                <div style={{ position: 'absolute', bottom: '100%', right: 8, marginBottom: 6, zIndex: 31, minWidth: 200, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, boxShadow: '0 12px 40px rgb(0 0 0 / 0.4)', padding: 6, animation: 'fadeup .15s ease' }}>
-                  {moreItems.map(item => (
-                    <button key={item.label} className="row-hover" onClick={() => { setMoreOpen(false); item.run(); }} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', height: 44, padding: '0 12px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--text)', fontSize: 14, cursor: 'pointer', textAlign: 'left' }}>
-                      <span style={{ color: 'var(--text2)', display: 'flex' }}>{item.icon}</span>{item.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            {moreMenu(moreItems, { bottom: '100%', right: 8, marginBottom: 6 })}
           </div>
         )}
       </div>

@@ -24,8 +24,8 @@ export const Layout: React.FC<IconProps> = ({ size = 17, stroke = 1.8, color = '
 export const Help: React.FC<IconProps> = ({ size = 17, stroke = 1.8, color = 'currentColor' }) => (
   <svg {...base(size, stroke, color)}><circle cx="12" cy="12" r="9" /><path d="M9.1 9.5a3 3 0 1 1 5.4 1.9c-.8 1-2 1.4-2.4 2.6" /><path d="M12 17h.01" /></svg>
 );
-export const Info: React.FC<IconProps> = ({ size = 17, stroke = 1.8, color = 'currentColor' }) => (
-  <svg {...base(size, stroke, color)}><circle cx="12" cy="12" r="9" /><path d="M12 16v-4M12 8h.01" /></svg>
+export const Info: React.FC<IconProps> = ({ size = 18, stroke = 2, color = 'currentColor' }) => (
+  <svg {...base(size, stroke, color)}><circle cx="12" cy="12" r="9" /><path d="M12 16.5v-5.5" /><circle cx="12" cy="7.8" r="1.3" fill={color} stroke="none" /></svg>
 );
 export const Download: React.FC<IconProps> = ({ size = 17, stroke = 1.8, color = 'currentColor' }) => (
   <svg {...base(size, stroke, color)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
