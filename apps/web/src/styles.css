@@ -8,9 +8,9 @@ button { touch-action: manipulation; }
 @media (max-width: 768px) { input, select, .dp-trigger { font-size: 16px; } }
 body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 textarea, input, select, button { font-family: inherit; }
-::selection { background: rgba(59,130,246,0.3); }
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
 select option { background: #1a1a1a; color: #fff; }
-input:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.18); }
+input:focus, select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
 input::placeholder { color: var(--muted); }
 
 @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }

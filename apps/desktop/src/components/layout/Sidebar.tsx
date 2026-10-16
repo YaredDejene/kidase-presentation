@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <nav className={`sidebar ${!showLabels ? 'sidebar--compact' : ''}`}>
-      <div className="sidebar-logo">ቅ</div>
+      <img className="sidebar-logo" src="/logo-white.svg" alt="Kidase" />
       <div className="sidebar-menu">
         {menuItems.map(item => {
           const isActive = currentView === item.id;
