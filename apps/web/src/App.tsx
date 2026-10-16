@@ -6,11 +6,12 @@ import { WebSlideRenderer } from './components/WebSlideRenderer';
 import { Stage } from './components/Stage';
 import { ConfigDrawer } from './components/ConfigDrawer';
 import { Admin } from './components/Admin';
-import { InfoPanel } from './components/InfoPanel';
+import { InfoPanel, readingLabel } from './components/InfoPanel';
+import { toEC } from 'kenat';
 import { ExportDialog } from './components/ExportDialog';
 import { HelpOverlay } from './components/HelpOverlay';
 import { themeVars, iconBtn, ThemeName } from './theme';
-import { T, UiLang, LANG_BY_SLOT } from './i18n';
+import { T, UiLang, LANG_BY_SLOT, ETH_MONTHS_SHORT } from './i18n';
 import * as I from './icons';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -101,10 +102,6 @@ const PREFS: Prefs = readJson<Prefs>(localStorage, 'kidase_prefs') ?? {};
 const SESSION: Session | null = (() => { const s = readJson<Session>(sessionStorage, 'kidase_session'); return s?.day === todayIso() ? s : null; })();
 
 const ETHIOPIC = "'Noto Serif Ethiopic Variable',serif";
-const LOGO: React.CSSProperties = {
-  borderRadius: 7, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: '#fff', fontWeight: 700, fontFamily: ETHIOPIC, flexShrink: 0,
-};
 const MOBILE_QUERY = '(max-width: 768px)';
 
 /** Most languages any template in the payload shows at once; slides with smaller templates show the first ones. */
@@ -295,16 +292,50 @@ export const App: React.FC = () => {
     );
   };
 
-  const dateLine = render && (
-    <button className="ic" onClick={() => setConfigOpen(true)} title={t.serviceDate} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 18, padding: '0 5px', margin: '0 -5px', borderRadius: 5, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text2)', fontSize: 11, maxWidth: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-      <I.Calendar size={12} color="var(--muted)" />
-      <span style={{ fontFamily: ETHIOPIC }}>{render.context.ethDateLabel}</span>
-      <span style={{ color: 'var(--muted)' }}>· {render.context.gregorian}</span>
+  const ec = useMemo(() => {
+    const g = render?.context.gregorian;
+    if (!g) return null;
+    const [y, m, d] = g.split('-').map(Number);
+    return toEC(y, m, d);
+  }, [render?.context.gregorian]);
+  const dateChip = render && ec && (
+    <button className="ic" onClick={() => setConfigOpen(true)} title={`${t.serviceDate}: ${render.context.ethDateLabel} · ${render.context.gregorian}`} style={{ display: 'flex', alignItems: 'stretch', height: 36, padding: 0, borderRadius: 8, border: '1px solid var(--border2)', background: 'transparent', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
+      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 34, padding: '0 6px', background: 'var(--accent)', color: 'var(--on-accent)', fontWeight: 700, fontSize: 17 }}>{ec.day}</span>
+      <span style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', padding: '0 9px', lineHeight: 1.25 }}>
+        <span style={{ fontFamily: ETHIOPIC, fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{ETH_MONTHS_SHORT[ec.month - 1]} {ec.year}</span>
+        <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>{render.context.gregorian}</span>
+      </span>
     </button>
   );
 
+  const secondaryStart = render?.slides.findIndex(sl => sl.isSecondary) ?? -1;
+  const pctDone = slideCount > 1 ? (slideIndex / (slideCount - 1)) * 100 : 0;
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setSlideIndex(Math.round(((e.clientX - r.left) / r.width) * (slideCount - 1)));
+  };
+  /** Progress through the liturgy along the bar's top edge; reading marks jump to that reading. */
+  const timeline = slideCount > 1 && (
+    <div onClick={seek} style={{ position: 'absolute', left: 0, right: 0, top: -5, height: 12, cursor: 'pointer', zIndex: 1 }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 5, height: 2, background: 'var(--border2)' }} />
+      <div style={{ position: 'absolute', left: 0, top: 5, height: 2, width: `${pctDone}%`, background: 'var(--accent)', transition: 'width .15s' }} />
+      {render?.readings.filter(r => r.slideIndex !== undefined).map(r => (
+        <button key={r.key} title={readingLabel(r, uiLang)} onClick={e => { e.stopPropagation(); setSlideIndex(r.slideIndex!); }} style={{ position: 'absolute', left: `${(r.slideIndex! / (slideCount - 1)) * 100}%`, top: 1, width: 10, height: 10, marginLeft: -5, padding: 0, border: '2px solid var(--surface)', borderRadius: '50%', background: r.slideIndex! <= slideIndex ? 'var(--accent)' : 'var(--text2)', cursor: 'pointer' }} />
+      ))}
+      {secondaryStart > 0 && (
+        <button title={render!.presentation.secondaryName} onClick={e => { e.stopPropagation(); setSlideIndex(secondaryStart); }} style={{ position: 'absolute', left: `${(secondaryStart / (slideCount - 1)) * 100}%`, top: 0, width: 12, height: 12, marginLeft: -6, padding: 0, border: '2px solid var(--surface)', borderRadius: 2, transform: 'rotate(45deg)', background: 'var(--accent)', cursor: 'pointer' }} />
+      )}
+    </div>
+  );
+
+  const liturgyInfo = render && (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: 1, minWidth: 0, maxWidth: isMobile ? '100%' : 360, padding: isMobile ? 0 : '0 4px' }}>
+      <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render.presentation.name}{render.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>
+    </div>
+  );
+
   const projectBtn = (
-    <button className="accent-btn" onClick={toggleFullscreen} title={`${t.project} (F)`} style={{ height: isMobile ? 40 : 36, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 7, borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
+    <button className="accent-btn" onClick={toggleFullscreen} title={`${t.project} (F)`} style={{ height: isMobile ? 40 : 36, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 7, borderRadius: 8, background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, flexShrink: 0 }}>
       <I.Project /> {t.project}
     </button>
   );
@@ -325,7 +356,10 @@ export const App: React.FC = () => {
 
         {/* floating nav pill (desktop) */}
         {!isMobile && (
-          <div style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 20, display: 'flex', alignItems: 'center', gap: 2, background: 'var(--surface)', borderRadius: 11, padding: 4, boxShadow: '0 6px 22px rgb(0 0 0 / 0.32)' }}>
+          <div style={{ position: 'absolute', zIndex: 20, display: 'flex', alignItems: 'center', gap: 2, background: 'var(--surface)', padding: 4, ...(railOpen
+            // Docked to the bottom of the thumbnail column, so no thumbnails show beneath it.
+            ? { bottom: 0, left: 0, width: 214, boxSizing: 'border-box', justifyContent: 'center', borderTop: '1px solid var(--border)', borderRight: '1px solid var(--border)' }
+            : { bottom: 14, left: 14, borderRadius: 11, boxShadow: '0 6px 22px rgb(0 0 0 / 0.32)' }) }}>
             <button className="ic" onClick={() => setRailOpen(v => !v)} title={t.toggleThumbs} style={iconBtn}><I.Layout /></button>
             <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
             <button className="ic" onClick={prev} title={`${t.prevSlide} (←)`} style={iconBtn}><I.ChevronLeft /></button>
@@ -336,11 +370,16 @@ export const App: React.FC = () => {
 
         {/* toolbar */}
         <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px 6px 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
-          <div style={{ ...LOGO, width: 28, height: 28, fontSize: 15 }}>ቅ</div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, minWidth: 0, flex: 1 }}>
-            <span style={{ fontWeight: 600, fontSize: 14.5, letterSpacing: '-0.01em', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render?.presentation.name ?? 'Kidase'}{render?.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>
-            {dateLine}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+            <img src={isDark ? '/mark-dark.svg' : '/mark-light.svg'} alt="" width={34} height={34} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ fontFamily: ETHIOPIC, fontWeight: 700, fontSize: 19, lineHeight: 1, color: 'var(--text)' }}>ቅዳሴ</span>
+              {!isMobile && <span style={{ fontSize: 8.5, letterSpacing: '0.22em', color: 'var(--text2)', whiteSpace: 'nowrap' }}>KIDASE PRESENTATION</span>}
+            </div>
           </div>
+          <div style={{ flex: 1 }} />
+          {!isMobile && liturgyInfo}
+          {dateChip}
           {!isMobile && (
             <>
               <button className="ic" onClick={() => setHelpOpen(true)} title={`${t.shortcuts} (?)`} style={iconBtn}><I.Help /></button>
@@ -375,8 +414,12 @@ export const App: React.FC = () => {
               </div>
             )}
             {!loading && !error && current && definition && (
-              <div style={{ width: 'min(100cqw, calc(100cqh * 16 / 9))', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', boxShadow: '0 24px 70px rgb(0 0 0 / 0.45), inset 0 1px 0 rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.06)' }}>
-                {slideStage(current, definition)}
+              <div style={{ width: 'min(100cqw, calc((100cqh - 26px) * 16 / 9))' }}>
+                <div style={{ aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', boxShadow: '0 24px 70px rgb(0 0 0 / 0.45), inset 0 1px 0 rgba(255,255,255,0.05)', outline: '1px solid rgba(255,255,255,0.06)' }}>
+                  {slideStage(current, definition)}
+                </div>
+                {/* liturgy timeline, right under the slide */}
+                <div style={{ position: 'relative', top: 16, height: 10 }}>{timeline}</div>
               </div>
             )}
             {!loading && !error && render && render.slides.length === 0 && (
@@ -396,9 +439,13 @@ export const App: React.FC = () => {
           )}
         </div>
 
+        {isMobile && liturgyInfo && (
+          <div style={{ padding: '6px 12px 0', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>{liturgyInfo}</div>
+        )}
+
         {/* bottom action bar (mobile) */}
         {isMobile && (
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: '6px 8px', paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: '6px 8px', paddingBottom: 'calc(6px + env(safe-area-inset-bottom))', borderTop: liturgyInfo ? 'none' : '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
             <button className="ic" onClick={() => setRailOpen(v => !v)} title={t.toggleThumbs} style={mobileBtn}><I.Layout /></button>
             <button className="ic" onClick={prev} title={t.prevSlide} style={mobileBtn}><I.ChevronLeft /></button>
             <span style={{ fontSize: 13, color: 'var(--text)', minWidth: 52, textAlign: 'center', fontWeight: 500 }}>{slideCount ? slideIndex + 1 : 0} / {slideCount}</span>

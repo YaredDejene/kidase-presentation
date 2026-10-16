@@ -14,20 +14,10 @@
 }
 
 .sidebar-logo {
-  font-size: 32px;
-  font-weight: 700;
-  color: #FFD700;
+  width: 44px;
+  height: 44px;
   margin-bottom: 30px;
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 4px;
-  padding-left: 2px;
-  letter-spacing: 0;
-  border: #FFD700 2px solid;
-  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .sidebar-menu {

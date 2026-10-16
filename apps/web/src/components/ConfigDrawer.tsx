@@ -124,7 +124,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
           <CopyLink t={p.t} url={p.shareUrl} />
-          <button className="accent-btn" onClick={p.onClose} style={{ height: 42, padding: '0 26px', borderRadius: 9, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{p.t.done}</button>
+          <button className="accent-btn" onClick={p.onClose} style={{ height: 42, padding: '0 26px', borderRadius: 9, background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{p.t.done}</button>
         </div>
       </div>
     </div>

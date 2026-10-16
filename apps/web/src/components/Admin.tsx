@@ -12,7 +12,6 @@ interface Props {
   isDark: boolean;
 }
 
-const LOGO: React.CSSProperties = { width: 32, height: 32, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16, fontFamily: "'Noto Serif Ethiopic Variable',serif" };
 const overlay: React.CSSProperties = { position: 'fixed', inset: 0, zIndex: 110, background: 'var(--bg)', color: 'var(--text)', overflow: 'auto' };
 
 export const Admin: React.FC<Props> = ({ token, setToken, onBack, theme, toggleTheme, isDark }) => {
@@ -48,7 +47,7 @@ const SignIn: React.FC<{ onAuthed: (t: string) => void; onBack: () => void; isDa
           <label style={lbl}>Password</label>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} style={{ ...fld, width: '100%', marginBottom: 24 }} />
           {error && <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: '#ff8a80', fontSize: 13 }}>{error}</div>}
-          <button className="accent-btn" disabled={busy} onClick={submit} style={{ height: 44, width: '100%', borderRadius: 9, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>{busy ? 'Signing in…' : 'Sign in'}</button>
+          <button className="accent-btn" disabled={busy} onClick={submit} style={{ height: 44, width: '100%', borderRadius: 9, background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', fontSize: 14, fontWeight: 600, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>{busy ? 'Signing in…' : 'Sign in'}</button>
         </div>
       </main>
     </div>
@@ -85,7 +84,7 @@ const Authed: React.FC<{ token: string; onSignOut: () => void; onBack: () => voi
     <div style={{ ...overlay, display: 'flex', flexDirection: 'column' }}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60, padding: '0 24px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-          <div style={LOGO}>ቅ</div>
+          <img src="/logo-white.svg" alt="Kidase" width={32} height={32} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.12 }}>
             <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)' }}>Kidase</span>
             <span style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.02em' }}>ADMIN</span>

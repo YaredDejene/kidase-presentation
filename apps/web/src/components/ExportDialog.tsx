@@ -117,4 +117,4 @@ export const ExportDialog: React.FC<Props> = ({ t, onClose, payload, languages }
 };
 
 const btnOutline: React.CSSProperties = { height: 40, padding: '0 18px', borderRadius: 9, border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text)', fontSize: 13.5, fontWeight: 500, cursor: 'pointer' };
-const btnAccent: React.CSSProperties = { height: 40, padding: '0 22px', borderRadius: 9, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 };
+const btnAccent: React.CSSProperties = { height: 40, padding: '0 22px', borderRadius: 9, background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 };

@@ -7,7 +7,7 @@ import { Close, ChevronRight } from '../icons';
 interface Props { t: Strings; uiLang: UiLang; onClose: () => void; render: RenderPayload | null; onJump: (slideIndex: number) => void; }
 
 /** Reading label in the interface language, English when that translation is missing. */
-const readingLabel = (r: RenderPayload['readings'][number], uiLang: UiLang) =>
+export const readingLabel = (r: RenderPayload['readings'][number], uiLang: UiLang) =>
   (uiLang === 'am' ? r.labelAmh : uiLang === 'ti' ? r.labelTi : '') || r.label;
 
 const eyebrow: React.CSSProperties = { fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', marginBottom: 8 };
