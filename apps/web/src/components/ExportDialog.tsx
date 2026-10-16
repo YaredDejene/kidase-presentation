@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toEC } from 'kenat';
 import type { OrderedLanguage } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 import { iconBtn } from '../theme';
@@ -22,7 +23,11 @@ export const ExportDialog: React.FC<Props> = ({ t, onClose, payload, languages }
   const [pct, setPct] = useState(0);
   const [fileName, setFileName] = useState('');
 
-  const base = `kidase_${payload.context.gregorian}`;
+  const greg = payload.context.gregorian;
+  const [y, m, d] = greg.split('-').map(Number);
+  const ec = toEC(y, m, d);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const base = `kidase_${greg}_EC-${ec.year}-${pad(ec.month)}-${pad(ec.day)}`;
 
   const run = async () => {
     const name = `${base}.${fmt}`;
