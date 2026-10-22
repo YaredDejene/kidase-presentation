@@ -17,6 +17,47 @@ import {
 /** Local engine instance for evaluating gitsawe selection rules */
 const localEngine = new RuleEngine();
 
+/**
+ * Ethiopian Orthodox fasting seasons, expressed in the rule DSL so it stays
+ * identical to what a DisplayRule could say. Exposed as meta.isFastingSeason.
+ *  - Wednesdays and Fridays outside Easter to Pentecost, except Gena and Timket
+ *  - Advent fast: Hidar 15 to Tahsas 29, excluding Gena
+ *  - Gahad: the day before Timket
+ *  - Nineveh: three days from its start
+ *  - Great Lent: Abiy Tsome up to (not including) Fasika
+ *  - Apostles' fast: the day after Pentecost until Hamle 5
+ *  - Filseta: Nehase 1 to 16
+ */
+export const FASTING_SEASON_RULE: RuleEntry = {
+  id: "fasting-season",
+  when: {
+    $or: [
+      { $and: [
+        { "meta.dayOfWeek": { $in: ["Wed", "Fri"] } },
+        { $not: { "meta.date": { $between: ["$ref:meta.holidays.fasika", "$ref:meta.holidays.paraclete"] } } },
+        { $not: { "meta.date": { $in: ["$ref:meta.holidays.gena", "$ref:meta.holidays.timket"] } } },
+      ] },
+      { $and: [
+        { "meta.ethMonthDay": { $between: ["03-15", "04-29"] } },
+        { $not: { "meta.date": { $eq: "$ref:meta.holidays.gena" } } },
+      ] },
+      { $diff: { from: "$ref:meta.date", to: "$ref:meta.holidays.timket", unit: "days", $eq: 1 } },
+      { $diff: { from: "$ref:meta.holidays.nineveh", to: "$ref:meta.date", unit: "days", $between: [0, 2] } },
+      { $and: [
+        { "meta.date": { $between: ["$ref:meta.holidays.abiyTsome", "$ref:meta.holidays.fasika"] } },
+        { $not: { "meta.date": { $eq: "$ref:meta.holidays.fasika" } } },
+      ] },
+      { $and: [
+        { $diff: { from: "$ref:meta.holidays.paraclete", to: "$ref:meta.date", unit: "days", $gte: 1 } },
+        { "meta.ethMonthDay": { $between: ["01-01", "11-05"] } },
+      ] },
+      { "meta.ethMonthDay": { $between: ["12-01", "12-16"] } },
+    ],
+  } as RuleEntry["when"],
+  then: {},
+  otherwise: {},
+};
+
 export interface BuildContextArgs {
   presentation?: Presentation | null;
   slide?: Slide | null;
@@ -107,6 +148,9 @@ export function buildContext(args: BuildContextArgs): RuleContext {
     holidays: holidaysObj,
     ...args.extra,
   };
+  meta.isFastingSeason = localEngine.evaluateRule(FASTING_SEASON_RULE, {
+    presentation: {}, slide: {}, vars: {}, settings: {}, meta,
+  }).matched;
 
   // Resolve the current Gitsawe based on selection rules and priority
   const matched = getCurrentGitsawe(

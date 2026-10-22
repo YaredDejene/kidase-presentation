@@ -92,18 +92,11 @@ export class RuleNormalizer {
         throw new NormalizationError(`Unknown comparison operator: ${op}`);
       }
 
-      let resolvedVal: ResolvedValue;
-      if (Array.isArray(val)) {
-        resolvedVal = { kind: 'array', items: val.map(v => this.toResolvedValue(v)) };
-      } else {
-        resolvedVal = this.toResolvedValue(val as DSLValue);
-      }
-
       nodes.push({
         type: 'comparison',
         path,
         operator: op as ComparisonOperator,
-        value: resolvedVal,
+        value: this.toResolvedValue(val),
       });
     }
 
@@ -180,26 +173,22 @@ export class RuleNormalizer {
       throw new NormalizationError('$nthDayAfter requires a comparison operator (e.g. $eq: "2026-04-12")');
     }
 
-    let resolvedVal: ResolvedValue;
-    if (Array.isArray(value)) {
-      resolvedVal = { kind: 'array', items: (value as DSLValue[]).map(v => this.toResolvedValue(v)) };
-    } else {
-      resolvedVal = this.toResolvedValue(value);
-    }
-
     return {
       type: 'nthDayAfter',
       from: this.toResolvedValue(from),
       dayOfWeek,
       nth,
       operator,
-      value: resolvedVal,
+      value: this.toResolvedValue(value),
     };
   }
 
-  toResolvedValue(val: DSLValue): ResolvedValue {
+  toResolvedValue(val: DSLValue | DSLValue[]): ResolvedValue {
     if (val === null || val === undefined) {
       return { kind: 'literal', value: null };
+    }
+    if (Array.isArray(val)) {
+      return { kind: 'array', items: val.map(v => this.toResolvedValue(v)) };
     }
     if (typeof val === 'string' && val.startsWith('$ref:')) {
       return { kind: 'ref', path: val.slice(5) };

@@ -1996,7 +1996,7 @@ dependencies = [
 
 [[package]]
 name = "kidase-presentation"
-version = "1.0.10"
+version = "1.0.14"
 dependencies = [
  "serde",
  "serde_json",
