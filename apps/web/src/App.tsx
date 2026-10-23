@@ -394,6 +394,7 @@ export const App: React.FC = () => {
     { label: t.exportTip, icon: <I.Download />, run: () => setExportOpen(true) },
     themeItem,
     adminItem,
+    { label: t.backToStart, icon: <I.ChevronLeft />, run: () => { location.href = '/'; } },
   ];
 
   if (screen === 'landing') {
@@ -424,6 +425,7 @@ export const App: React.FC = () => {
 
         {/* toolbar */}
         <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px 6px 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
+          {!isMobile && <a href="/" className="ic" title={t.backToStart} style={{ ...iconBtn, textDecoration: 'none', marginRight: 2 }}><I.ChevronLeft /></a>}
           <a href="/" title={t.backToStart} style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0, textDecoration: 'none' }}>
             <img src={isDark ? '/mark-dark.svg' : '/mark-light.svg'} alt="" width={34} height={34} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
