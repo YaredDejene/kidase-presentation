@@ -6,6 +6,7 @@ import {
   Presentation,
   PresentationLanguage,
   getAllLanguages,
+  isStandaloneService,
   LANG_SLOTS,
 } from '../domain/entities/Presentation';
 import { Gitsawe } from '../domain/entities/Gitsawe';
@@ -155,11 +156,12 @@ export class RenderService {
     const context = buildContext(baseCtxArgs);
     const meta = context.meta;
 
-    // Secondary kidase auto-merge (driven by resolved gitsawe.kidaseType)
+    // Secondary kidase auto-merge (driven by resolved gitsawe.kidaseType). A standalone
+    // service (Kidan) renders on its own.
     const gitsaweMeta = meta.gitsawe as Record<string, unknown> | undefined;
     const kidaseType = gitsaweMeta?.kidaseType as string | undefined;
     let secondary: LoadedSet | null = null;
-    if (kidaseType && kidaseType !== primary.presentation.name) {
+    if (!isStandaloneService(primary.presentation.type) && kidaseType && kidaseType !== primary.presentation.name) {
       const secPres = await this.repos.presentation.getByName(kidaseType);
       if (secPres) {
         secondary = await this.loadSet(secPres.id, args.country);

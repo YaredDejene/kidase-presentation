@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { toEC } from 'kenat';
-import type { OrderedLanguage } from '@kidase/shared';
+import { isStandaloneService, type OrderedLanguage } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 import { iconBtn } from '../theme';
 import { Close, Download, Check } from '../icons';
@@ -27,7 +27,8 @@ export const ExportDialog: React.FC<Props> = ({ t, onClose, payload, languages }
   const [y, m, d] = greg.split('-').map(Number);
   const ec = toEC(y, m, d);
   const pad = (n: number) => String(n).padStart(2, '0');
-  const base = `kidase_${greg}_EC-${ec.year}-${pad(ec.month)}-${pad(ec.day)}`;
+  const service = isStandaloneService(payload.presentation.type) ? 'kidan' : 'kidase';
+  const base = `${service}_${greg}_EC-${ec.year}-${pad(ec.month)}-${pad(ec.day)}`;
 
   const run = async () => {
     const name = `${base}.${fmt}`;

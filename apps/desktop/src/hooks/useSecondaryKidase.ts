@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { isStandaloneService } from '@kidase/shared';
 import { presentationRepository } from '../repositories';
 import { presentationService } from '../services';
 import { useAppStore } from '../store/appStore';
@@ -21,7 +22,8 @@ export function useSecondaryKidase(evaluateRules: () => void) {
     const gitsawe = ruleContextMeta?.gitsawe as Record<string, unknown> | undefined;
     const kidaseType = gitsawe?.kidaseType as string | undefined;
 
-    if (!kidaseType || !currentPresentation) {
+    // A standalone service (Kidan) renders on its own, without an anaphora.
+    if (!kidaseType || !currentPresentation || isStandaloneService(currentPresentation.type)) {
       clearSecondaryData();
       return;
     }

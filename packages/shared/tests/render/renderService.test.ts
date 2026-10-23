@@ -150,4 +150,25 @@ describe('RenderService', () => {
     expect(result.slides.map(s => s.id)).toEqual(['s1', 'sec1']);
     expect(result.slides.find(s => s.id === 'sec1')?.isSecondary).toBe(true);
   });
+
+  it('does not merge an anaphora into a Kidan primary', async () => {
+    const selectRule = JSON.stringify({ id: 'g-sel', when: { 'meta.isMehella': { $eq: true } }, then: { visible: true } });
+    const repos = fakeRepositories({
+      templates: [{ id: 't1', name: 'Default', maxLangCount: 4, definitionJson: def(), createdAt: '' }],
+      presentations: [
+        { id: 'k1', name: 'Kidan', type: 'Kidan', templateId: 't1', languageMap: { Lang1: "Ge'ez" }, isPrimary: false, isActive: true, createdAt: '' },
+        { id: 'p2', name: 'Secondary', type: 'Kidase', templateId: 't1', languageMap: { Lang1: "Ge'ez" }, isPrimary: false, isActive: false, createdAt: '' },
+      ],
+      slides: [
+        { id: 'ks1', presentationId: 'k1', slideOrder: 0, blocksJson: [{ Lang1: 'kidan' }], isDisabled: false, isDynamic: false },
+        { id: 'sec1', presentationId: 'p2', slideOrder: 0, blocksJson: [{ Lang1: 'secondary' }], isDisabled: false, isDynamic: false },
+      ],
+      gitsawes: [{ id: 'g1', lineId: 'l1', name: 'Feast X', priority: 1, kidaseType: 'Secondary', createdAt: '' }],
+      rules: [{ id: 'g-sel', name: 'select g1', scope: 'gitsawe', gitsaweId: 'g1', ruleJson: selectRule, isEnabled: true, createdAt: '' }],
+    });
+    const result = await new RenderService(repos).render({ presentationId: 'k1', date: '2026-06-25', isMehella: true });
+
+    expect(result.slides.map(s => s.id)).toEqual(['ks1']);
+    expect(result.presentation.secondaryName).toBeUndefined();
+  });
 });

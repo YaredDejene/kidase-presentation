@@ -13,6 +13,8 @@ export interface Strings {
   pdfSub: (n: number) => string; pptxSub: string; cancel: string; download: string; rendering: string;
   exportReady: string; exportAgain: string; exportFailed: string; slide: string;
   country: string; countrySub: string; countryNames: Record<Country, string>;
+  backToStart: string; noPresTitle: string; noPresSub: string;
+  landingSub: string; kidaseDesc: string; kidanDesc: string;
   /** One label per entry of SHORTCUTS, same order. */
   shortcutLabels: string[];
 }
@@ -26,6 +28,8 @@ export const T: Record<UiLang, Strings> = {
     pdfSub: n => `All ${n} slides · print-ready`, pptxSub: 'Editable · one slide per page', cancel: 'Cancel', download: 'Download', rendering: 'Rendering slides & composing file…',
     exportReady: 'Export ready', exportAgain: 'Export again', exportFailed: 'Export failed', slide: 'Slide',
     country: 'Country', countrySub: 'Sets the patriarch and country named in the prayers.', countryNames: { et: 'Ethiopia', er: 'Eritrea', both: 'Ethiopia and Eritrea' },
+    backToStart: 'Start page', noPresTitle: 'Nothing to show yet', noPresSub: 'This service has not been published. Go back to the start page.',
+    landingSub: 'Ethiopian and Eritrean Orthodox Tewahedo service slides for projection, in Ge\'ez, Amharic, Tigrinya and English.', kidaseDesc: "Divine Liturgy with the day's Gitsawe readings", kidanDesc: 'Covenant prayer',
     shortcutLabels: ['Previous / next slide', 'Next slide', 'Project fullscreen', 'Liturgical info', 'Exit fullscreen / close', 'Keyboard shortcuts'],
   },
   am: {
@@ -36,6 +40,8 @@ export const T: Record<UiLang, Strings> = {
     pdfSub: n => `ሁሉም ${n} ስላይዶች · ለህትመት ዝግጁ`, pptxSub: 'ሊስተካከል የሚችል · በአንድ ገጽ አንድ ስላይድ', cancel: 'ሰርዝ', download: 'አውርድ', rendering: 'ስላይዶች እየተዘጋጁ ፋይሉ እየተሰራ ነው…',
     exportReady: 'ፋይሉ ዝግጁ ነው', exportAgain: 'እንደገና አውርድ', exportFailed: 'ማውረድ አልተሳካም', slide: 'ስላይድ',
     country: 'ሀገር', countrySub: 'በጸሎቱ የሚጠሩትን ፓትርያርክና ሀገር ይወስናል።', countryNames: { et: 'ኢትዮጵያ', er: 'ኤርትራ', both: 'ኢትዮጵያና ኤርትራ' },
+    backToStart: 'መነሻ ገጽ', noPresTitle: 'ገና የሚታይ ነገር የለም', noPresSub: 'ይህ አገልግሎት ገና አልታተመም። ወደ መነሻ ገጽ ይመለሱ።',
+    landingSub: 'የኢትዮጵያና የኤርትራ ኦርቶዶክስ ተዋሕዶ የአገልግሎት ስላይዶች በግዕዝ፣ በአማርኛ፣ በትግርኛና በእንግሊዝኛ።', kidaseDesc: 'ቅዳሴ ከዕለቱ የግፃዌ ምንባባት ጋር', kidanDesc: 'ጸሎተ ኪዳን',
     shortcutLabels: ['ቀዳሚ / ቀጣይ ስላይድ', 'ቀጣይ ስላይድ', 'በሙሉ ስክሪን አሳይ', 'የቅዳሴ መረጃ', 'ከሙሉ ስክሪን ውጣ / ዝጋ', 'የቁልፍ አቋራጮች'],
   },
   ti: {
@@ -46,8 +52,17 @@ export const T: Record<UiLang, Strings> = {
     pdfSub: n => `ኩሎም ${n} ስላይዳት · ንሕትመት ድሉው`, pptxSub: 'ክእረም ዝኽእል · ኣብ ሓደ ገጽ ሓደ ስላይድ', cancel: 'ሰርዝ', download: 'ኣውርድ', rendering: 'ስላይዳት ይዳለዉ ፋይል ይስራሕ ኣሎ…',
     exportReady: 'ፋይል ድሉው እዩ', exportAgain: 'መሊስካ ኣውርድ', exportFailed: 'ምውራድ ኣይተዓወተን', slide: 'ስላይድ',
     country: 'ሃገር', countrySub: 'ኣብ ጸሎት ዝጥቀሱ ፓትርያርክን ሃገርን ይውስን።', countryNames: { et: 'ኢትዮጵያ', er: 'ኤርትራ', both: 'ኢትዮጵያን ኤርትራን' },
+    backToStart: 'መበገሲ ገጽ', noPresTitle: 'ገና ዝረአ የለን', noPresSub: 'እዚ ኣገልግሎት ገና ኣይተሓትመን። ናብ መበገሲ ገጽ ተመለሱ።',
+    landingSub: 'ናይ ኢትዮጵያን ኤርትራን ኦርቶዶክስ ተዋሕዶ ስላይዳት ኣገልግሎት ብግእዝ፣ ኣምሓርኛ፣ ትግርኛን እንግሊዝኛን።', kidaseDesc: 'ቅዳሴ ምስ ናይ ዕለቱ ንባባት ግጻዌ', kidanDesc: 'ጸሎተ ኪዳን',
     shortcutLabels: ['ዝሓለፈ / ዝቕጽል ስላይድ', 'ዝቕጽል ስላይድ', 'ብምሉእ ስክሪን ኣርኢ', 'ሓበሬታ ቅዳሴ', 'ካብ ምሉእ ስክሪን ውጻእ / ዕጾ', 'ሓጸርቲ መንገድታት ቁልፊ'],
   },
+};
+
+/** Kidan has no Gitsawe readings, so the strings that mention Kidase or readings read differently there. */
+export const T_KIDAN: Record<UiLang, Partial<Strings>> = {
+  en: { dateSub: "Pick the date to load that day's slides.", loadingSlide: 'Loading Kidan…', noSlidesSub: 'No slides are shown for the selected date. Try another date.' },
+  am: { serviceDate: 'የኪዳን ቀን', dateSub: 'የዕለቱን ስላይዶች ለመጫን ቀን ይምረጡ።', loadingSlide: 'ኪዳን በመጫን ላይ…', noSlidesSub: 'ለተመረጠው ቀን የሚታይ ስላይድ የለም። ሌላ ቀን ይሞክሩ።' },
+  ti: { serviceDate: 'ዕለት ኪዳን', dateSub: 'ናይታ ዕለት ስላይዳት ንምጽዓን ዕለት ምረጽ።', loadingSlide: 'ኪዳን ኣብ ምጽዓን…', noSlidesSub: 'ነታ ዝተመርጸት ዕለት ዝረአ ስላይድ የለን። ካልእ ዕለት ፈትኑ።' },
 };
 
 export const UI_LANGS: { key: UiLang; label: string }[] = [
