@@ -12,7 +12,7 @@ import { ExportDialog } from './components/ExportDialog';
 import { HelpOverlay } from './components/HelpOverlay';
 import { Landing } from './components/Landing';
 import { themeVars, iconBtn, ThemeName } from './theme';
-import { T, UiLang, LANG_BY_SLOT, ETH_MONTHS_SHORT } from './i18n';
+import { T, T_KIDAN, UiLang, LANG_BY_SLOT, ETH_MONTHS_SHORT } from './i18n';
 import * as I from './icons';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -173,7 +173,7 @@ export const App: React.FC = () => {
   const [controlsVisible, setControlsVisible] = useState(true);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const t = T[uiLang];
+  const t = useMemo(() => (MODE === 'Kidan' ? { ...T[uiLang], ...T_KIDAN[uiLang] } : T[uiLang]), [uiLang]);
   const isDark = theme === 'dark';
   useEffect(() => { document.documentElement.lang = uiLang; }, [uiLang]);
 

@@ -58,6 +58,13 @@ export const T: Record<UiLang, Strings> = {
   },
 };
 
+/** Kidan has no Gitsawe readings, so the strings that mention Kidase or readings read differently there. */
+export const T_KIDAN: Record<UiLang, Partial<Strings>> = {
+  en: { dateSub: "Pick the date to load that day's slides.", loadingSlide: 'Loading Kidan…', noSlidesSub: 'No slides are shown for the selected date. Try another date.' },
+  am: { serviceDate: 'የኪዳን ቀን', dateSub: 'የዕለቱን ስላይዶች ለመጫን ቀን ይምረጡ።', loadingSlide: 'ኪዳን በመጫን ላይ…', noSlidesSub: 'ለተመረጠው ቀን የሚታይ ስላይድ የለም። ሌላ ቀን ይሞክሩ።' },
+  ti: { serviceDate: 'ዕለት ኪዳን', dateSub: 'ናይታ ዕለት ስላይዳት ንምጽዓን ዕለት ምረጽ።', loadingSlide: 'ኪዳን ኣብ ምጽዓን…', noSlidesSub: 'ነታ ዝተመርጸት ዕለት ዝረአ ስላይድ የለን። ካልእ ዕለት ፈትኑ።' },
+};
+
 export const UI_LANGS: { key: UiLang; label: string }[] = [
   { key: 'en', label: 'English' }, { key: 'am', label: 'አማርኛ' }, { key: 'ti', label: 'ትግርኛ' },
 ];
