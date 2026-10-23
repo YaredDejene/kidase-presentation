@@ -147,6 +147,13 @@ export type PresentationType =
   | 'Kidan'
   | 'Custom';
 
+/**
+ * A standalone service renders on its own: no anaphora merge, no Gitsawe readings.
+ * Everything else is treated as a Kidase, since existing rows carry free-text
+ * types such as "Divine Liturgy".
+ */
+export const isStandaloneService = (type: string | undefined) => type === 'Kidan';
+
 export const PRESENTATION_TYPES: { value: PresentationType; label: string }[] = [
   { value: 'Kidase', label: 'Kidase (Divine Liturgy)' },
   { value: 'Kidan', label: 'Kidan (Covenant Prayer)' },
