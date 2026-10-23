@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LangSlot, Country } from '@kidase/shared';
-import { isVerseSlide, DEFAULT_LANG_COLORS } from '@kidase/shared';
+import { isVerseSlide, isStandaloneService, DEFAULT_LANG_COLORS } from '@kidase/shared';
 import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
 import { Stage } from './components/Stage';
@@ -10,6 +10,7 @@ import { InfoPanel, readingLabel } from './components/InfoPanel';
 import { toEC } from 'kenat';
 import { ExportDialog } from './components/ExportDialog';
 import { HelpOverlay } from './components/HelpOverlay';
+import { Landing } from './components/Landing';
 import { themeVars, iconBtn, ThemeName } from './theme';
 import { T, UiLang, LANG_BY_SLOT, ETH_MONTHS_SHORT } from './i18n';
 import * as I from './icons';
@@ -89,7 +90,29 @@ function readLink(): Link {
   return out;
 }
 const LINK = readLink();
-if (location.search) { try { history.replaceState(null, '', location.pathname); } catch { /* ignore */ } }
+
+/**
+ * One viewer, one service per path: /kidase and /kidan each show the presentations
+ * of that type. The root is the landing page, except that a root URL with a query
+ * string is an old Kidase share link and opens the viewer.
+ */
+export type Mode = 'Kidase' | 'Kidan';
+type Screen = 'landing' | 'viewer' | 'admin';
+const MODE_BY_PATH: Record<string, Mode> = { '/kidase': 'Kidase', '/kidan': 'Kidan' };
+const PATH = location.pathname.replace(/\/+$/, '') || '/';
+const MODE: Mode = MODE_BY_PATH[PATH] ?? 'Kidase';
+const BOOT_SCREEN: Screen = PATH === '/admin' ? 'admin' : MODE_BY_PATH[PATH] || (PATH === '/' && location.search) ? 'viewer' : 'landing';
+/** What the viewer shows per service. Kidan has no Gitsawe readings, no Mehella variants and no country placeholders. */
+const FEATURES = {
+  Kidase: { mehella: true, country: true, readings: true },
+  Kidan: { mehella: false, country: false, readings: false },
+}[MODE];
+const BRAND = { Kidase: { amh: 'ቅዳሴ', latin: 'KIDASE' }, Kidan: { amh: 'ኪዳን', latin: 'KIDAN' } }[MODE];
+const MODE_PATH = `/${MODE.toLowerCase()}`;
+// The address bar stays clean and on the service path, so a reload never lands on the landing page.
+if (BOOT_SCREEN === 'viewer' && (location.search || location.pathname !== MODE_PATH)) {
+  try { history.replaceState(null, '', MODE_PATH); } catch { /* ignore */ }
+}
 const langSlug = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '-');
 const COUNTRY_WORD: Record<Country, string> = { et: 'ethiopia', er: 'eritrea', both: 'ethiopia-eritrea' };
 
@@ -98,8 +121,11 @@ interface Session { day: string; presentation?: string; date: string; slide: num
 function readJson<T>(store: Storage, key: string): T | null {
   try { return JSON.parse(store.getItem(key) ?? 'null'); } catch { return null; }
 }
-const PREFS: Prefs = readJson<Prefs>(localStorage, 'kidase_prefs') ?? {};
-const SESSION: Session | null = (() => { const s = readJson<Session>(sessionStorage, 'kidase_session'); return s?.day === todayIso() ? s : null; })();
+// Each service remembers its own languages and place; Kidan starts from the Kidase theme and interface language.
+const PREFS_KEY = `${MODE.toLowerCase()}_prefs`;
+const SESSION_KEY = `${MODE.toLowerCase()}_session`;
+const PREFS: Prefs = { ...readJson<Prefs>(localStorage, 'kidase_prefs'), ...readJson<Prefs>(localStorage, PREFS_KEY) };
+const SESSION: Session | null = (() => { const s = readJson<Session>(sessionStorage, SESSION_KEY); return s?.day === todayIso() ? s : null; })();
 
 const ETHIOPIC = "'Noto Serif Ethiopic Variable',serif";
 const MOBILE_QUERY = '(max-width: 768px)';
@@ -138,7 +164,7 @@ export const App: React.FC = () => {
   // Projection without the Fullscreen API (iPhone): the same overlay, inside the browser window.
   const [manualFullscreen, setManualFullscreen] = useState(false);
   const fullscreen = apiFullscreen || manualFullscreen;
-  const [screen, setScreen] = useState<'viewer' | 'admin'>('viewer');
+  const [screen, setScreen] = useState<Screen>(BOOT_SCREEN);
   const [adminToken, setAdminToken] = useState<string | null>(() => { try { return localStorage.getItem('kidase_admin_token'); } catch { return null; } });
   const updateToken = useCallback((tk: string | null) => {
     setAdminToken(tk);
@@ -151,17 +177,23 @@ export const App: React.FC = () => {
   const isDark = theme === 'dark';
   useEffect(() => { document.documentElement.lang = uiLang; }, [uiLang]);
 
+  const [listEmpty, setListEmpty] = useState(false);
   useEffect(() => {
-    fetchPresentations().then(list => {
+    if (BOOT_SCREEN === 'landing') return;
+    fetchPresentations().then(all => {
+      const list = all.filter(p => isStandaloneService(p.type) === (MODE === 'Kidan'));
       if (list.length) { setDefaultId(list[0].id); setSelectedId(prev => prev || list.find(p => p.id === wantedId.current)?.id || list[0].id); }
+      else setListEmpty(true);
     }).catch(e => setError(String(e.message ?? e)));
   }, []);
+  // The landing page keeps the HTML title for search engines; the viewer names its service.
+  useEffect(() => { if (screen !== 'landing') document.title = `${MODE} · ${BRAND.amh}`; }, [screen]);
 
   useEffect(() => {
     if (!selectedId) return;
     let cancelled = false;
     setLoading(true); setError(null);
-    fetchRender(selectedId, gregDate, isMehella, country)
+    fetchRender(selectedId, gregDate, FEATURES.mehella && isMehella, country)
       .then(payload => {
         if (cancelled) return;
         setRender(payload);
@@ -227,7 +259,7 @@ export const App: React.FC = () => {
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
       else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
       else if (e.key === 'Escape' && fullscreen) exitProjection();
-      else if (e.key === 'i' || e.key === 'I') setInfoOpen(v => !v);
+      else if ((e.key === 'i' || e.key === 'I') && FEATURES.readings) setInfoOpen(v => !v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -241,11 +273,11 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const prefs: Prefs = { ui: uiLang, theme, country, mehella: isMehella, languages: activeSlots };
-    try { localStorage.setItem('kidase_prefs', JSON.stringify(prefs)); } catch { /* ignore */ }
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
   }, [uiLang, theme, country, isMehella, activeSlots]);
   useEffect(() => {
     const session: Session = { day: todayIso(), presentation: selectedId, date: gregDate, slide: slideIndex };
-    try { sessionStorage.setItem('kidase_session', JSON.stringify(session)); } catch { /* ignore */ }
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch { /* ignore */ }
   }, [selectedId, gregDate, slideIndex]);
 
   // Built on demand for "Copy share link"; the address bar itself stays clean.
@@ -253,9 +285,9 @@ export const App: React.FC = () => {
     const q = new URLSearchParams();
     q.set('date', gregDate);
     q.set('slide', String(slideIndex + 1));
-    q.set('country', COUNTRY_WORD[country]);
+    if (FEATURES.country) q.set('country', COUNTRY_WORD[country]);
     if (activeLanguages.length) q.set('languages', activeLanguages.map(l => langSlug(l.name)).join(','));
-    if (isMehella) q.set('mehella', '1');
+    if (FEATURES.mehella && isMehella) q.set('mehella', '1');
     if (selectedId && selectedId !== defaultId) q.set('presentation', selectedId);
     return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',')}`;
   }, [gregDate, slideIndex, country, activeLanguages, isMehella, selectedId, defaultId]);
@@ -317,7 +349,7 @@ export const App: React.FC = () => {
     <div onClick={seek} style={{ position: 'absolute', left: 0, right: 0, top: -5, height: 12, cursor: 'pointer', zIndex: 1 }}>
       <div style={{ position: 'absolute', left: 0, right: 0, top: 5, height: 2, background: 'var(--border2)' }} />
       <div style={{ position: 'absolute', left: 0, top: 5, height: 2, width: `${pctDone}%`, background: 'var(--accent)', transition: 'width .15s' }} />
-      {render?.readings.filter(r => r.slideIndex !== undefined).map(r => (
+      {FEATURES.readings && render?.readings.filter(r => r.slideIndex !== undefined).map(r => (
         <button key={r.key} title={readingLabel(r, uiLang)} onClick={e => { e.stopPropagation(); setSlideIndex(r.slideIndex!); }} style={{ position: 'absolute', left: `${(r.slideIndex! / (slideCount - 1)) * 100}%`, top: 1, width: 10, height: 10, marginLeft: -5, padding: 0, border: '2px solid var(--surface)', borderRadius: '50%', background: r.slideIndex! <= slideIndex ? 'var(--accent)' : 'var(--text2)', cursor: 'pointer' }} />
       ))}
       {secondaryStart > 0 && (
@@ -358,11 +390,19 @@ export const App: React.FC = () => {
     </>
   );
   const moreItems: MenuItem[] = [
-    { label: t.context, icon: <I.Info />, run: () => setInfoOpen(true) },
+    ...(FEATURES.readings ? [{ label: t.context, icon: <I.Info />, run: () => setInfoOpen(true) }] : []),
     { label: t.exportTip, icon: <I.Download />, run: () => setExportOpen(true) },
     themeItem,
     adminItem,
   ];
+
+  if (screen === 'landing') {
+    return (
+      <div className="app-root" style={rootStyle}>
+        <Landing t={t} isDark={isDark} uiLang={uiLang} setUiLang={setUiLang} toggleTheme={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} />
+      </div>
+    );
+  }
 
   return (
     <div className="app-root" style={rootStyle}>
@@ -384,19 +424,19 @@ export const App: React.FC = () => {
 
         {/* toolbar */}
         <div style={{ minHeight: 56, display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px 6px 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+          <a href="/" title={t.backToStart} style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0, textDecoration: 'none' }}>
             <img src={isDark ? '/mark-dark.svg' : '/mark-light.svg'} alt="" width={34} height={34} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontFamily: ETHIOPIC, fontWeight: 700, fontSize: 19, lineHeight: 1, color: 'var(--text)' }}>ቅዳሴ</span>
-              {!isMobile && <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.32em', color: 'var(--text)', opacity: 0.8, whiteSpace: 'nowrap' }}>KIDASE</span>}
+              <span style={{ fontFamily: ETHIOPIC, fontWeight: 700, fontSize: 19, lineHeight: 1, color: 'var(--text)' }}>{BRAND.amh}</span>
+              {!isMobile && <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.32em', color: 'var(--text)', opacity: 0.8, whiteSpace: 'nowrap' }}>{BRAND.latin}</span>}
             </div>
-          </div>
+          </a>
           <div style={{ flex: 1 }} />
           {contextText}
           {!isMobile && (
             <>
               <div style={{ width: 1, height: 24, background: 'var(--border)', margin: '0 2px' }} />
-              <button className="ic" onClick={() => setInfoOpen(true)} title={`${t.context} (I)`} style={iconBtn}><I.Info /></button>
+              {FEATURES.readings && <button className="ic" onClick={() => setInfoOpen(true)} title={`${t.context} (I)`} style={iconBtn}><I.Info /></button>}
               <button className="ic" onClick={() => setExportOpen(true)} title={t.exportTip} style={iconBtn}><I.Download /></button>
               <button className="ic" onClick={() => setConfigOpen(true)} title={t.settingsTip} style={iconBtn}><I.Gear /></button>
               <div style={{ position: 'relative' }}>
@@ -444,6 +484,14 @@ export const App: React.FC = () => {
                 <button className="outline-btn" onClick={() => setConfigOpen(true)} style={{ height: 38, padding: '0 18px', borderRadius: 8, border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>{t.changeDate}</button>
               </div>
             )}
+            {!loading && !error && listEmpty && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', maxWidth: 380 }}>
+                <div style={{ width: 54, height: 54, borderRadius: 14, background: 'var(--elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}><I.Alert color="var(--muted)" /></div>
+                <h3 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 6px', color: 'var(--text)' }}>{t.noPresTitle}</h3>
+                <p style={{ fontSize: 14, color: 'var(--text2)', margin: '0 0 18px' }}>{t.noPresSub}</p>
+                <a href="/" className="outline-btn" style={{ height: 38, padding: '0 18px', borderRadius: 8, border: '1px solid var(--border2)', color: 'var(--text)', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>{t.backToStart}</a>
+              </div>
+            )}
           </div>
 
           {railOpen && isMobile && (
@@ -483,11 +531,12 @@ export const App: React.FC = () => {
           country={country} setCountry={setCountry}
           shareUrl={shareUrl}
           sections={[]}
+          features={FEATURES}
         />
       )}
-      {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} onJump={i => { setSlideIndex(i); setInfoOpen(false); }} />}
+      {infoOpen && FEATURES.readings && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} onJump={i => { setSlideIndex(i); setInfoOpen(false); }} />}
       {exportOpen && render && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
-      {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
+      {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} showInfoKey={FEATURES.readings} />}
 
       {/* fullscreen projection */}
       {fullscreen && current && definition && (

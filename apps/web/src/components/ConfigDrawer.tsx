@@ -27,6 +27,8 @@ interface Props {
   /** Full link reproducing the current view. */
   shareUrl: string;
   sections: SectionItem[];
+  /** Which optional settings this service has. */
+  features: { mehella: boolean; country: boolean };
 }
 
 /** One plain section per setting, separated by a rule; no cards. */
@@ -94,13 +96,13 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
           </section>
 
           {/* country: patriarch and country placeholders */}
-          <section style={card}>
+          {p.features.country && <section style={card}>
             <h3 style={h3}>{p.t.country}</h3>
             <p style={sub}>{p.t.countrySub}</p>
             <select value={p.country} onChange={e => p.setCountry(e.target.value as Country)} style={{ ...sel, width: '100%' }}>
               {COUNTRIES.map(c => <option key={c} value={c}>{p.t.countryNames[c]}</option>)}
             </select>
-          </section>
+          </section>}
 
           {/* interface language */}
           <section style={card}>
@@ -111,7 +113,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
           </section>
 
           {/* mehella */}
-          <section style={card}>
+          {p.features.mehella && <section style={card}>
             <div onClick={p.toggleMehella} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{p.t.mehella} <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif", fontWeight: 400, color: 'var(--text2)', marginLeft: 6 }}>ምህላ</span></div>
@@ -119,7 +121,7 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
               </div>
               <div style={switchTrack(p.isMehella)}><span style={switchKnob(p.isMehella)} /></div>
             </div>
-          </section>
+          </section>}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
