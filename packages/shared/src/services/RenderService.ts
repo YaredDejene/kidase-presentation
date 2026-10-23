@@ -155,11 +155,12 @@ export class RenderService {
     const context = buildContext(baseCtxArgs);
     const meta = context.meta;
 
-    // Secondary kidase auto-merge (driven by resolved gitsawe.kidaseType)
+    // Secondary kidase auto-merge (driven by resolved gitsawe.kidaseType). Only a Kidase
+    // takes an anaphora; other services (Kidan) render on their own.
     const gitsaweMeta = meta.gitsawe as Record<string, unknown> | undefined;
     const kidaseType = gitsaweMeta?.kidaseType as string | undefined;
     let secondary: LoadedSet | null = null;
-    if (kidaseType && kidaseType !== primary.presentation.name) {
+    if (primary.presentation.type === 'Kidase' && kidaseType && kidaseType !== primary.presentation.name) {
       const secPres = await this.repos.presentation.getByName(kidaseType);
       if (secPres) {
         secondary = await this.loadSet(secPres.id, args.country);

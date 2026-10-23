@@ -144,10 +144,12 @@ export type PresentationType =
   | 'Seatat'
   | 'Tselot'
   | 'Mezmur'
+  | 'Kidan'
   | 'Custom';
 
 export const PRESENTATION_TYPES: { value: PresentationType; label: string }[] = [
   { value: 'Kidase', label: 'Kidase (Divine Liturgy)' },
+  { value: 'Kidan', label: 'Kidan (Covenant Prayer)' },
   { value: 'Mahlet', label: 'Mahlet (Hymns)' },
   { value: 'Seatat', label: 'Seatat (Hours)' },
   { value: 'Tselot', label: 'Tselot (Prayers)' },

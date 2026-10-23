@@ -21,7 +21,8 @@ export function useSecondaryKidase(evaluateRules: () => void) {
     const gitsawe = ruleContextMeta?.gitsawe as Record<string, unknown> | undefined;
     const kidaseType = gitsawe?.kidaseType as string | undefined;
 
-    if (!kidaseType || !currentPresentation) {
+    // Only a Kidase takes an anaphora; other services (Kidan) render on their own.
+    if (!kidaseType || !currentPresentation || currentPresentation.type !== 'Kidase') {
       clearSecondaryData();
       return;
     }
