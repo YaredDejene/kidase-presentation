@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { T } from '@/i18n';
 import { useSettings } from '@/store/settings';
 import { fonts, useTheme } from '@/theme';
@@ -9,6 +9,7 @@ export default function TabsLayout() {
   const t = T[settings.uiLang];
   const { colors } = useTheme();
   const ethiopic = settings.uiLang !== 'en';
+  if (!settings.onboarded) return <Redirect href="/onboarding" />;
   return (
     <Tabs
       screenOptions={{

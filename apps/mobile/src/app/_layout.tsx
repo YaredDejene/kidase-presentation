@@ -31,6 +31,7 @@ function Routes() {
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.bg }, animation: theme.motion ? 'default' : 'none' }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="onboarding" options={{ animation: 'none' }} />
         <Stack.Screen name="reader" options={{ presentation: 'fullScreenModal' }} />
       </Stack>
     </>

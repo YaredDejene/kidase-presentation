@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { T } from '@/i18n';
-import { formatEth, formatGregorian, formatWeekday, toEth, todayIso } from '@/lib/ethDate';
+import { formatEth, formatGregorian, formatGregorianLong, formatWeekday, toEth, todayIso } from '@/lib/ethDate';
 import { useSettings } from '@/store/settings';
 import { fonts, radius, useTheme } from '@/theme';
 
@@ -22,7 +22,7 @@ export function DateBlock({ date, onStep, onPick, onToday, offline }: Props) {
   const lang = settings.uiLang;
   const eth = toEth(date);
   const isToday = date === todayIso();
-  const primary = settings.calendar === 'ethiopian' ? formatEth(eth, lang, settings.geezNumerals) : formatGregorian(date, lang);
+  const primary = settings.calendar === 'ethiopian' ? formatEth(eth, lang, settings.geezNumerals) : formatGregorianLong(date, lang);
   const secondary = settings.calendar === 'ethiopian' ? formatGregorian(date, lang) : formatEth(eth, lang, settings.geezNumerals);
   const primaryIsEthiopic = settings.calendar === 'ethiopian' || lang !== 'en';
   const size = church ? 34 : 30;
