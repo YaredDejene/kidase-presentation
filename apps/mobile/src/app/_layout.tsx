@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { SelectedDateProvider } from '@/store/date';
 import { SettingsProvider, useSettings } from '@/store/settings';
 import { useTheme } from '@/theme';
 
@@ -39,7 +40,9 @@ function Routes() {
 export default function RootLayout() {
   return (
     <SettingsProvider>
-      <Routes />
+      <SelectedDateProvider>
+        <Routes />
+      </SelectedDateProvider>
     </SettingsProvider>
   );
 }

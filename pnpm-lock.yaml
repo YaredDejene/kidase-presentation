@@ -165,9 +165,15 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.88.0)
+      '@react-native-community/slider':
+        specifier: 5.2.1
+        version: 5.2.1
       expo:
         specifier: ~58.0.19
         version: 58.0.19(@babel/core@7.29.7)(@expo/dom-webview@58.0.2)(@expo/metro-runtime@58.0.15)(expo-router@58.0.26)(react-dom@19.3.1)(react-native-worklets@0.13.0)(react-native@0.88.0)(react@19.3.0)(typescript@6.0.3)
+      expo-clipboard:
+        specifier: ~58.0.4
+        version: 58.0.4(expo@58.0.19)(react-native@0.88.0)(react@19.3.0)
       expo-constants:
         specifier: ~58.0.13
         version: 58.0.13(expo@58.0.19)(react-native@0.88.0)(typescript@6.0.3)
@@ -2397,6 +2403,10 @@ packages:
       react-native: 0.88.0(@babel/core@7.29.7)(@react-native/metro-config@0.88.0)(@types/react@19.3.0)(react@19.3.0)
     dev: false
 
+  /@react-native-community/slider@5.2.1:
+    resolution: {integrity: sha512-HBDPRFRIN47hRtd5tdDWZp3kkVN1z98jGbK9wHOfUfVO+PbBDZzD7xjiiyBqNpg6Rom2QPFOpBZzsB2bHy4yAQ==}
+    dev: false
+
   /@react-native-masked-view/masked-view@0.3.2(react-native@0.88.0)(react@19.3.0):
     resolution: {integrity: sha512-XwuQoW7/GEgWRMovOQtX3A4PrXhyaZm0lVUiY8qJDvdngjLms9Cpdck6SmGAUNqQwcj2EadHC1HwL0bEyoa/SQ==}
     peerDependencies:
@@ -4201,6 +4211,18 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - typescript
+    dev: false
+
+  /expo-clipboard@58.0.4(expo@58.0.19)(react-native@0.88.0)(react@19.3.0):
+    resolution: {integrity: sha512-b2eEJMwdWXLTrmrkg/otsmL2OV6s9D90tytSNBsY87UswrWf6JwxcB2OaWegyUWD9XnvtBVNeVK7lej0zZh+5A==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+      react-native: '*'
+    dependencies:
+      expo: 58.0.19(@babel/core@7.29.7)(@expo/dom-webview@58.0.2)(@expo/metro-runtime@58.0.15)(expo-router@58.0.26)(react-dom@19.3.1)(react-native-worklets@0.13.0)(react-native@0.88.0)(react@19.3.0)(typescript@6.0.3)
+      react: 19.3.0
+      react-native: 0.88.0(@babel/core@7.29.7)(@react-native/metro-config@0.88.0)(@types/react@19.3.0)(react@19.3.0)
     dev: false
 
   /expo-constants@58.0.13(expo@58.0.19)(react-native@0.88.0)(typescript@6.0.3):

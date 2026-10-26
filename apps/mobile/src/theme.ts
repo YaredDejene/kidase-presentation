@@ -18,14 +18,7 @@ export const palettes: Record<'light' | 'dark', Palette> = {
 };
 
 
-/** Font family names as registered by the Google Fonts packages in the root layout. */
-export const fonts = {
-  ethiopic: 'NotoSerifEthiopic_400Regular',
-  ethiopicMedium: 'NotoSerifEthiopic_500Medium',
-  ethiopicBold: 'NotoSerifEthiopic_700Bold',
-  serif: 'SourceSerif4_400Regular',
-  serifSemi: 'SourceSerif4_600SemiBold',
-} as const;
+export { fonts } from '@/lib/fonts';
 
 export const radius = { card: 12, control: 8, pill: 999 } as const;
 
