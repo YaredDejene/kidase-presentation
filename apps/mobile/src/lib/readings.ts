@@ -1,7 +1,7 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchRange, type DayReadings } from '@/lib/api';
-import { monthKey, monthRange } from '@/lib/months';
+import { addMonths, monthKey, monthRange } from '@/lib/months';
 
 /**
  * Readings cache: one JSON file per Gregorian month under the document directory, mirrored in
@@ -56,6 +56,29 @@ export function isMonthStale(key: string): boolean {
 
 export async function hasMonth(key: string): Promise<boolean> {
   return (await readMonth(key)) !== null;
+}
+
+/** Cache first, then the network; null when neither has the month. */
+export async function loadMonth(key: string): Promise<DayReadings[] | null> {
+  return (await readMonth(key)) ?? fetchMonth(key).catch(() => null);
+}
+
+/** Every cached or fetchable day between two dates, keyed by ISO date. Used by the calendar grid for markers. */
+export function useRangeDays(from: string, to: string): Map<string, DayReadings> {
+  const [days, setDays] = useState<Map<string, DayReadings>>(new Map());
+  useEffect(() => {
+    let alive = true;
+    const keys: string[] = [];
+    for (let k = monthKey(from); k <= monthKey(to); k = addMonths(k, 1)) keys.push(k);
+    Promise.all(keys.map(loadMonth)).then(months => {
+      if (!alive) return;
+      const map = new Map<string, DayReadings>();
+      for (const m of months) for (const d of m ?? []) if (d.date.gregorian >= from && d.date.gregorian <= to) map.set(d.date.gregorian, d);
+      setDays(map);
+    });
+    return () => { alive = false; };
+  }, [from, to]);
+  return days;
 }
 
 /** Synchronous lookup for screens opened from Today, which has already loaded the month. */

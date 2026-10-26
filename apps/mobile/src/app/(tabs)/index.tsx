@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateBlock } from '@/components/DateBlock';
+import { DatePickerSheet } from '@/components/DatePickerSheet';
 import { ReadingCard } from '@/components/ReadingCard';
 import { EmptyState, Skeleton } from '@/components/States';
 import { T } from '@/i18n';
@@ -20,6 +22,7 @@ export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const t = T[settings.uiLang];
   const { day, status, offline, reload } = useDay(date);
+  const [picker, setPicker] = useState(false);
   const openReader = (index: number) => router.push({ pathname: '/reader', params: { date, index: String(index) } });
 
   return (
@@ -32,7 +35,7 @@ export default function TodayScreen() {
           <EmptyState onRetry={reload} />
         ) : (
           <>
-            <DateBlock date={date} onStep={d => setDate(addDays(date, d))} onPick={() => undefined} onToday={() => setDate(todayIso())} offline={offline} />
+            <DateBlock date={date} onStep={d => setDate(addDays(date, d))} onPick={() => setPicker(true)} onToday={() => setDate(todayIso())} offline={offline} />
             {status === 'loading' || !day ? <Skeleton /> : day.readings.map((r, i) => <ReadingCard key={r.key} reading={r} onPress={() => openReader(i)} />)}
           </>
         )}
@@ -43,6 +46,13 @@ export default function TodayScreen() {
           <Text style={[styles.pillText, { color: colors.onAccent }, uiFont(settings.uiLang)]}>{t.readAll}</Text>
         </Pressable>
       )}
+      <DatePickerSheet
+        visible={picker}
+        date={date}
+        onClose={() => setPicker(false)}
+        onDone={iso => { setPicker(false); setDate(iso); }}
+        onOpenCalendar={iso => { setPicker(false); setDate(iso); router.navigate('/calendar'); }}
+      />
     </View>
   );
 }
