@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DateBlock } from '@/components/DateBlock';
@@ -9,6 +9,7 @@ import { ReadingCard } from '@/components/ReadingCard';
 import { EmptyState, Skeleton } from '@/components/States';
 import { T } from '@/i18n';
 import { addDays, todayIso } from '@/lib/ethDate';
+import { prefetchYear } from '@/lib/prefetch';
 import { useDay } from '@/lib/readings';
 import { uiFont } from '@/lib/text';
 import { useSelectedDate } from '@/store/date';
@@ -23,6 +24,7 @@ export default function TodayScreen() {
   const t = T[settings.uiLang];
   const { day, status, offline, reload } = useDay(date);
   const [picker, setPicker] = useState(false);
+  useEffect(() => { if (status === 'ready') prefetchYear(); }, [status]);
   const openReader = (index: number) => router.push({ pathname: '/reader', params: { date, index: String(index) } });
 
   return (

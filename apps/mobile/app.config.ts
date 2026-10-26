@@ -30,6 +30,7 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-font',
     'expo-localization',
+    ['expo-notifications', { enableRemoteNotifications: false }],
     ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 160, resizeMode: 'contain', backgroundColor: '#f7f7f8', dark: { backgroundColor: '#0a0a0a' } }],
   ],
   experiments: { typedRoutes: true },

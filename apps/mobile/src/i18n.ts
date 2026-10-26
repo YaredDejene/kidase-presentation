@@ -20,6 +20,7 @@ export interface Strings {
   upcoming: string; feast: string; fast: string; sunday: string; inDays: (n: number) => string; todayLabel: string; tomorrow: string;
   pagumeNote: (days: number) => string; followsSystemText: string; preview: string;
   todaysGospel: string; aboutBody: string; aboutLink: string;
+  prevDay: string; nextDay: string;
 }
 
 export const T: Record<UiLang, Strings> = {
@@ -39,6 +40,7 @@ export const T: Record<UiLang, Strings> = {
     upcoming: 'Upcoming feasts and fasts', feast: 'Feast', fast: 'Fast day', sunday: 'Sunday', inDays: n => `in ${n} days`, todayLabel: 'today', tomorrow: 'tomorrow',
     pagumeNote: d => `Pagume is the 13th month: ${d} days this year, closing the Ethiopian year before Meskerem.`, followsSystemText: "Also follows your phone's text size setting.", preview: 'Preview',
     todaysGospel: "Today's Gospel", aboutBody: 'Daily readings from the Gitsawe, the lectionary of the Ethiopian and Eritrean Orthodox Tewahedo Church. Readings and verse text come from the Kidase presentation system.', aboutLink: 'kidase.org',
+    prevDay: 'Previous day', nextDay: 'Next day',
   },
   am: {
     today: 'ዛሬ', calendar: 'ዓውደ ዓመት', settings: 'ቅንብሮች',
@@ -56,6 +58,7 @@ export const T: Record<UiLang, Strings> = {
     upcoming: 'የሚመጡ በዓላትና አጽዋማት', feast: 'በዓል', fast: 'የጾም ቀን', sunday: 'ሰንበት', inDays: n => `በ${n} ቀናት ውስጥ`, todayLabel: 'ዛሬ', tomorrow: 'ነገ',
     pagumeNote: d => `ጳጉሜን 13ኛው ወር ነው፤ በዚህ ዓመት ${d} ቀናት አሉት፣ ከመስከረም በፊት ዓመቱን ይዘጋል።`, followsSystemText: 'የስልክዎን የፊደል መጠን ቅንብርም ይከተላል።', preview: 'ቅድመ እይታ',
     todaysGospel: 'የዛሬ ወንጌል', aboutBody: 'ከግፃዌ፣ ከኢትዮጵያና ከኤርትራ ኦርቶዶክስ ተዋሕዶ ቤተ ክርስቲያን የንባብ መጽሐፍ፣ የዕለት ምንባባት። ምንባባቱና ጥቅሶቹ ከቅዳሴ ማቅረቢያ ሥርዓት ይመጣሉ።', aboutLink: 'kidase.org',
+    prevDay: 'ቀዳሚ ቀን', nextDay: 'ቀጣይ ቀን',
   },
   ti: {
     today: 'ሎሚ', calendar: 'ዓውደ ዓመት', settings: 'ቅጥዕታት',
@@ -73,6 +76,7 @@ export const T: Record<UiLang, Strings> = {
     upcoming: 'ዝመጹ በዓላትን ጾማትን', feast: 'በዓል', fast: 'መዓልቲ ጾም', sunday: 'ሰንበት', inDays: n => `ድሕሪ ${n} መዓልታት`, todayLabel: 'ሎሚ', tomorrow: 'ጽባሕ',
     pagumeNote: d => `ጳጉሜ 13ይ ወርሒ እያ፤ ኣብዚ ዓመት ${d} መዓልታት ኣለዋ፣ ቅድሚ መስከረም ንዓመቱ ትዓጹ።`, followsSystemText: 'ናይ ስልክኹም ዓቐን ፊደል እውን ይስዕብ።', preview: 'ቅድመ ርእይቶ',
     todaysGospel: 'ወንጌል ናይ ሎሚ', aboutBody: 'ዕለታዊ ንባባት ካብ ግጻዌ፣ መጽሓፍ ንባብ ናይ ኢትዮጵያን ኤርትራን ኦርቶዶክስ ተዋሕዶ ቤተ ክርስትያን። ንባባትን ጥቕስታትን ካብ ስርዓት መርኢት ቅዳሴ ይመጹ።', aboutLink: 'kidase.org',
+    prevDay: 'ዝሓለፈ መዓልቲ', nextDay: 'ዝቕጽል መዓልቲ',
   },
 };
 

@@ -24,6 +24,7 @@ await ensureIndexes(db);
 const counts = await importKidaseBackup(db, backup);
 await bumpContentVersion(db);
 const app = await buildApp({ repos: createMongoRepositories(db), db });
+app.addHook('onResponse', async (req, reply) => console.log(reply.statusCode, req.method, req.url));
 const port = Number(process.env.PORT ?? 3001);
 await app.listen({ port, host: '0.0.0.0' });
 console.log(`Kidase API (in-memory) listening on http://0.0.0.0:${port}`, counts);

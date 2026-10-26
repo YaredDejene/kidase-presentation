@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { useReduceMotion } from '@/lib/useReduceMotion';
 import { useSettings } from '@/store/settings';
 
 export type Palette = Record<'bg' | 'surface' | 'elevated' | 'border' | 'borderStrong' | 'text' | 'secondary' | 'muted' | 'accent' | 'accentHover' | 'onAccent' | 'accentSoft' | 'fastTint' | 'skeleton', string>;
@@ -41,6 +42,7 @@ export const TEXT_SIZE_MAX = 28;
 export function useTheme(): Theme {
   const { settings } = useSettings();
   const system = useColorScheme();
+  const reduceMotion = useReduceMotion();
   const church = settings.churchMode;
   const dark = church || settings.appearance === 'dark' || (settings.appearance === 'system' && system === 'dark');
   return {
@@ -49,6 +51,6 @@ export function useTheme(): Theme {
     church,
     bodySize: settings.textSize + (church ? CHURCH_MODE_BUMP : 0),
     ethiopicScale: 1.06,
-    motion: !church,
+    motion: !church && !reduceMotion,
   };
 }

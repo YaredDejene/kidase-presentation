@@ -30,13 +30,13 @@ export function DateBlock({ date, onStep, onPick, onToday, offline }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Previous day" hitSlop={12} onPress={() => onStep(-1)} style={styles.chevron}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t.prevDay} hitSlop={12} onPress={() => onStep(-1)} style={styles.chevron}>
           <Ionicons name="chevron-back" size={22} color={colors.secondary} />
         </Pressable>
         <Pressable accessibilityRole="button" onPress={onPick} style={styles.center}>
-          <Text style={[styles.primary, { color: colors.text, fontSize: size, fontFamily: primaryIsEthiopic ? fonts.ethiopic : fonts.serifSemi, lineHeight: size * 1.35 }]}>{primary}</Text>
+          <Text maxFontSizeMultiplier={1.5} style={[styles.primary, { color: colors.text, fontSize: size, fontFamily: primaryIsEthiopic ? fonts.ethiopic : fonts.serifSemi, lineHeight: size * 1.35 }]}>{primary}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Next day" hitSlop={12} onPress={() => onStep(1)} style={styles.chevron}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t.nextDay} hitSlop={12} onPress={() => onStep(1)} style={styles.chevron}>
           <Ionicons name="chevron-forward" size={22} color={colors.secondary} />
         </Pressable>
       </View>

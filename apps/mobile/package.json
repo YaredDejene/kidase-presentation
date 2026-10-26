@@ -27,7 +27,7 @@
     "expo-keep-awake": "~58.0.3",
     "expo-linking": "~58.0.14",
     "expo-localization": "~58.0.5",
-    "expo-notifications": "~58.1.6",
+    "expo-notifications": "~58.0.11",
     "expo-router": "~58.0.26",
     "expo-splash-screen": "~58.0.11",
     "expo-status-bar": "~58.0.4",
@@ -42,7 +42,15 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
+    "expo-doctor": "^1.21.5",
     "typescript": "~6.0.3",
     "vitest": "^4.0.18"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo-notifications"
+      ]
+    }
   }
 }

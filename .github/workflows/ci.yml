@@ -29,6 +29,9 @@ jobs:
       - name: TypeScript typecheck
         run: pnpm -r typecheck
 
+      - name: Expo doctor (mobile)
+        run: pnpm --filter mobile exec expo-doctor
+
   test:
     name: Tests
     runs-on: ubuntu-latest
