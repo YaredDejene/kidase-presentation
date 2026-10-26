@@ -7,7 +7,7 @@ import swagger from '@fastify/swagger';
 import scalarApiReference from '@scalar/fastify-api-reference';
 import { Db } from 'mongodb';
 import type { Repositories, Presentation, LangSlot } from '@kidase/shared';
-import { RenderService, getOrderedLanguages, LANG_SLOTS, COUNTRIES, type Country } from '@kidase/shared';
+import { RenderService, ReadingsService, parseIsoDate, getOrderedLanguages, LANG_SLOTS, COUNTRIES, type Country } from '@kidase/shared';
 import { getContentVersion, bumpContentVersion } from './contentVersion';
 import { RenderCache } from './renderCache';
 import { cachedRepositories } from './cachedRepos';
@@ -42,6 +42,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const app = Fastify({ logger: false, bodyLimit: 64 * 1024 * 1024, trustProxy: true });
   const repoCache = cachedRepositories(opts.repos);
   const renderService = new RenderService(repoCache.repos);
+  const readingsService = new ReadingsService(repoCache.repos);
   const cache = new RenderCache();
   // Part of every render ETag so a new build invalidates what browsers kept under stale-while-revalidate.
   const build = Date.now().toString(36);
@@ -191,6 +192,64 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       return reply.send(body);
     },
   );
+
+  // ---- Lectionary readings for the mobile app ----
+  const MAX_RANGE_DAYS = 400;
+  const dateDesc = { type: 'string', description: 'YYYY-MM-DD' } as const;
+
+  /** Serves a JSON body under the content-version ETag, replaying the in-process cache when warm. */
+  async function sendCached(req: FastifyRequest, reply: FastifyReply, key: string, produce: () => Promise<unknown>) {
+    const etag = `"${key}"`;
+    if (req.headers['if-none-match'] === etag) {
+      cacheHeaders(reply, etag);
+      return reply.code(304).send();
+    }
+    let entry = cache.get(key);
+    if (!entry) {
+      entry = { etag, body: JSON.stringify(await produce()) };
+      cache.set(key, entry);
+    }
+    cacheHeaders(reply, etag);
+    reply.header('content-type', 'application/json; charset=utf-8');
+    return reply.send(entry.body);
+  }
+
+  app.get<{ Querystring: { date?: string; from?: string; to?: string } }>('/api/v1/readings', {
+    schema: {
+      tags: ['public'],
+      summary: 'The five Gitsawe readings with verse text for one date, or { days } for a range',
+      querystring: {
+        type: 'object',
+        properties: {
+          date: { ...dateDesc, description: 'One day, YYYY-MM-DD (defaults to today when no range is given)' },
+          from: { ...dateDesc, description: 'Range start, with `to`; at most 400 days' },
+          to: dateDesc,
+        },
+      },
+    },
+  }, async (req, reply) => {
+    const { from, to } = req.query;
+    const cv = await getContentVersion(opts.db);
+    repoCache.atVersion(cv);
+    if (from || to) {
+      const start = from ? parseIsoDate(from) : null;
+      const end = to ? parseIsoDate(to) : null;
+      if (!start || !end || end < start) return reply.code(400).send({ error: 'from and to must be valid YYYY-MM-DD dates, from first' });
+      if ((end.getTime() - start.getTime()) / 86_400_000 >= MAX_RANGE_DAYS) return reply.code(400).send({ error: `Range longer than ${MAX_RANGE_DAYS} days` });
+      return sendCached(req, reply, `${cv}.${build}:readings:${from}..${to}`, async () => ({ days: await readingsService.getRange(from!, to!) }));
+    }
+    const date = req.query.date ?? new Date().toISOString().slice(0, 10);
+    if (!parseIsoDate(date)) return reply.code(400).send({ error: 'date must be YYYY-MM-DD' });
+    return sendCached(req, reply, `${cv}.${build}:readings:${date}`, () => readingsService.getDay(date));
+  });
+
+  app.get('/api/v1/languages', {
+    schema: { tags: ['public'], summary: 'Languages that carry verse text, each named in its own script' },
+  }, async (req, reply) => {
+    const cv = await getContentVersion(opts.db);
+    repoCache.atVersion(cv);
+    return sendCached(req, reply, `${cv}.${build}:languages`, async () => ({ languages: await readingsService.getLanguages() }));
+  });
 
   // ---- Admin (JWT-protected) ----
   async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
