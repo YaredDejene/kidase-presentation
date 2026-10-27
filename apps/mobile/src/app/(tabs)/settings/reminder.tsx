@@ -2,6 +2,9 @@ import { Stack } from 'expo-router';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { Wheel } from '@/components/Wheel';
 import { T } from '@/i18n';
+import { todayIso } from '@/lib/ethDate';
+import { useDay } from '@/lib/readings';
+import { reminderContent } from '@/lib/reminderContent';
 import { uiFont } from '@/lib/text';
 import { useSettings } from '@/store/settings';
 import { radius, useTheme } from '@/theme';
@@ -19,6 +22,9 @@ export default function ReminderScreen() {
   const on = settings.reminder !== null;
   const [h, m] = (settings.reminder ?? DEFAULT_TIME).split(':');
   const minuteIndex = Math.max(0, MINUTES.indexOf(m));
+  const today = todayIso();
+  const { day } = useDay(today);
+  const preview = reminderContent(day ?? undefined, today, settings.uiLang, settings.readingLang);
 
   return (
     <>
@@ -37,7 +43,7 @@ export default function ReminderScreen() {
             </View>
           )}
         </View>
-        <Text style={[styles.note, { color: colors.secondary }, f]}>{t.todaysGospel}: Luke 12:26-32 · ጥቅምት 13, 2019</Text>
+        <Text style={[styles.note, { color: colors.secondary }, f]}>{preview.title} · {preview.body}</Text>
       </View>
     </>
   );

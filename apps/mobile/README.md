@@ -26,6 +26,27 @@ Without `EXPO_PUBLIC_API_URL` the app talks to `https://kidase.org/api/v1`.
 
 ## Builds
 
+### Locally on an iPhone (no EAS)
+
+One-time, on the phone and the Mac: install the iOS platform in Xcode (`xcodebuild -downloadPlatform iOS`, or Xcode > Settings > Components); enable Settings > Privacy & Security > Developer Mode on the iPhone and
+connect it by USB; in Xcode > Settings > Accounts sign in with your Apple ID (a free account works, the app then
+has to be reinstalled every 7 days). On first launch of the app, trust the developer under
+Settings > General > VPN & Device Management.
+
+```sh
+# a dev API the phone can reach (same wifi; use the Mac's LAN address, not localhost)
+pnpm --filter api dev:memory /path/to/kidase-backup.kidase
+
+cd apps/mobile
+npx expo prebuild --platform ios --no-install && (cd ios && pod install)   # once, and after adding native modules
+EXPO_PUBLIC_API_URL=http://<mac-ip>:3001/api/v1 npx expo run:ios --device
+```
+
+`run:ios` asks which device and signing team to use, builds with Xcode, installs the app and starts Metro.
+The `ios/` and `android/` folders are generated and git-ignored.
+
+### EAS
+
 ```sh
 npx eas build --profile preview --platform android   # installable APK for testers
 npx eas build --profile production                    # store builds

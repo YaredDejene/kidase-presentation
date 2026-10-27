@@ -66,6 +66,9 @@ function Routes() {
   );
 }
 
+/** Deep links into the reader or settings get the tabs beneath them, so Close and Back always have somewhere to go. */
+export const unstable_settings = { anchor: '(tabs)' };
+
 export default function RootLayout() {
   return (
     <SettingsProvider>

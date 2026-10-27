@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReaderPage } from '@/components/ReaderPage';
 import { TextOptions } from '@/components/TextOptions';
 import { VerseActions, type VerseSelection } from '@/components/VerseActions';
 import { T } from '@/i18n';
-import { peekDay } from '@/lib/readings';
+import { useDay } from '@/lib/readings';
 import { labelFor, uiFont } from '@/lib/text';
 import { useSettings } from '@/store/settings';
 import { fonts, useTheme } from '@/theme';
@@ -22,17 +22,18 @@ export default function ReaderScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const t = T[settings.uiLang];
-  const day = peekDay(date);
+  const { day, status } = useDay(date);
   const [current, setCurrent] = useState(Number(index ?? 0));
   const [options, setOptions] = useState(false);
   const [selection, setSelection] = useState<VerseSelection | null>(null);
   const [progress, setProgress] = useState(0);
   const list = useRef<FlatList>(null);
 
-  if (!day) {
-    router.back();
-    return null;
-  }
+  // Opened from Today the day is already cached; a cold deep link loads it first and a day with no readings falls back to Today.
+  useEffect(() => {
+    if (status !== 'loading' && !day) router.canGoBack() ? router.back() : router.replace('/');
+  }, [status, day]);
+  if (!day) return null;
   const readings = day.readings;
   const reading = readings[current];
   const goTo = (i: number) => {
