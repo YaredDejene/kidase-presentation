@@ -1,6 +1,6 @@
 # Deploying the server (web + api)
 
-Target: single-node k3s on Hetzner behind Cloudflare, manifests in `k8s/` (Kustomize). Background and first-time provisioning: `.claude/plans/deployment-plan.md`.
+Target: single-node k3s on Hetzner behind Cloudflare, manifests in `k8s/` (Kustomize). `k8s/bootstrap/` holds the Namespace, the ClusterIssuer and the deployer identity; it is applied once by hand with the admin kubeconfig and never by CI. Background and first-time provisioning: `.claude/plans/deployment-plan.md`.
 
 ## Release
 
@@ -42,7 +42,7 @@ Rotating `JWT_SECRET` signs every admin session out, which is the point.
 
 `KUBE_CONFIG` (GitHub environment `production`) should be a kubeconfig for the namespace-scoped `github-deployer` ServiceAccount, not the cluster-admin config from the node. One-time setup on the server:
 ```sh
-kubectl apply -f deploy/k8s/deployer-rbac.yaml
+kubectl apply -k deploy/k8s/bootstrap
 TOKEN=$(kubectl -n kidase get secret github-deployer-token -o jsonpath='{.data.token}' | base64 -d)
 CA=$(kubectl -n kidase get secret github-deployer-token -o jsonpath='{.data.ca\.crt}')
 cat <<KC

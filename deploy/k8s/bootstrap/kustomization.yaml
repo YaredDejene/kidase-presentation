@@ -1,0 +1,9 @@
+# Cluster-scoped and identity resources, applied once by hand with the node's admin kubeconfig:
+#   kubectl apply -k deploy/k8s/bootstrap
+# The GitHub deployer is namespace-scoped and must not manage these.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - issuer.yaml
+  - deployer-rbac.yaml
