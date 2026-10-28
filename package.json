@@ -10,5 +10,11 @@
     "tauri": "pnpm --filter desktop tauri",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.3.0",
+      "react-dom": "19.3.0"
+    }
   }
 }
