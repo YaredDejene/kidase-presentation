@@ -159,7 +159,7 @@ export class ReadingsService {
       readings.push({
         key: r.key as ReadingKey,
         label: { en: r.label, am: r.labelAmh, ti: r.labelTi },
-        ref: raw ? { raw, en: formatRefEn(raw, verses.at(-1)?.n) } : null,
+        ref: raw ? { raw, en: formatRefEn(raw, verses[verses.length - 1]?.n) } : null,
         verses,
       });
     }
