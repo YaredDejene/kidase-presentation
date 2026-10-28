@@ -112,12 +112,11 @@ jobs:
         working-directory: apps/desktop/src-tauri
         run: cargo clippy -- -D warnings
 
-  # Advisory for now: surfaces known vulnerabilities without blocking merges.
-  # Make it required once the baseline of advisories in the React Native tree is understood.
+  # Fails on any high or critical advisory. Accepted findings are listed under
+  # pnpm.auditConfig.ignoreGhsas in the root package.json, each with a reason in the commit that added it.
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
