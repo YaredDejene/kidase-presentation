@@ -4,6 +4,8 @@ on:
   release:
     types: [published]
 
+# Versions are bumped in the pull request before tagging (scripts/bump-version.sh); the main
+# ruleset rejects direct pushes, so the workflow no longer commits a bump back to main.
 permissions:
   contents: write
   packages: write
@@ -98,31 +100,3 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.platform.target }}
-
-  # ------------------------------------------------------------------
-  # Commit version bump back to main
-  # ------------------------------------------------------------------
-  sync-version:
-    name: Sync version to main
-    needs: tauri-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Update version files
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "Syncing version to $VERSION"
-          node -e "const f='package.json';const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='$VERSION';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
-          node -e "const f='apps/desktop/package.json';const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='$VERSION';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
-          node -e "const f='apps/desktop/src-tauri/tauri.conf.json';const j=JSON.parse(require('fs').readFileSync(f,'utf8'));j.version='$VERSION';require('fs').writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" apps/desktop/src-tauri/Cargo.toml
-
-      - name: Commit and push if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json apps/desktop/package.json apps/desktop/src-tauri/tauri.conf.json apps/desktop/src-tauri/Cargo.toml
-          git diff --staged --quiet || git commit -m "chore: bump version to ${GITHUB_REF_NAME#v}" && git push

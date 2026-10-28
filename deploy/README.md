@@ -5,7 +5,7 @@ Target: single-node k3s on Hetzner behind Cloudflare, manifests in `k8s/` (Kusto
 ## Release
 
 1. Merge to `main` through a pull request (the `main` ruleset requires green CI).
-2. Bump the version where it is shown (`apps/api/package.json`, `apps/web`, desktop `tauri.conf.json`), merge.
+2. In that PR, run `scripts/bump-version.sh X.Y.Z` (root, desktop, Tauri and Cargo versions). The API and web images are tagged from the release tag and do not read these files.
 3. Publish a GitHub Release with tag `vX.Y.Z`. `deploy.yml` builds `kidase-api` and `kidase-web`, pushes them to GHCR tagged `X.Y.Z`, `<12-char sha>` and `latest`, and applies `k8s/` with the SHA tag. `release.yml` ships the desktop installers from the same event.
 4. Watch the repo's Deployments page (environment `production`). `rollout status` fails the job if a pod does not become ready within 120 s.
 
