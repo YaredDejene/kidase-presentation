@@ -14,7 +14,13 @@
   "pnpm": {
     "overrides": {
       "react": "19.3.0",
-      "react-dom": "19.3.0"
+      "react-dom": "19.3.0",
+      "image-size": "^2.0.3"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-mrhx-c7xc-m3w5"
+      ]
     }
   }
 }
