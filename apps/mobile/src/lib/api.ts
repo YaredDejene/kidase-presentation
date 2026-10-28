@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import type { DayReadings, ReadingLanguage } from '@kidase/shared/services/ReadingsService';
 
 export type { DayReadings, DayReading, ReadingVerse, ReadingLanguage } from '@kidase/shared/services/ReadingsService';
@@ -5,8 +7,14 @@ export type { DayReadings, DayReading, ReadingVerse, ReadingLanguage } from '@ki
 /** Set EXPO_PUBLIC_API_URL for a local API (Android emulator: http://10.0.2.2:3001/api/v1). */
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://kidase.org/api/v1';
 
+// Identifies app traffic in server logs and CDN analytics. It is not an auth mechanism and must never be treated as one.
+const USER_AGENT = `${Constants.expoConfig?.name ?? 'Gitsawe'}/${Constants.expoConfig?.version ?? '0'} (${Device.osName ?? 'unknown'} ${Device.osVersion ?? ''})`;
+
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { headers: { accept: 'application/json' } });
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { accept: 'application/json', 'user-agent': USER_AGENT },
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!res.ok) throw new Error(`${res.status} ${path}`);
   return res.json() as Promise<T>;
 }

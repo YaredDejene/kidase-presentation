@@ -2,6 +2,8 @@ import Fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import compress from '@fastify/compress';
 import rateLimit from '@fastify/rate-limit';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import { timingSafeEqual } from 'node:crypto';
 import jwt from '@fastify/jwt';
 import swagger from '@fastify/swagger';
 import scalarApiReference from '@scalar/fastify-api-reference';
@@ -51,9 +53,18 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const adminPassword = opts.adminPassword ?? 'changeme';
   const appVersion = opts.appVersion ?? '1.0.3';
 
-  await app.register(cors, { origin: true });
+  // Native apps send no Origin header, so this only restricts browsers to our own pages (and the local dev servers).
+  await app.register(cors, { origin: ['https://kidase.org', 'https://kidase.online', /^http:\/\/localhost(:\d+)?$/] });
+  // CSP is off because the Scalar docs page at /docs inlines its scripts.
+  await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(compress, { global: true });
-  await app.register(rateLimit, { max: opts.rateLimitMax ?? 120, timeWindow: '1 minute' });
+  await app.register(rateLimit, {
+    max: opts.rateLimitMax ?? 120,
+    timeWindow: '1 minute',
+    // Behind the Cloudflare proxy the socket peer is an edge node shared by many users; CF-Connecting-IP is the client.
+    // Trusting it is safe only while the Hetzner firewall admits 80/443 from Cloudflare ranges alone.
+    keyGenerator: req => (req.headers['cf-connecting-ip'] as string | undefined) ?? req.ip,
+  });
   await app.register(jwt, { secret: opts.jwtSecret ?? 'dev-insecure-secret-change-me' });
 
   // OpenAPI document (generated from route schemas) + Scalar reference/testing UI.
@@ -77,6 +88,11 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   function cacheHeaders(reply: FastifyReply, etag: string): void {
     reply.header('ETag', etag);
     reply.header('Cache-Control', `public, max-age=${maxAge}, stale-while-revalidate=86400`);
+  }
+  /** Readings change only with a content edit; let the CDN hold them for an hour so spikes never reach the pod. */
+  function cdnCacheHeaders(reply: FastifyReply, etag: string): void {
+    reply.header('ETag', etag);
+    reply.header('Cache-Control', `public, max-age=${maxAge}, s-maxage=3600, stale-while-revalidate=86400`);
   }
 
   app.get('/api/v1/health', { schema: { tags: ['public'], summary: 'Health check' } }, async () => ({ ok: true }));
@@ -201,7 +217,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   async function sendCached(req: FastifyRequest, reply: FastifyReply, key: string, produce: () => Promise<unknown>) {
     const etag = `"${key}"`;
     if (req.headers['if-none-match'] === etag) {
-      cacheHeaders(reply, etag);
+      cdnCacheHeaders(reply, etag);
       return reply.code(304).send();
     }
     let entry = cache.get(key);
@@ -209,7 +225,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       entry = { etag, body: JSON.stringify(await produce()) };
       cache.set(key, entry);
     }
-    cacheHeaders(reply, etag);
+    cdnCacheHeaders(reply, etag);
     reply.header('content-type', 'application/json; charset=utf-8');
     return reply.send(entry.body);
   }
@@ -256,18 +272,22 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     try { await req.jwtVerify(); } catch { return reply.code(401).send({ error: 'Unauthorized' }); }
   }
 
+  const safeEqual = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
+
   app.post<{ Body: { email?: string; password?: string } }>('/api/v1/admin/login', {
+    // The only credential-guessing surface: a much tighter bucket than the public routes.
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
     schema: {
       tags: ['admin'], summary: 'Sign in, returns a JWT bearer token',
       body: { type: 'object', required: ['email', 'password'], properties: { email: { type: 'string' }, password: { type: 'string' } } },
     },
   }, async (req, reply) => {
     const { email, password } = req.body ?? {};
-    if (email !== adminEmail || password !== adminPassword) {
+    if (!safeEqual(email ?? '', adminEmail) || !safeEqual(password ?? '', adminPassword)) {
       return reply.code(401).send({ error: 'Invalid credentials' });
     }
-    const token = app.jwt.sign({ sub: email, role: 'admin' }, { expiresIn: '12h' });
-    return { token, tokenType: 'Bearer', expiresIn: 43200 };
+    const token = app.jwt.sign({ sub: email, role: 'admin' }, { expiresIn: '1h' });
+    return { token, tokenType: 'Bearer', expiresIn: 3600 };
   });
 
   app.get('/api/v1/admin/backup', {
