@@ -5,7 +5,11 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly, day: monday }
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    # react and react-dom are held at one version by pnpm.overrides and move only with the Expo SDK.
+    ignore:
+      - dependency-name: react
+      - dependency-name: react-dom
     groups:
       expo:
         patterns: ["expo", "expo-*", "@expo/*", "react-native", "react-native-*", "@react-native*/*"]
@@ -16,6 +20,9 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
+    open-pull-requests-limit: 2
+    groups:
+      actions: { patterns: ["*"] }
   - package-ecosystem: cargo
     directory: /apps/desktop/src-tauri
     schedule: { interval: monthly }
