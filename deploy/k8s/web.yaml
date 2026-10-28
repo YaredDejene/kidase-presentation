@@ -15,6 +15,7 @@ spec:
         - name: web
           # Image name is rewritten by Kustomize (see kustomization.yaml).
           image: kidase-web
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           readinessProbe:
