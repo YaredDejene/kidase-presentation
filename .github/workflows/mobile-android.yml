@@ -1,0 +1,62 @@
+name: Mobile (Android test APK)
+
+# Builds a release APK for testing and attaches it to the run as an artifact.
+# No store account, keystore or Expo account is involved: the generated Android project signs
+# release builds with the debug keystore, which is fine for testers and wrong for the Play Store.
+# Store builds (plan 3) replace this with EAS once the developer accounts exist.
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: API base URL baked into the build (plain http enables cleartext for LAN testing)
+        default: https://kidase.org/api/v1
+  push:
+    branches: [main]
+    paths: [apps/mobile/**, packages/shared/**, pnpm-lock.yaml]
+
+concurrency:
+  group: mobile-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_API_URL: ${{ inputs.api_url || 'https://kidase.org/api/v1' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter mobile typecheck && pnpm --filter mobile test
+
+      # The android/ folder is git-ignored and generated here from app.config.ts.
+      - name: Generate the Android project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gitsawe-${{ github.sha }}.apk
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
+          if-no-files-found: error

@@ -1,5 +1,5 @@
 import type { ExpoConfig } from 'expo/config';
-import { withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
+import { withAndroidManifest, withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
 
 // The product name is not decided yet. Everything that shows or encodes it derives from these two lines.
 export const APP_NAME = 'Gitsawe';
@@ -42,4 +42,12 @@ const config: ExpoConfig = {
   experiments: { typedRoutes: true },
 };
 
-export default withoutPush(config);
+// Android release builds refuse plain http. Allow it only when the build is pointed at a LAN dev API,
+// so a test APK can talk to the laptop while store builds keep the default.
+const withLanCleartext: ConfigPlugin = c => withAndroidManifest(c, c => {
+  const application = c.modResults.manifest.application?.[0];
+  if (application && (process.env.EXPO_PUBLIC_API_URL ?? '').startsWith('http:')) application.$['android:usesCleartextTraffic'] = 'true';
+  return c;
+});
+
+export default withLanCleartext(withoutPush(config));
