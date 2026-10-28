@@ -28,9 +28,9 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "mongodb-memory-server": "^10.1.4",
-    "typescript": "~5.8.3",
-    "vitest": "^4.0.18"
+    "@types/node": "^26.6.5",
+    "mongodb-memory-server": "^11.3.0",
+    "typescript": "~7.0.2",
+    "vitest": "^5.0.5"
   }
 }
