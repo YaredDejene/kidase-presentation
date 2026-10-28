@@ -11,16 +11,27 @@ export interface ApiConfig {
   jwtSecret: string;
 }
 
-export function loadConfig(): ApiConfig {
-  return {
-    mongoUri: process.env.MONGODB_URI ?? 'mongodb://localhost:27017',
-    mongoDb: process.env.MONGODB_DB ?? 'kidase',
-    port: Number(process.env.PORT ?? 3001),
-    host: process.env.HOST ?? '0.0.0.0',
-    renderMaxAge: Number(process.env.RENDER_MAX_AGE ?? 60),
-    rateLimitMax: Number(process.env.RATE_LIMIT_MAX ?? 120),
-    adminEmail: process.env.ADMIN_EMAIL ?? 'admin@church.org',
-    adminPassword: process.env.ADMIN_PASSWORD ?? 'changeme',
-    jwtSecret: process.env.JWT_SECRET ?? 'dev-insecure-secret-change-me',
+export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
+  const cfg: ApiConfig = {
+    mongoUri: env.MONGODB_URI ?? 'mongodb://localhost:27017',
+    mongoDb: env.MONGODB_DB ?? 'kidase',
+    port: Number(env.PORT ?? 3001),
+    host: env.HOST ?? '0.0.0.0',
+    renderMaxAge: Number(env.RENDER_MAX_AGE ?? 60),
+    rateLimitMax: Number(env.RATE_LIMIT_MAX ?? 120),
+    adminEmail: env.ADMIN_EMAIL ?? 'admin@church.org',
+    adminPassword: env.ADMIN_PASSWORD ?? 'changeme',
+    jwtSecret: env.JWT_SECRET ?? 'dev-insecure-secret-change-me',
   };
+  // The defaults above exist for local development only. In production a missing Secret key
+  // must stop the pod (readiness fails, the rollout reports it) rather than run with a known password.
+  if (env.NODE_ENV === 'production') {
+    const weak = [
+      cfg.jwtSecret === 'dev-insecure-secret-change-me' && 'JWT_SECRET',
+      cfg.adminPassword === 'changeme' && 'ADMIN_PASSWORD',
+      cfg.mongoUri.startsWith('mongodb://localhost') && 'MONGODB_URI',
+    ].filter(Boolean);
+    if (weak.length) throw new Error(`Refusing to start in production with default ${weak.join(', ')}`);
+  }
+  return cfg;
 }

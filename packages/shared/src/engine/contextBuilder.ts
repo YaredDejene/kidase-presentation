@@ -214,6 +214,8 @@ function getCurrentGitsawe(
     for (const ruleDef of rules) {
       try {
         const ruleEntry: RuleEntry = JSON.parse(ruleDef.ruleJson);
+        // The engine caches the parsed rule by id; a rule without one would share another's AST.
+        if (!ruleEntry.id) ruleEntry.id = ruleDef.id;
         const result = localEngine.evaluateRule(ruleEntry, evalContext);
         if (result.matched) {
           return record;

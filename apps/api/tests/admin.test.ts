@@ -39,6 +39,23 @@ async function login(): Promise<string> {
   return res.json().token as string;
 }
 
+describe('login hardening', () => {
+  it('rate-limits login per client, keyed by CF-Connecting-IP behind the proxy', async () => {
+    const hit = (ip: string) => app.inject({ method: 'POST', url: '/api/v1/admin/login', headers: { 'cf-connecting-ip': ip }, payload: { email: ADMIN.email, password: 'wrong' } });
+    for (let i = 0; i < 10; i++) expect((await hit('203.0.113.7')).statusCode).toBe(401);
+    expect((await hit('203.0.113.7')).statusCode).toBe(429);
+    expect((await hit('203.0.113.8')).statusCode).toBe(401);
+  });
+
+  it('allows browsers only from our own origins', async () => {
+    const ours = await app.inject({ method: 'GET', url: '/api/v1/health', headers: { origin: 'https://kidase.org' } });
+    expect(ours.headers['access-control-allow-origin']).toBe('https://kidase.org');
+    const other = await app.inject({ method: 'GET', url: '/api/v1/health', headers: { origin: 'https://evil.example' } });
+    expect(other.headers['access-control-allow-origin']).toBeUndefined();
+    expect(other.headers['x-content-type-options']).toBe('nosniff');
+  });
+});
+
 describe('admin auth + backup/restore', () => {
   it('rejects bad credentials and issues a token for valid ones', async () => {
     const bad = await app.inject({ method: 'POST', url: '/api/v1/admin/login', payload: { email: ADMIN.email, password: 'wrong' } });

@@ -119,6 +119,8 @@ After seeding, try the endpoints below in `/docs`.
 | `GET /api/v1/presentations`                           | Picker catalog: `{ id, name, type, slideCount, langs, languages }`  |
 | `GET /api/v1/presentations/:id`                       | Viewer config meta (languages, template, default config)            |
 | `GET /api/v1/presentations/:id/render?date=&mehella=` | Resolved, display-ready slides + readings + context for a date      |
+| `GET /api/v1/readings?date=` or `?from=&to=`          | Gitsawe readings with verse text in every language, one day or a range (max 400 days) |
+| `GET /api/v1/languages`                               | Languages that carry verse text, named in their own script           |
 | `POST /api/v1/admin/login`                            | Sign in (email+password) → JWT bearer token                         |
 | `GET /api/v1/admin/backup` *(auth)*                   | Download a full `.kidase` backup of all collections                 |
 | `POST /api/v1/admin/restore` *(auth)*                 | Restore a `.kidase` backup (replaces all data, bumps cache version) |

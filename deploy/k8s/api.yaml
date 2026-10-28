@@ -15,6 +15,7 @@ spec:
         - name: api
           # Image name is rewritten by Kustomize (see kustomization.yaml).
           image: kidase-api
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
           envFrom:

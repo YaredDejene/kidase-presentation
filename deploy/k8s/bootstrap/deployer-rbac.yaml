@@ -1,0 +1,43 @@
+# Namespace-scoped identity for GitHub Actions. Replaces the cluster-admin kubeconfig in the
+# KUBE_CONFIG secret: if that secret ever leaks, the holder can touch the kidase namespace only.
+# Applied once by hand via bootstrap/kustomization.yaml; the deployer must not manage its own rights.
+# Token and kubeconfig recipe: deploy/README.md.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-deployer
+  namespace: kidase
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: github-deployer
+  namespace: kidase
+rules:
+  - apiGroups: ["", "apps", "networking.k8s.io"]
+    resources: [services, deployments, deployments/status, replicasets, pods, ingresses]
+    verbs: [get, list, watch, create, patch, update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-deployer
+  namespace: kidase
+subjects:
+  - kind: ServiceAccount
+    name: github-deployer
+    namespace: kidase
+roleRef:
+  kind: Role
+  name: github-deployer
+  apiGroup: rbac.authorization.k8s.io
+---
+# Long-lived token for the ServiceAccount (k3s does not create one automatically any more).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-deployer-token
+  namespace: kidase
+  annotations:
+    kubernetes.io/service-account.name: github-deployer
+type: kubernetes.io/service-account-token

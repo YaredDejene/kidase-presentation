@@ -29,6 +29,9 @@ jobs:
       - name: TypeScript typecheck
         run: pnpm -r typecheck
 
+      - name: Expo doctor (mobile)
+        run: pnpm --filter mobile exec expo-doctor
+
   test:
     name: Tests
     runs-on: ubuntu-latest
@@ -108,3 +111,22 @@ jobs:
       - name: Cargo clippy
         working-directory: apps/desktop/src-tauri
         run: cargo clippy -- -D warnings
+
+  # Fails on any high or critical advisory. Accepted findings are listed under
+  # pnpm.auditConfig.ignoreGhsas in the root package.json, each with a reason in the commit that added it.
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm audit --audit-level high

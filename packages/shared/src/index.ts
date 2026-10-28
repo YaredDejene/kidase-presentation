@@ -25,6 +25,7 @@ export * from './domain/interfaces/Repositories';
 // Domain utilities
 export * from './domain/country';
 export * from './domain/formatting';
+export * from './domain/bookNames';
 export * from './domain/slideFiltering';
 
 // Render math
