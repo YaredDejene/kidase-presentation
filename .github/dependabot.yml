@@ -1,0 +1,21 @@
+# Weekly dependency PRs. Expo packages are grouped because the SDK pins them to one another;
+# updating them one at a time produces PRs that expo-doctor rejects.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    groups:
+      expo:
+        patterns: ["expo", "expo-*", "@expo/*", "react-native", "react-native-*", "@react-native*/*"]
+      fastify:
+        patterns: ["fastify", "@fastify/*"]
+      dev:
+        dependency-type: development
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+  - package-ecosystem: cargo
+    directory: /apps/desktop/src-tauri
+    schedule: { interval: monthly }
