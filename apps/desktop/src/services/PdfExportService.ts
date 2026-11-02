@@ -4,7 +4,11 @@ import { Slide } from '@kidase/shared/domain/entities/Slide';
 import { Template, EnabledLanguage, templateLanguages } from '@kidase/shared/domain/entities/Template';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
 import { OrderedLanguage, LangSlot, firstText } from '@kidase/shared/domain/entities/Presentation';
-import { placeholderService } from '@kidase/shared';
+import { placeholderService, TITLE_SLIDE_ID, buildTitleSlideInfo, withReadingSlides } from '@kidase/shared';
+import { createElement } from 'react';
+import { flushSync } from 'react-dom';
+import { createRoot } from 'react-dom/client';
+import { TitleSlideView } from '@kidase/shared/render/TitleSlideView';
 import { computeFontScale } from '@kidase/shared/domain/formatting';
 
 export interface PdfExportOptions {
@@ -61,6 +65,17 @@ export class PdfExportService {
       const slideLanguages = languagesMap?.get(slide.id) || languages;
       const container = this.createSlideContainer(slide, slideTemplate, slideVariables, slideLanguages, opts, meta ?? undefined);
       document.body.appendChild(container);
+      // The generated title slide has its own layout; mount the shared component instead.
+      const titleRoot = slide.id === TITLE_SLIDE_ID ? createRoot(container) : null;
+      if (titleRoot) {
+        container.style.padding = '0';
+        container.replaceChildren();
+        flushSync(() => titleRoot.render(createElement(TitleSlideView, {
+          definition: slideTemplate.definitionJson,
+          info: withReadingSlides(buildTitleSlideInfo(meta, slide.titleJson?.Lang1 ?? ''), slides),
+          scale: opts.width / DESIGN_WIDTH,
+        })));
+      }
 
       try {
         // Layout is synchronous; only fonts may still be loading.
@@ -88,6 +103,18 @@ export class PdfExportService {
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
         pdf.addImage(imgData, 'JPEG', 0, 0, opts.width, opts.height);
 
+        // The page is an image, so links (e.g. kidase.org on the title slide) go on top as clickable areas.
+        const origin = container.getBoundingClientRect();
+        for (const el of container.querySelectorAll<HTMLElement>('[data-href]')) {
+          const r = el.getBoundingClientRect();
+          pdf.link(r.left - origin.left, r.top - origin.top, r.width, r.height, { url: el.dataset.href! });
+        }
+        // Jumps within the PDF, e.g. a reading on the title slide to its page (one page per slide).
+        for (const el of container.querySelectorAll<HTMLElement>('[data-page]')) {
+          const r = el.getBoundingClientRect();
+          pdf.link(r.left - origin.left, r.top - origin.top, r.width, r.height, { pageNumber: Number(el.dataset.page) + 1 });
+        }
+
         // Free canvas memory
         canvas.width = 0;
         canvas.height = 0;
@@ -96,6 +123,7 @@ export class PdfExportService {
         // Add a blank page for failed slides instead of crashing
         if (i > 0) pdf.addPage();
       } finally {
+        titleRoot?.unmount();
         document.body.removeChild(container);
       }
     }

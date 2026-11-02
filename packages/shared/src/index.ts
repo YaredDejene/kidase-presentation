@@ -27,9 +27,11 @@ export * from './domain/country';
 export * from './domain/formatting';
 export * from './domain/bookNames';
 export * from './domain/slideFiltering';
+export * from './domain/titleSlide';
 
 // Render math
 export * from './render/fontScale';
+export * from './render/titleSlidePptx';
 
 // Services
 export * from './services';

@@ -30,7 +30,7 @@ function mountSlide(payload: RenderPayload, slide: RSlide, languages: OrderedLan
   document.body.appendChild(host);
   const root = createRoot(host);
   flushSync(() => root.render(
-    <WebSlideRenderer definition={def} languages={languages} block={slide.block} title={slide.title} footer={slide.footer} pageLabel={pageLabel} />,
+    <WebSlideRenderer definition={def} languages={languages} block={slide.block} title={slide.title} footer={slide.footer} titleInfo={slide.titleInfo} pageLabel={pageLabel} />,
   ));
   return { host, def, unmount: () => { root.unmount(); document.body.removeChild(host); } };
 }
@@ -88,6 +88,15 @@ function drawSlide(pdf: jsPDF, host: HTMLElement, background: string): void {
     const x = (w.rect.left - origin.left) * K;
     const y = (w.rect.top - origin.top + w.rect.height * baseline) * K;
     pdf.text(w.text, x, y, { renderingMode: bold ? 'fillThenStroke' : 'fill' });
+  }
+  for (const el of host.querySelectorAll<HTMLElement>('[data-href]')) {
+    const r = el.getBoundingClientRect();
+    pdf.link((r.left - origin.left) * K, (r.top - origin.top) * K, r.width * K, r.height * K, { url: el.dataset.href! });
+  }
+  // Jumps within the PDF, e.g. a reading on the title slide to its page (one page per slide).
+  for (const el of host.querySelectorAll<HTMLElement>('[data-page]')) {
+    const r = el.getBoundingClientRect();
+    pdf.link((r.left - origin.left) * K, (r.top - origin.top) * K, r.width * K, r.height * K, { pageNumber: Number(el.dataset.page) + 1 });
   }
 }
 

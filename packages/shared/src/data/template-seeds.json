@@ -159,7 +159,7 @@
   },
   {
     "name": "Default Centered",
-    "maxLangCount": 4,
+    "maxLangCount": 5,
     "definitionJson": {
       "layout": { "columns": 1, "rows": 1, "gap": 20, "verticalAlign": "center" },
       "title": {
@@ -171,7 +171,7 @@
       "languages": [
         {
           "slot": "Lang1",
-          "fontSize": 62,
+          "fontSize": 68,
           "fontFamily": "Nyala, serif",
           "color": "#FFFFFF",
           "alignment": "center",
@@ -179,7 +179,7 @@
         },
         {
           "slot": "Lang2",
-          "fontSize": 46,
+          "fontSize": 50,
           "fontFamily": "Nyala, serif",
           "color": "#FFFF00",
           "alignment": "center",
@@ -187,7 +187,7 @@
         },
         {
           "slot": "Lang3",
-          "fontSize": 46,
+          "fontSize": 50,
           "fontFamily": "Nyala, serif",
           "color": "#00FF00",
           "alignment": "center",
@@ -195,9 +195,17 @@
         },
         {
           "slot": "Lang4",
-          "fontSize": 46,
+          "fontSize": 50,
           "fontFamily": "Nyala, serif",
           "color": "#00BFFF",
+          "alignment": "center",
+          "lineHeight": 1.15
+        },
+        {
+          "slot": "Lang5",
+          "fontSize": 50,
+          "fontFamily": "Nyala, serif",
+          "color": "#FFA500",
           "alignment": "center",
           "lineHeight": 1.15
         }

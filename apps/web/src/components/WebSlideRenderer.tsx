@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { templateLanguages, type TemplateDefinition, type SlideBlock, type SlideTitle, type OrderedLanguage } from '@kidase/shared';
+import { templateLanguages, type TitleSlideInfo, type TemplateDefinition, type SlideBlock, type SlideTitle, type OrderedLanguage } from '@kidase/shared';
 import { SlideView, SLIDE_FONT } from '@kidase/shared/render/SlideView';
+import { TitleSlideView } from '@kidase/shared/render/TitleSlideView';
 
 export interface ResolvedFooter {
   title: SlideTitle | null;
@@ -16,6 +17,8 @@ interface WebSlideRendererProps {
   footer: ResolvedFooter | null;
   /** Slide counter drawn in the bottom-right corner (viewer, projection and exports; not thumbnails). */
   pageLabel?: string;
+  /** Set on the generated title slide, which has its own layout. */
+  titleInfo?: TitleSlideInfo;
 }
 
 /**
@@ -30,12 +33,15 @@ export const WebSlideRenderer: React.FC<WebSlideRendererProps> = React.memo(({
   title,
   footer,
   pageLabel,
+  titleInfo,
 }) => {
   const enabledLanguages = useMemo(() => templateLanguages(def, languages), [def, languages]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <SlideView definition={def} enabledLanguages={enabledLanguages} block={block} title={title} footer={footer} />
+      {titleInfo
+        ? <TitleSlideView definition={def} info={titleInfo} />
+        : <SlideView definition={def} enabledLanguages={enabledLanguages} block={block} title={title} footer={footer} />}
       {pageLabel && (
         <div style={{ position: 'absolute', bottom: 20, right: 40, fontSize: 28, lineHeight: 1, color: '#888888', fontFamily: `${SLIDE_FONT}, serif` }}>{pageLabel}</div>
       )}

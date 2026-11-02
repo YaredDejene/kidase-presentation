@@ -8,8 +8,11 @@ import {
   getOrderedLanguages,
   templateLanguages,
   placeholderService,
+  TITLE_SLIDE_ID,
+  buildTitleSlideInfo,
 } from '@kidase/shared';
 import { SlideView } from '@kidase/shared/render/SlideView';
+import { TitleSlideView } from '@kidase/shared/render/TitleSlideView';
 
 interface SlideRendererProps {
   slide: Slide;
@@ -60,6 +63,12 @@ export const SlideRenderer: React.FC<SlideRendererProps> = React.memo(({
       text: footerText ? placeholderService.replaceInBlock(footerText, variables, metaContext) : null,
     };
   }, [slide.footerJson, variables, metaContext]);
+
+  const titleInfo = useMemo(
+    () => slide.id === TITLE_SLIDE_ID ? buildTitleSlideInfo(metaContext, slide.titleJson?.Lang1 ?? '') : null,
+    [slide.id, slide.titleJson, metaContext],
+  );
+  if (titleInfo) return <TitleSlideView definition={def} info={titleInfo} scale={scale} />;
 
   return (
     <SlideView

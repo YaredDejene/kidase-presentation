@@ -8,7 +8,6 @@ import {
   getAllLanguages,
   LANG_SLOTS,
 } from '../domain/entities/Presentation';
-import { Gitsawe } from '../domain/entities/Gitsawe';
 import { RuleDefinition } from '../domain/entities/RuleDefinition';
 import { getMergedEnabledSlides, dynamicSegmentId } from '../domain/slideFiltering';
 import { placeholderService } from './PlaceholderService';
@@ -16,7 +15,10 @@ import { ruleEngine } from '../engine';
 import { buildContext, BuildContextArgs } from '../engine/contextBuilder';
 import { RuleEntry, RuleContext } from '../engine/types';
 import { formatEthiopianDate } from '../domain/formatting';
+import { READING_FIELDS, buildTitleSlideInfo, type TitleSlideInfo } from '../domain/titleSlide';
 import { BLANK_FOR_COUNTRY, BLANK_VALUE, COUNTRY_VARIABLES, type Country } from '../domain/country';
+
+export { READING_FIELDS };
 
 export interface ResolvedReading {
   key: string;
@@ -70,6 +72,8 @@ export interface RenderResult {
   templates: Record<string, TemplateDefinition>;
   sections: ResolvedSection[];
   slides: ResolvedSlide[];
+  /** Summary for the viewer's generated first slide; not one of `slides`. */
+  titleSlide: TitleSlideInfo;
 }
 
 export interface RenderArgs {
@@ -80,16 +84,6 @@ export interface RenderArgs {
   /** Swaps the patriarch and country placeholders and blanks the parish ones (public viewer). */
   country?: Country;
 }
-
-/** Maps Gitsawe record fields to the viewer's info panel. */
-export const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string; labelTi: string }[] = [
-  { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: 'የቅዳሴ ዓይነት', labelTi: 'ዓይነት ቅዳሴ' },
-  { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ', labelTi: 'መልእኽቲ ጳውሎስ' },
-  { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት', labelTi: 'መልእኽቲ ሓዋርያት' },
-  { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት', labelTi: 'ግብሪ ሓዋርያት' },
-  { key: 'misbak', field: 'misbak', label: 'Misbak', labelAmh: 'ምስባክ', labelTi: 'ምስባክ' },
-  { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል', labelTi: 'ወንጌል' },
-];
 
 interface LoadedSet {
   presentation: Presentation;
@@ -264,6 +258,7 @@ export class RenderService {
       templates,
       sections: [],
       slides,
+      titleSlide: buildTitleSlideInfo(meta, primary.presentation.name),
     };
   }
 

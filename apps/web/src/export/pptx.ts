@@ -3,7 +3,7 @@ import type { OrderedLanguage, TemplateDefinition } from '@kidase/shared';
 
 // Interop-safe constructor (CJS default may be double-wrapped under Node ESM).
 const Pptx = ((PptxGenJS as unknown as { default?: typeof PptxGenJS }).default ?? PptxGenJS) as typeof PptxGenJS;
-import { computeFontScaleFactor, firstText, templateLanguages } from '@kidase/shared';
+import { addTitleSlidePptx, computeFontScaleFactor, firstText, templateLanguages } from '@kidase/shared';
 import type { RenderPayload } from '../api/client';
 
 type RSlide = RenderPayload['slides'][number];
@@ -45,6 +45,7 @@ function addPptxSlide(pptx: PptxGenJS, slide: RSlide, def: TemplateDefinition | 
 
   // Page counter in the bottom-right corner, like the viewer.
   ps.addText(pageLabel, { x: slideWidth - 1.6, y: slideHeight - 0.45, w: 1.5, h: 0.35, fontSize: 12, color: '888888', align: 'right', valign: 'bottom', margin: 0 });
+  if (slide.titleInfo) { addTitleSlidePptx(ps, def, slide.titleInfo); return; }
 
   if (slide.title && def.title.show && titleText) {
     const titleFontSize = pxToPoints(def.title.fontSize) * fontScale;
