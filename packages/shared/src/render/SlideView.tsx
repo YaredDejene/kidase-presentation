@@ -30,6 +30,8 @@ const MAX_FIT = 2;
 const FLOOR_FIT = 0.2;
 /** Footer size relative to the template's title size; the footer matches the header title. */
 const FOOTER_RATIO = 1;
+/** A long footer shrinks to stay on one line, but not below this; past it, it wraps. */
+const MIN_FOOTER_FIT = 0.6;
 
 /**
  * One decision per slide, so every language looks the same: when all blocks
@@ -61,6 +63,17 @@ function alignTexts(root: HTMLElement): void {
   if (allLong && justified.some(el => wordGapEm(el) > MAX_WORD_GAP_EM)) apply(false);
 }
 
+/** Shrink a footer that would wrap so it fits on one line (see MIN_FOOTER_FIT). */
+function fitFooter(root: HTMLElement): void {
+  const footer = root.querySelector<HTMLElement>('[data-footer]');
+  if (!footer) return;
+  root.style.setProperty('--footer-fit', '1');
+  footer.style.whiteSpace = 'nowrap';
+  const ratio = footer.clientWidth / footer.scrollWidth;
+  footer.style.whiteSpace = '';
+  if (ratio < 1) root.style.setProperty('--footer-fit', String(Math.max(MIN_FOOTER_FIT, ratio * 0.98)));
+}
+
 /**
  * Size the text by measuring it: find the largest `--fit` font multiplier
  * whose rendered content fits the content area. Height only grows with the
@@ -70,6 +83,10 @@ function alignTexts(root: HTMLElement): void {
 function fitSlide(root: HTMLElement): void {
   const box = root.querySelector<HTMLElement>('[data-fit-box]');
   if (!box || box.clientHeight === 0) return;
+
+  // The footer is at full size while --fit >= 1; settle its size before measuring the text room.
+  root.style.setProperty('--fit', String(MAX_FIT));
+  fitFooter(root);
 
   const gap = parseFloat(getComputedStyle(box).rowGap) || 0;
   const rows = Array.from(box.children) as HTMLElement[];
@@ -250,10 +267,11 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
 
     return (
       <div
+        data-footer
         style={{
           marginTop: `${24 * scale}px`,
-          // A small caption; shrinks further with dense text, never grows.
-          fontSize: `calc(min(var(--fit), 1) * ${def.title.fontSize * FOOTER_RATIO * scale}px)`,
+          // Shrinks with dense text and to stay on one line; never grows.
+          fontSize: `calc(min(var(--fit), 1) * var(--footer-fit, 1) * ${def.title.fontSize * FOOTER_RATIO * scale}px)`,
           textAlign: 'left',
         }}
       >

@@ -35,7 +35,8 @@ function withTitleSlide(payload: RenderPayload): RenderPayload {
 const BASE = import.meta.env.VITE_API_BASE ?? '';
 
 export async function fetchPresentations(): Promise<PresentationSummary[]> {
-  const res = await fetch(`${BASE}/api/v1/presentations`);
+  // Always re-check with the server (a cheap 304 via the ETag), so content edits show up on the next load.
+  const res = await fetch(`${BASE}/api/v1/presentations`, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to load presentations (${res.status})`);
   return res.json();
 }
@@ -52,7 +53,7 @@ export async function fetchRender(
   if (isMehella) q.set('mehella', '1');
   q.set('country', country);
   if (readings) q.set('readings', readings);
-  const res = await fetch(`${BASE}/api/v1/presentations/${id}/render?${q.toString()}`);
+  const res = await fetch(`${BASE}/api/v1/presentations/${id}/render?${q.toString()}`, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to render (${res.status})`);
   return withTitleSlide(await res.json());
 }

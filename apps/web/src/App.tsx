@@ -68,13 +68,13 @@ function useSwipe(onLeft: () => void, onRight: () => void) {
 
 /**
  * The address bar stays clean. A share link carries the view in readable
- * query words (date, slide, country, languages, mehella, presentation), is
+ * query words (date, slide, country, languages, mehella, readings, presentation), is
  * applied once on load and then removed from the address bar. Preferences
  * live in localStorage; the date and slide of the current tab in
  * sessionStorage, for today only, so a refresh during a service keeps the
  * place while tomorrow starts fresh.
  */
-interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean }
+interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean; readings?: Record<string, number> }
 function readLink(): Link {
   const q = new URLSearchParams(location.search);
   const out: Link = {};
@@ -86,6 +86,10 @@ function readLink(): Link {
   if (q.get('country') === 'ethiopia-eritrea') out.country = 'both';
   if (q.get('languages')) out.languages = q.get('languages')!.split(',').filter(Boolean);
   if (q.get('mehella') === '1') out.mehella = true;
+  // Chosen alternatives, e.g. "gospel:1,kidaseType:1".
+  if (/^[A-Za-z]+:\d{1,2}(,[A-Za-z]+:\d{1,2})*$/.test(q.get('readings') ?? '')) {
+    out.readings = Object.fromEntries(q.get('readings')!.split(',').map(p => p.split(':')).map(([k, n]) => [k, Number(n)]));
+  }
   return out;
 }
 const LINK = readLink();
@@ -120,7 +124,7 @@ export const App: React.FC = () => {
   const [isMehella, setIsMehella] = useState(LINK.mehella ?? PREFS.mehella ?? false);
   const [country, setCountry] = useState<Country>(LINK.country ?? PREFS.country ?? 'et');
   // Picked alternatives for readings that list more than one; a new date starts from the first of each.
-  const [readingChoice, setReadingChoice] = useState<Record<string, number>>({});
+  const [readingChoice, setReadingChoice] = useState<Record<string, number>>(LINK.readings ?? {});
   const readingsParam = Object.entries(readingChoice).filter(([, n]) => n > 0).map(([k, n]) => `${k}:${n}`).join(',');
   const [activeSlots, setActiveSlots] = useState<LangSlot[]>(PREFS.languages ?? []);
   const pendingSlide = useRef<number>(LINK.slide ?? SESSION?.slide ?? 0);
@@ -259,9 +263,10 @@ export const App: React.FC = () => {
     q.set('country', COUNTRY_WORD[country]);
     if (activeLanguages.length) q.set('languages', activeLanguages.map(l => langSlug(l.name)).join(','));
     if (isMehella) q.set('mehella', '1');
+    if (readingsParam) q.set('readings', readingsParam);
     if (selectedId && selectedId !== defaultId) q.set('presentation', selectedId);
-    return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',')}`;
-  }, [gregDate, slideIndex, country, activeLanguages, isMehella, selectedId, defaultId]);
+    return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',').replace(/%3A/g, ':')}`;
+  }, [gregDate, slideIndex, country, activeLanguages, isMehella, readingsParam, selectedId, defaultId]);
 
   // Keep the active thumbnail in view in the rail or the strip.
   const activeThumb = useRef<HTMLDivElement>(null);
