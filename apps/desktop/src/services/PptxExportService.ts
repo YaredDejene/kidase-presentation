@@ -239,7 +239,7 @@ export class PptxExportService {
 
     if (!processedFooterTitle && !processedFooterText) return;
 
-    const footerFontSize = pxToPoints(def.title.fontSize) * fontScale * 0.6;
+    const footerFontSize = pxToPoints(def.title.fontSize) * fontScale;
     const runs: PptxGenJS.TextProps[] = [];
     let hasContent = false;
 

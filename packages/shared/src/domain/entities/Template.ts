@@ -11,6 +11,8 @@ export interface TemplateDefinition {
     rows: number;
     gap: number;
     verticalAlign: 'top' | 'center' | 'bottom';
+    /** Justify every slide, even short or loose ones that would otherwise fall back to left. */
+    alwaysJustify?: boolean;
   };
   title: {
     show: boolean;

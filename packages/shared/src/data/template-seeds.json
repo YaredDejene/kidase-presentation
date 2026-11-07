@@ -3,7 +3,7 @@
     "name": "Default Template",
     "maxLangCount": 5,
     "definitionJson": {
-      "layout": { "columns": 1, "rows": 1, "gap": 20, "verticalAlign": "center" },
+      "layout": { "columns": 1, "rows": 1, "gap": 20, "verticalAlign": "center", "alwaysJustify": true },
       "title": {
         "show": true,
         "fontSize": 64,

@@ -4,14 +4,13 @@ import jsPDF from 'jspdf';
 import type { OrderedLanguage } from '@kidase/shared';
 import { WebSlideRenderer } from '../components/WebSlideRenderer';
 import type { RenderPayload } from '../api/client';
-import { buildPptx, Progress } from './pptx';
 
-export type { Progress };
+export type Progress = (current: number, total: number) => void;
 type RSlide = RenderPayload['slides'][number];
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1080;
-/** Page in points (13.33 x 7.5 in, same as the PPTX). jsPDF's px unit mis-scales fonts, so everything is points. */
+/** Page in points (13.33 x 7.5 in). jsPDF's px unit mis-scales fonts, so everything is points. */
 const PAGE_W = 960;
 const PAGE_H = 540;
 /** Design px to page points. */
@@ -122,7 +121,3 @@ export async function exportPdf(payload: RenderPayload, languages: OrderedLangua
   pdf.save(filename);
 }
 
-export async function exportPptx(payload: RenderPayload, languages: OrderedLanguage[], filename: string, onProgress?: Progress): Promise<void> {
-  const pptx = buildPptx(payload, languages, onProgress);
-  await pptx.writeFile({ fileName: filename });
-}

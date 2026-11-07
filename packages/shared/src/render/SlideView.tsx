@@ -28,8 +28,8 @@ const MIN_FIT = 0.6;
 const MAX_FIT = 2;
 /** Slides are never split, so text too long for MIN_FIT may shrink down to this. */
 const FLOOR_FIT = 0.2;
-/** Footer size relative to the template's title size. */
-const FOOTER_RATIO = 0.6;
+/** Footer size relative to the template's title size; the footer matches the header title. */
+const FOOTER_RATIO = 1;
 
 /**
  * One decision per slide, so every language looks the same: when all blocks
@@ -48,6 +48,11 @@ function alignTexts(root: HTMLElement): void {
       && (el.textContent ?? '').length / lines >= MIN_JUSTIFIED_CHARS_PER_LINE;
   });
   const justified = texts.filter(el => el.dataset.slideText === 'justify');
+  if (root.dataset.alwaysJustify === 'true') {
+    for (const el of texts) el.style.setProperty('text-wrap-style', 'pretty');
+    for (const el of justified) el.style.textAlign = 'justify';
+    return;
+  }
   const apply = (justify: boolean) => {
     for (const el of texts) el.style.setProperty('text-wrap-style', 'pretty');
     for (const el of justified) el.style.textAlign = justify ? 'justify' : 'left';
@@ -303,6 +308,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
   return (
     <div
       ref={rootRef}
+      data-always-justify={def.layout.alwaysJustify ? 'true' : undefined}
       style={{
         // Starting guess from the character-count heuristic; fitSlide refines it by measuring.
         ['--fit' as string]: fontScaleFactor,

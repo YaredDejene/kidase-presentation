@@ -11,7 +11,7 @@ export const TITLE_SLIDE_ID = '__title__';
 export const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string; labelTi: string }[] = [
   { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: 'የቅዳሴ ዓይነት', labelTi: 'ዓይነት ቅዳሴ' },
   { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ', labelTi: 'መልእኽቲ ጳውሎስ' },
-  { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት', labelTi: 'መልእኽቲ ሓዋርያት' },
+  { key: 'apostle', field: 'messageApostle', label: 'Apostolic Epistle', labelAmh: 'መልእክተ ሐዋርያት', labelTi: 'መልእኽቲ ሓዋርያት' },
   { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት', labelTi: 'ግብሪ ሓዋርያት' },
   { key: 'misbak', field: 'misbak', label: 'Misbak', labelAmh: 'ምስባክ', labelTi: 'ምስባክ' },
   { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል', labelTi: 'ወንጌል' },

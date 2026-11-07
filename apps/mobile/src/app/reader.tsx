@@ -101,7 +101,7 @@ export default function ReaderScreen() {
   );
 }
 
-const SHORT_EN: Record<string, string> = { pauline: 'Paul', apostle: 'Catholic', acts: 'Acts', misbak: 'Misbak', gospel: 'Gospel' };
+const SHORT_EN: Record<string, string> = { pauline: 'Paul', apostle: 'Apostolic', acts: 'Acts', misbak: 'Misbak', gospel: 'Gospel' };
 const SHORT_AM: Record<string, string> = { pauline: 'ጳውሎስ', apostle: 'ሐዋርያት', acts: 'ግብረ', misbak: 'ምስባክ', gospel: 'ወንጌል' };
 const SHORT_TI: Record<string, string> = { pauline: 'ጳውሎስ', apostle: 'ሓዋርያት', acts: 'ግብሪ', misbak: 'ምስባክ', gospel: 'ወንጌል' };
 
