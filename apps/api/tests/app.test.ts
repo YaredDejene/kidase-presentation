@@ -125,6 +125,39 @@ describe('public API', () => {
     expect(afterBump.json().dataVersion).toBe(String(bumped));
   });
 
+  it('GET /:id/render picks among a reading\'s alternatives via ?readings=', async () => {
+    const g = db.collection('gitsawes');
+    await g.updateOne({ _id: 'g1' as never }, { $set: { wengel: 'ሉቃስ ም 12 ቁ 26-32፣ ሉቃስ ም 3 ቁ 21-ፍም', kidaseType: 'ዘዮሐንስ አፈወርቅ, ዘሐዋርያት' } });
+    await bumpContentVersion(db);
+    try {
+      const url = '/api/v1/presentations/p1/render?date=2026-10-23';
+      const get = (q = '') => app.inject({ method: 'GET', url: url + q });
+      const reading = (body: { readings: { key: string }[] }, key: string) => body.readings.find(r => r.key === key);
+
+      const first = await get();
+      expect(first.statusCode).toBe(200);
+      expect(reading(first.json(), 'gospel')).toMatchObject({ value: 'ሉቃስ ም 12 ቁ 26-32', choice: 0, options: ['ሉቃስ ም 12 ቁ 26-32', 'ሉቃስ ም 3 ቁ 21-ፍም'] });
+      expect(reading(first.json(), 'kidaseType')).toMatchObject({ value: 'ዘዮሐንስ አፈወርቅ', choice: 0 });
+
+      const picked = await get('&readings=gospel:1,kidaseType:1');
+      expect(picked.statusCode).toBe(200);
+      expect(reading(picked.json(), 'gospel')).toMatchObject({ value: 'ሉቃስ ም 3 ቁ 21-ፍም', choice: 1, options: ['ሉቃስ ም 12 ቁ 26-32', 'ሉቃስ ም 3 ቁ 21-ፍም'] });
+      expect(reading(picked.json(), 'kidaseType')).toMatchObject({ value: 'ዘሐዋርያት', choice: 1 });
+      expect(picked.json().titleSlide.anaphora).toBe('ዘሐዋርያት');
+      expect(picked.headers.etag).not.toBe(first.headers.etag);
+
+      // Order and explicit defaults don't split the cache.
+      expect((await get('&readings=kidaseType:1,gospel:1')).headers.etag).toBe(picked.headers.etag);
+      expect((await get('&readings=gospel:0')).headers.etag).toBe(first.headers.etag);
+
+      expect((await get('&readings=gospel')).statusCode).toBe(400);
+      expect((await get('&readings=gospel:x')).statusCode).toBe(400);
+    } finally {
+      await g.updateOne({ _id: 'g1' as never }, { $set: { wengel: 'ሉቃስ ም 12 ቁ 26-32', kidaseType: 'ዘዮሐንስ አፈወርቅ' } });
+      await bumpContentVersion(db);
+    }
+  });
+
   it('GET /readings returns the day with stripped verse numbers and English references', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/readings?date=2026-10-23' });
     expect(res.statusCode).toBe(200);

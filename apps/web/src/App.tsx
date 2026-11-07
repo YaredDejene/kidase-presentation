@@ -11,7 +11,7 @@ import { toEC } from 'kenat';
 import { ExportDialog } from './components/ExportDialog';
 import { HelpOverlay } from './components/HelpOverlay';
 import { themeVars, iconBtn, ThemeName } from './theme';
-import { T, UiLang, LANG_BY_SLOT, ETH_MONTHS_SHORT } from './i18n';
+import { T, UiLang, LANG_BY_SLOT, ethDateText, langName } from './i18n';
 import * as I from './icons';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -119,6 +119,9 @@ export const App: React.FC = () => {
   const [gregDate, setGregDate] = useState<string>(LINK.date ?? SESSION?.date ?? todayIso());
   const [isMehella, setIsMehella] = useState(LINK.mehella ?? PREFS.mehella ?? false);
   const [country, setCountry] = useState<Country>(LINK.country ?? PREFS.country ?? 'et');
+  // Picked alternatives for readings that list more than one; a new date starts from the first of each.
+  const [readingChoice, setReadingChoice] = useState<Record<string, number>>({});
+  const readingsParam = Object.entries(readingChoice).filter(([, n]) => n > 0).map(([k, n]) => `${k}:${n}`).join(',');
   const [activeSlots, setActiveSlots] = useState<LangSlot[]>(PREFS.languages ?? []);
   const pendingSlide = useRef<number>(LINK.slide ?? SESSION?.slide ?? 0);
   // Language names from a share link, resolved against the payload once it arrives.
@@ -161,7 +164,7 @@ export const App: React.FC = () => {
     if (!selectedId) return;
     let cancelled = false;
     setLoading(true); setError(null);
-    fetchRender(selectedId, gregDate, isMehella, country)
+    fetchRender(selectedId, gregDate, isMehella, country, readingsParam)
       .then(payload => {
         if (cancelled) return;
         setRender(payload);
@@ -180,7 +183,7 @@ export const App: React.FC = () => {
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [selectedId, gregDate, isMehella, country]);
+  }, [selectedId, gregDate, isMehella, country, readingsParam]);
 
   const slideCount = render?.slides.length ?? 0;
   const next = useCallback(() => setSlideIndex(i => Math.min(i + 1, Math.max(slideCount - 1, 0))), [slideCount]);
@@ -302,7 +305,7 @@ export const App: React.FC = () => {
   const contextText = render && ec && (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0, lineHeight: 1.3, flexShrink: isMobile ? 0 : 1 }}>
       {!isMobile && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render.presentation.name}{render.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>}
-      <span style={{ fontSize: 11, color: 'var(--text2)', whiteSpace: 'nowrap' }}><span style={{ fontFamily: ETHIOPIC }}>{ETH_MONTHS_SHORT[ec.month - 1]} {ec.day}, {ec.year}</span><span style={{ color: 'var(--muted)' }}> · {render.context.gregorian}</span></span>
+      <span style={{ fontSize: 11, color: 'var(--text2)', whiteSpace: 'nowrap' }}><span style={uiLang === 'en' ? undefined : { fontFamily: ETHIOPIC }}>{ethDateText(uiLang, ec)}</span><span style={{ color: 'var(--muted)' }}> · {render.context.gregorian}</span></span>
     </div>
   );
 
@@ -476,9 +479,11 @@ export const App: React.FC = () => {
       {configOpen && (
         <ConfigDrawer
           isDark={isDark} t={t} onClose={() => setConfigOpen(false)}
-          gregDate={gregDate} onGreg={setGregDate}
+          gregDate={gregDate} onGreg={d => { setGregDate(d); setReadingChoice({}); }}
           languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
           isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
+          readings={render?.readings ?? []}
+          chooseReading={(key, i) => setReadingChoice(c => ({ ...c, [key]: i }))}
           uiLang={uiLang} setUiLang={setUiLang}
           country={country} setCountry={setCountry}
           shareUrl={shareUrl}
@@ -504,7 +509,7 @@ export const App: React.FC = () => {
                 const meta = LANG_BY_SLOT[l.slot] || { short: l.name.slice(0, 2) };
                 const blocked = !on && activeSlots.length >= capacity;
                 return (
-                  <button key={l.slot} onClick={() => toggleLang(l.slot)} disabled={blocked} title={blocked ? t.langSub(capacity) : l.name} style={{ opacity: blocked ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${on ? '#444' : '#2a2a2a'}`, background: on ? '#262626' : 'transparent', color: on ? '#fff' : '#666' }}>
+                  <button key={l.slot} onClick={() => toggleLang(l.slot)} disabled={blocked} title={blocked ? t.langSub(capacity) : langName(uiLang, l.name)} style={{ opacity: blocked ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${on ? '#444' : '#2a2a2a'}`, background: on ? '#262626' : 'transparent', color: on ? '#fff' : '#666' }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color ?? DEFAULT_LANG_COLORS[l.slot], opacity: on ? 1 : 0.4, flexShrink: 0 }} />{meta.short}
                   </button>
                 );

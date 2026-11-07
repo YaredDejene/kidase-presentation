@@ -17,6 +17,14 @@ export const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string;
   { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል', labelTi: 'ወንጌል' },
 ];
 
+/** A reading field can list alternatives, e.g. "ሉቃስ ም 24 ቁ 13-33, ማርቆስ ም 1 ቁ 1-9"; the user picks one. */
+export function splitReading(value: string): string[] {
+  return value.split(/[,፣]/).map(s => s.trim()).filter(Boolean);
+}
+
+/** Chosen alternative per reading key (e.g. { gospel: 1 }); missing keys use the first. */
+export type ReadingChoice = Record<string, number>;
+
 const AMH_DAYS = ['እሑድ', 'ሰኞ', 'ማክሰኞ', 'ረቡዕ', 'ሐሙስ', 'ዓርብ', 'ቅዳሜ'];
 
 export interface TitleSlideInfo {

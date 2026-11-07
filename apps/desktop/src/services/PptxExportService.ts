@@ -264,7 +264,7 @@ export class PptxExportService {
             options: {
               fontSize: footerFontSize,
               fontFace: cleanFontFamily(langDef.fontFamily),
-              color: colorToHex6(langDef.color),
+              color: colorToHex6(def.title.color),
               bold: true,
             },
           });

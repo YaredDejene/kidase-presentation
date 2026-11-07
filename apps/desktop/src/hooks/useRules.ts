@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAppStore } from '../store/appStore';
+import { useRuleStore } from '../store/ruleStore';
 import { ruleRepository, gitsaweRepository } from '../repositories';
 import { ruleEngine, buildContext, BuildContextArgs } from '@kidase/shared/engine';
 import type { RuleDefinition } from '@kidase/shared/domain/entities/RuleDefinition';
@@ -57,6 +58,7 @@ export function useRules() {
     setRuleContextMeta,
   } = useAppStore();
 
+  const readingChoice = useRuleStore(s => s.readingChoice);
   const [rules, setRules] = useState<RuleDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -158,6 +160,7 @@ export function useRules() {
       gitsaweRules,
       overrideDate,
       extra: { isMehella },
+      readingChoice,
     };
 
     // Always build context (needed for gitsawe selection and placeholder resolution)
@@ -195,6 +198,7 @@ export function useRules() {
             gitsaweRules,
             overrideDate,
             extra: { isMehella },
+            readingChoice,
           };
           const secContext = buildContext(secCtxArgs);
           const secondary = evaluateRulesForSlides(enabledSecRules, secondarySlides, secContext, secCtxArgs);
@@ -219,7 +223,7 @@ export function useRules() {
     }
 
     return allResults;
-  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, isMehella, setRuleFilteredSlideIds, setRuleContextMeta]);
+  }, [rules, currentPresentation, currentSlides, currentVariables, appSettings, ruleEvaluationDate, isMehella, readingChoice, setRuleFilteredSlideIds, setRuleContextMeta]);
 
   // Validate a rule JSON string
   const validateRule = useCallback((ruleJson: string) => {

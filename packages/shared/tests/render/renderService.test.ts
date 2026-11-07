@@ -150,4 +150,60 @@ describe('RenderService', () => {
     expect(result.slides.map(s => s.id)).toEqual(['s1', 'sec1']);
     expect(result.slides.find(s => s.id === 'sec1')?.isSecondary).toBe(true);
   });
+  describe('readings and anaphora with alternatives', () => {
+    const repos = () => fakeRepositories({
+      templates: [{ id: 't1', name: 'Default', maxLangCount: 4, definitionJson: def(), createdAt: '' }],
+      presentations: [
+        { id: 'p1', name: 'Kidase', type: 'Kidase', templateId: 't1', languageMap: { Lang1: "Ge'ez" }, isPrimary: true, isActive: true, createdAt: '' },
+        { id: 'pa', name: 'Anaphora A', type: 'Kidase', templateId: 't1', languageMap: { Lang1: "Ge'ez" }, isPrimary: false, isActive: false, createdAt: '' },
+        { id: 'pb', name: 'Anaphora B', type: 'Kidase', templateId: 't1', languageMap: { Lang1: "Ge'ez" }, isPrimary: false, isActive: false, createdAt: '' },
+      ],
+      slides: [
+        { id: 'gospel', presentationId: 'p1', slideOrder: 0, lineId: '@meta.gitsawe.wengel', blocksJson: [{ Lang1: '' }], isDisabled: false, isDynamic: true },
+        { id: 'a1', presentationId: 'pa', slideOrder: 0, blocksJson: [{ Lang1: 'anaphora A' }], isDisabled: false, isDynamic: false },
+        { id: 'b1', presentationId: 'pb', slideOrder: 0, blocksJson: [{ Lang1: 'anaphora B' }], isDisabled: false, isDynamic: false },
+      ],
+      verses: [
+        { id: 'v1', segmentId: 'John 1:1', verseOrder: 1, textLang1: 'In the beginning', createdAt: '' },
+        { id: 'v2', segmentId: 'Mark 1:1', verseOrder: 1, textLang1: 'The beginning of the gospel', createdAt: '' },
+      ],
+      gitsawes: [{ id: 'g1', lineId: 'l1', name: 'Day', priority: 1, kidaseType: 'Anaphora A, Anaphora B', wengel: 'John 1:1፣ Mark 1:1', createdAt: '' }],
+      rules: [{ id: 'g-alt', name: 'always', scope: 'gitsawe', gitsaweId: 'g1', isEnabled: true, createdAt: '',
+        ruleJson: JSON.stringify({ id: 'g-alt', when: { 'meta.year': { $gte: 2000 } }, then: {} }) }],
+    });
+    const render = (readingChoice?: Record<string, number>) =>
+      new RenderService(repos()).render({ presentationId: 'p1', date: '2026-06-25', readingChoice });
+    const reading = (r: Awaited<ReturnType<typeof render>>, key: string) => r.readings.find(x => x.key === key);
+
+    it('uses the first of each by default and lists the alternatives', async () => {
+      const r = await render();
+      expect(r.slides.map(s => s.block.Lang1)).toEqual(['In the beginning', 'anaphora A']);
+      expect(r.presentation.secondaryName).toBe('Anaphora A');
+      expect(reading(r, 'gospel')).toMatchObject({ value: 'John 1:1', options: ['John 1:1', 'Mark 1:1'], choice: 0, slideIndex: 0 });
+      expect(reading(r, 'kidaseType')).toMatchObject({ value: 'Anaphora A', options: ['Anaphora A', 'Anaphora B'], choice: 0 });
+      expect(r.titleSlide.anaphora).toBe('Anaphora A');
+      expect(r.titleSlide.readings.find(x => x.key === 'gospel')?.value).toBe('John 1:1');
+    });
+
+    it('switches verses, merged anaphora and title slide, and keeps the options listed', async () => {
+      const r = await render({ gospel: 1, kidaseType: 1 });
+      expect(r.slides.map(s => s.block.Lang1)).toEqual(['The beginning of the gospel', 'anaphora B']);
+      expect(r.presentation.secondaryName).toBe('Anaphora B');
+      expect(reading(r, 'gospel')).toMatchObject({ value: 'Mark 1:1', options: ['John 1:1', 'Mark 1:1'], choice: 1 });
+      expect(reading(r, 'kidaseType')).toMatchObject({ value: 'Anaphora B', options: ['Anaphora A', 'Anaphora B'], choice: 1 });
+      expect(r.titleSlide.anaphora).toBe('Anaphora B');
+      expect(r.titleSlide.readings.find(x => x.key === 'gospel')?.value).toBe('Mark 1:1');
+    });
+
+    it('changes one choice without touching the other', async () => {
+      const r = await render({ kidaseType: 1 });
+      expect(r.slides.map(s => s.block.Lang1)).toEqual(['In the beginning', 'anaphora B']);
+    });
+
+    it('falls back to the first for an out-of-range choice', async () => {
+      const r = await render({ gospel: 7, kidaseType: 9 });
+      expect(r.slides.map(s => s.block.Lang1)).toEqual(['In the beginning', 'anaphora A']);
+      expect(reading(r, 'gospel')?.choice).toBe(0);
+    });
+  });
 });

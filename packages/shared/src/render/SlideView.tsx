@@ -199,7 +199,8 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
           fontSize: `${def.title.fontSize * scale}px`,
           color: def.title.color,
           textAlign: def.title.alignment,
-          marginBottom: `${24 * scale}px`,
+          // Tight under the title; the footer gets the larger gap so it reads as separate.
+          marginBottom: `${8 * scale}px`,
           fontWeight: 'bold',
         }}
       >
@@ -232,8 +233,9 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
             key={`footer-${langDef.slot}`}
             style={{ fontFamily: withSlideFont(langDef.fontFamily), color: langDef.color }}
           >
+            {/* The footer title takes the header title's color; the text keeps its language color. */}
             {titlePart && (
-              <span style={{ fontWeight: 'bold' }}>
+              <span style={{ fontWeight: 'bold', color: def.title.color }}>
                 {titlePart}
                 {textPart && ': '}
               </span>
@@ -249,7 +251,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
     return (
       <div
         style={{
-          marginTop: `${8 * scale}px`,
+          marginTop: `${24 * scale}px`,
           // A small caption; shrinks further with dense text, never grows.
           fontSize: `calc(min(var(--fit), 1) * ${def.title.fontSize * FOOTER_RATIO * scale}px)`,
           textAlign: 'left',

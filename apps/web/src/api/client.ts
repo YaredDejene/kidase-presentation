@@ -45,11 +45,13 @@ export async function fetchRender(
   date: string | null,
   isMehella: boolean,
   country: Country,
+  readings = '',
 ): Promise<RenderPayload> {
   const q = new URLSearchParams();
   if (date) q.set('date', date);
   if (isMehella) q.set('mehella', '1');
   q.set('country', country);
+  if (readings) q.set('readings', readings);
   const res = await fetch(`${BASE}/api/v1/presentations/${id}/render?${q.toString()}`);
   if (!res.ok) throw new Error(`Failed to render (${res.status})`);
   return withTitleSlide(await res.json());
