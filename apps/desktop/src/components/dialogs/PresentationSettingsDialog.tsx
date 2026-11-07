@@ -7,7 +7,8 @@ import { Template, languageColor } from '@kidase/shared/domain/entities/Template
 import { Slide } from '@kidase/shared/domain/entities/Slide';
 import { useVariables } from '../../hooks/useVariables';
 import { usePresentation } from '../../hooks/usePresentation';
-import { placeholderService } from '@kidase/shared';
+import { placeholderService, READING_FIELDS } from '@kidase/shared';
+import { useRuleStore } from '../../store/ruleStore';
 import { useAppStore } from '../../store/appStore';
 import { toast } from '../../store/toastStore';
 import { DatePicker } from '../common/DatePicker';
@@ -385,6 +386,8 @@ function GeneralTab({
         </div>
       </div>
 
+      <ReadingChoices />
+
       <div className="form-group">
         <label className="form-label">{t('statistics')}</label>
         <div className="stats-grid">
@@ -402,6 +405,30 @@ function GeneralTab({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** A dropdown per reading whose gitsawe lists more than one reference; changing one re-renders everything. */
+function ReadingChoices() {
+  const { t, i18n } = useTranslation('dialogs');
+  const options = useRuleStore(s => s.ruleContextMeta?.readingOptions as Record<string, string[]> | undefined);
+  const choice = useRuleStore(s => s.readingChoice);
+  const setChoice = useRuleStore(s => s.setReadingChoice);
+  const rows = READING_FIELDS.filter(r => options?.[r.key]);
+  if (!options || rows.length === 0) return null;
+  return (
+    <div className="form-group">
+      <label className="form-label">{t('readings')}</label>
+      <p className="form-hint">{t('readingsHint')}</p>
+      {rows.map(r => (
+        <div key={r.key} style={{ marginTop: 10 }}>
+          <span className="setting-hint" style={{ display: 'block', marginBottom: 4 }}>{i18n.language === 'am' ? r.labelAmh : r.label}</span>
+          <select value={choice[r.key] ?? 0} onChange={e => setChoice(r.key, Number(e.target.value))} className="form-select">
+            {options[r.key].map((ref, i) => <option key={i} value={i}>{ref}</option>)}
+          </select>
+        </div>
+      ))}
     </div>
   );
 }

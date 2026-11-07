@@ -99,6 +99,7 @@ function buildUnifiedState(
         ruleFilteredSlideIds: null,
         ruleEvaluationDate: null,
         isMehella: false,
+        readingChoice: {},
         ruleContextMeta: null,
       });
     },

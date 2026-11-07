@@ -1,7 +1,7 @@
 import React from 'react';
 import type { RenderPayload } from '../api/client';
 import { iconBtn } from '../theme';
-import { Strings, UiLang } from '../i18n';
+import { Strings, UiLang, ethDateText } from '../i18n';
 import { Close, ChevronRight } from '../icons';
 
 interface Props { t: Strings; uiLang: UiLang; onClose: () => void; render: RenderPayload | null; onJump: (slideIndex: number) => void; }
@@ -9,6 +9,9 @@ interface Props { t: Strings; uiLang: UiLang; onClose: () => void; render: Rende
 /** Reading label in the interface language, English when that translation is missing. */
 export const readingLabel = (r: RenderPayload['readings'][number], uiLang: UiLang) =>
   (uiLang === 'am' ? r.labelAmh : uiLang === 'ti' ? r.labelTi : '') || r.label;
+
+/** "2019-02-29" to its parts. */
+const parseEth = (s: string) => { const [year, month, day] = s.split('-').map(Number); return { year, month, day }; };
 
 const eyebrow: React.CSSProperties = { fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', marginBottom: 8 };
 
@@ -23,14 +26,14 @@ export const InfoPanel: React.FC<Props> = ({ t, uiLang, onClose, render, onJump 
       <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 22 }}>
         <div>
           <div style={eyebrow}>{t.date}</div>
-          <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)', fontFamily: "'Noto Serif Ethiopic Variable',serif", marginBottom: 2 }}>{render?.context.ethDateLabel}</div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)', fontFamily: uiLang === 'en' ? undefined : "'Noto Serif Ethiopic Variable',serif", marginBottom: 2 }}>{render?.context.ethDate && ethDateText(uiLang, parseEth(render.context.ethDate))}</div>
           <div style={{ fontSize: 13, color: 'var(--text2)' }}>{render?.context.gregorian}</div>
         </div>
         {render?.context.feast && (
           <>
             <div style={{ height: 1, background: 'var(--border)' }} />
             <div>
-              <div style={eyebrow}>{t.feast} · <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>በዓል</span></div>
+              <div style={eyebrow}>{t.feast}</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>{render.context.feast}</div>
               {render.context.feastAmh && <div style={{ fontSize: 16, color: 'var(--text2)', fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>{render.context.feastAmh}</div>}
             </div>
@@ -40,15 +43,14 @@ export const InfoPanel: React.FC<Props> = ({ t, uiLang, onClose, render, onJump 
           <>
             <div style={{ height: 1, background: 'var(--border)' }} />
             <div>
-              <div style={eyebrow}>{t.readings} · <span style={{ fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>ግፃዌ</span></div>
+              <div style={eyebrow}>{t.readings}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {render.readings.map(r => (
                   <div key={r.key} className={r.slideIndex !== undefined ? 'row-hover' : undefined} onClick={r.slideIndex !== undefined ? () => onJump(r.slideIndex!) : undefined} title={r.slideIndex !== undefined ? `${t.slide} ${r.slideIndex + 1}` : undefined} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)', cursor: r.slideIndex !== undefined ? 'pointer' : undefined }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', fontFamily: uiLang === 'en' ? undefined : "'Noto Serif Ethiopic Variable',serif" }}>{readingLabel(r, uiLang)}</div>
-                      <div style={{ fontSize: 12.5, color: 'var(--muted)', fontFamily: "'Noto Serif Ethiopic Variable',serif" }}>{uiLang === 'en' ? r.labelAmh : r.label}</div>
                     </div>
-                    <span style={{ fontSize: 13, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{r.ref || r.value}</span>
+                    <span style={{ fontSize: 13, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{uiLang === 'en' ? r.ref || r.value : r.value}</span>
                     {r.slideIndex !== undefined && <ChevronRight size={16} color="var(--muted)" />}
                   </div>
                 ))}

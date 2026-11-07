@@ -11,7 +11,7 @@ import { toEC } from 'kenat';
 import { ExportDialog } from './components/ExportDialog';
 import { HelpOverlay } from './components/HelpOverlay';
 import { themeVars, iconBtn, ThemeName } from './theme';
-import { T, UiLang, LANG_BY_SLOT, ETH_MONTHS_SHORT } from './i18n';
+import { T, UiLang, LANG_BY_SLOT, ethDateText, langName } from './i18n';
 import * as I from './icons';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -68,13 +68,13 @@ function useSwipe(onLeft: () => void, onRight: () => void) {
 
 /**
  * The address bar stays clean. A share link carries the view in readable
- * query words (date, slide, country, languages, mehella, presentation), is
+ * query words (date, slide, country, languages, mehella, readings, presentation), is
  * applied once on load and then removed from the address bar. Preferences
  * live in localStorage; the date and slide of the current tab in
  * sessionStorage, for today only, so a refresh during a service keeps the
  * place while tomorrow starts fresh.
  */
-interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean }
+interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean; readings?: Record<string, number> }
 function readLink(): Link {
   const q = new URLSearchParams(location.search);
   const out: Link = {};
@@ -86,6 +86,10 @@ function readLink(): Link {
   if (q.get('country') === 'ethiopia-eritrea') out.country = 'both';
   if (q.get('languages')) out.languages = q.get('languages')!.split(',').filter(Boolean);
   if (q.get('mehella') === '1') out.mehella = true;
+  // Chosen alternatives, e.g. "gospel:1,kidaseType:1".
+  if (/^[A-Za-z]+:\d{1,2}(,[A-Za-z]+:\d{1,2})*$/.test(q.get('readings') ?? '')) {
+    out.readings = Object.fromEntries(q.get('readings')!.split(',').map(p => p.split(':')).map(([k, n]) => [k, Number(n)]));
+  }
   return out;
 }
 const LINK = readLink();
@@ -119,6 +123,9 @@ export const App: React.FC = () => {
   const [gregDate, setGregDate] = useState<string>(LINK.date ?? SESSION?.date ?? todayIso());
   const [isMehella, setIsMehella] = useState(LINK.mehella ?? PREFS.mehella ?? false);
   const [country, setCountry] = useState<Country>(LINK.country ?? PREFS.country ?? 'et');
+  // Picked alternatives for readings that list more than one; a new date starts from the first of each.
+  const [readingChoice, setReadingChoice] = useState<Record<string, number>>(LINK.readings ?? {});
+  const readingsParam = Object.entries(readingChoice).filter(([, n]) => n > 0).map(([k, n]) => `${k}:${n}`).join(',');
   const [activeSlots, setActiveSlots] = useState<LangSlot[]>(PREFS.languages ?? []);
   const pendingSlide = useRef<number>(LINK.slide ?? SESSION?.slide ?? 0);
   // Language names from a share link, resolved against the payload once it arrives.
@@ -161,7 +168,7 @@ export const App: React.FC = () => {
     if (!selectedId) return;
     let cancelled = false;
     setLoading(true); setError(null);
-    fetchRender(selectedId, gregDate, isMehella, country)
+    fetchRender(selectedId, gregDate, isMehella, country, readingsParam)
       .then(payload => {
         if (cancelled) return;
         setRender(payload);
@@ -180,7 +187,7 @@ export const App: React.FC = () => {
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [selectedId, gregDate, isMehella, country]);
+  }, [selectedId, gregDate, isMehella, country, readingsParam]);
 
   const slideCount = render?.slides.length ?? 0;
   const next = useCallback(() => setSlideIndex(i => Math.min(i + 1, Math.max(slideCount - 1, 0))), [slideCount]);
@@ -256,9 +263,10 @@ export const App: React.FC = () => {
     q.set('country', COUNTRY_WORD[country]);
     if (activeLanguages.length) q.set('languages', activeLanguages.map(l => langSlug(l.name)).join(','));
     if (isMehella) q.set('mehella', '1');
+    if (readingsParam) q.set('readings', readingsParam);
     if (selectedId && selectedId !== defaultId) q.set('presentation', selectedId);
-    return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',')}`;
-  }, [gregDate, slideIndex, country, activeLanguages, isMehella, selectedId, defaultId]);
+    return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',').replace(/%3A/g, ':')}`;
+  }, [gregDate, slideIndex, country, activeLanguages, isMehella, readingsParam, selectedId, defaultId]);
 
   // Keep the active thumbnail in view in the rail or the strip.
   const activeThumb = useRef<HTMLDivElement>(null);
@@ -274,7 +282,7 @@ export const App: React.FC = () => {
 
   const slideStage = (slide: NonNullable<typeof current>, def: NonNullable<typeof definition>) => (
     <Stage>
-      <WebSlideRenderer definition={def} languages={activeLanguages} block={slide.block} title={slide.title} footer={slide.footer} pageLabel={pageLabel} />
+      <WebSlideRenderer definition={def} languages={activeLanguages} block={slide.block} title={slide.title} footer={slide.footer} titleInfo={slide.titleInfo} pageLabel={pageLabel} />
     </Stage>
   );
 
@@ -286,7 +294,7 @@ export const App: React.FC = () => {
       <div key={s.id} ref={activeRow ? activeThumb : undefined} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', flexShrink: 0, border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, boxShadow: isVerse ? 'inset 3px 0 0 #4a6a4a' : undefined, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
         <span style={{ fontSize: 11, color: isVerse ? '#9a8acd' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
         <div style={{ width: 150, height: 84, flexShrink: 0, borderRadius: 5, overflow: 'hidden', background: '#000' }}>
-          {def && <LazyMount><Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} /></Stage></LazyMount>}
+          {def && <LazyMount><Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} titleInfo={s.titleInfo} /></Stage></LazyMount>}
         </div>
       </div>
     );
@@ -302,7 +310,7 @@ export const App: React.FC = () => {
   const contextText = render && ec && (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0, lineHeight: 1.3, flexShrink: isMobile ? 0 : 1 }}>
       {!isMobile && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render.presentation.name}{render.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>}
-      <span style={{ fontSize: 11, color: 'var(--text2)', whiteSpace: 'nowrap' }}><span style={{ fontFamily: ETHIOPIC }}>{ETH_MONTHS_SHORT[ec.month - 1]} {ec.day}, {ec.year}</span><span style={{ color: 'var(--muted)' }}> · {render.context.gregorian}</span></span>
+      <span style={{ fontSize: 11, color: 'var(--text2)', whiteSpace: 'nowrap' }}><span style={uiLang === 'en' ? undefined : { fontFamily: ETHIOPIC }}>{ethDateText(uiLang, ec)}</span><span style={{ color: 'var(--muted)' }}> · {render.context.gregorian}</span></span>
     </div>
   );
 
@@ -476,9 +484,11 @@ export const App: React.FC = () => {
       {configOpen && (
         <ConfigDrawer
           isDark={isDark} t={t} onClose={() => setConfigOpen(false)}
-          gregDate={gregDate} onGreg={setGregDate}
+          gregDate={gregDate} onGreg={d => { setGregDate(d); setReadingChoice({}); }}
           languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
           isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
+          readings={render?.readings ?? []}
+          chooseReading={(key, i) => setReadingChoice(c => ({ ...c, [key]: i }))}
           uiLang={uiLang} setUiLang={setUiLang}
           country={country} setCountry={setCountry}
           shareUrl={shareUrl}
@@ -504,7 +514,7 @@ export const App: React.FC = () => {
                 const meta = LANG_BY_SLOT[l.slot] || { short: l.name.slice(0, 2) };
                 const blocked = !on && activeSlots.length >= capacity;
                 return (
-                  <button key={l.slot} onClick={() => toggleLang(l.slot)} disabled={blocked} title={blocked ? t.langSub(capacity) : l.name} style={{ opacity: blocked ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${on ? '#444' : '#2a2a2a'}`, background: on ? '#262626' : 'transparent', color: on ? '#fff' : '#666' }}>
+                  <button key={l.slot} onClick={() => toggleLang(l.slot)} disabled={blocked} title={blocked ? t.langSub(capacity) : langName(uiLang, l.name)} style={{ opacity: blocked ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 9px', borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: `1px solid ${on ? '#444' : '#2a2a2a'}`, background: on ? '#262626' : 'transparent', color: on ? '#fff' : '#666' }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color ?? DEFAULT_LANG_COLORS[l.slot], opacity: on ? 1 : 0.4, flexShrink: 0 }} />{meta.short}
                   </button>
                 );

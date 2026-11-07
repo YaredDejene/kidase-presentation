@@ -15,10 +15,7 @@ interface Props {
   languages: OrderedLanguage[];
 }
 
-const FORMATS = ['pdf', 'pptx'] as const;
-
 export const ExportDialog: React.FC<Props> = ({ t, onClose, payload, languages }) => {
-  const [fmt, setFmt] = useState<'pdf' | 'pptx'>('pdf');
   const [status, setStatus] = useState<Status>('idle');
   const [pct, setPct] = useState(0);
   const [fileName, setFileName] = useState('');
@@ -30,16 +27,15 @@ export const ExportDialog: React.FC<Props> = ({ t, onClose, payload, languages }
   const base = `kidase_${greg}_EC-${ec.year}-${pad(ec.month)}-${pad(ec.day)}`;
 
   const run = async () => {
-    const name = `${base}.${fmt}`;
+    const name = `${base}.pdf`;
     setFileName(name);
     setStatus('running');
     setPct(0);
     const onProgress = (c: number, t: number) => setPct(Math.round((c / t) * 100));
     try {
-      // The PDF and PPTX libraries are over half the bundle; load them only when exporting.
-      const { exportPdf, exportPptx } = await import('../export/exporters');
-      if (fmt === 'pdf') await exportPdf(payload, languages, name, onProgress);
-      else await exportPptx(payload, languages, name, onProgress);
+      // The PDF library is a large part of the bundle; load it only when exporting.
+      const { exportPdf } = await import('../export/exporters');
+      await exportPdf(payload, languages, name, onProgress);
       setStatus('done');
     } catch (e) {
       setStatus('idle');
@@ -63,18 +59,12 @@ export const ExportDialog: React.FC<Props> = ({ t, onClose, payload, languages }
         {status === 'idle' && (
           <>
             <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {FORMATS.map(key => {
-                const on = fmt === key;
-                return (
-                  <div key={key} onClick={() => setFmt(key)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--elevated)' : 'transparent' }}>
-                    <span style={{ width: 18, height: 18, borderRadius: '50%', flexShrink: 0, border: `2px solid ${on ? 'var(--accent)' : 'var(--border2)'}`, background: on ? 'var(--accent)' : 'transparent', boxShadow: on ? 'inset 0 0 0 3px var(--surface)' : 'none' }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{key === 'pdf' ? 'PDF' : 'PowerPoint'}</div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{key === 'pdf' ? t.pdfSub(payload.slides.length) : t.pptxSub}</div>
-                    </div>
-                  </div>
-                );
-              })}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 10, border: '1px solid var(--accent)', background: 'var(--elevated)' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>PDF</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t.pdfSub(payload.slides.length)}</div>
+                </div>
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '14px 22px', borderTop: '1px solid var(--border)' }}>
               <button className="outline-btn" onClick={onClose} style={btnOutline}>{t.cancel}</button>

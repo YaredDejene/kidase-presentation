@@ -155,7 +155,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   // The heavy, deterministic, cacheable render.
-  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string; country?: Country } }>(
+  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string; country?: Country; readings?: string } }>(
     '/api/v1/presentations/:id/render',
     {
       schema: {
@@ -168,6 +168,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
             date: { type: 'string', description: 'Service date, YYYY-MM-DD (defaults to today)' },
             mehella: { type: 'string', description: '"1"/"true" for the Mehella variant', enum: ['0', '1', 'true', 'false'] },
             country: { type: 'string', description: 'Patriarch and country placeholders for this country; parish placeholders left blank', enum: COUNTRIES },
+            readings: { type: 'string', description: 'Chosen alternative for readings that list more than one, e.g. "gospel:1,misbak:1" (0-based; default 0)', pattern: '^[A-Za-z]+:\\d{1,2}(,[A-Za-z]+:\\d{1,2})*$' },
           },
         },
       },
@@ -177,9 +178,13 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       const date = req.query.date;
       const mehella = req.query.mehella === '1' || req.query.mehella === 'true';
       const country = req.query.country;
+      // Sorted and without zeros (the default), so equivalent choices share a cache entry.
+      const readingChoice = Object.fromEntries((req.query.readings ?? '').split(',').filter(Boolean)
+        .map(p => p.split(':')).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Number(n)]).sort(([a], [b]) => String(a).localeCompare(String(b))));
+      const readingsKey = Object.entries(readingChoice).map(([k, n]) => `${k}${n}`).join('.');
       const cv = await getContentVersion(opts.db);
       repoCache.atVersion(cv);
-      const key = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}`;
+      const key = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}:${readingsKey}`;
       const etag = `"${key}"`;
 
       if (req.headers['if-none-match'] === etag) {
@@ -196,7 +201,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
       let result;
       try {
-        result = await renderService.render({ presentationId: id, date, isMehella: mehella, country });
+        result = await renderService.render({ presentationId: id, date, isMehella: mehella, country, readingChoice });
       } catch {
         return reply.code(404).send({ error: 'Presentation not found' });
       }

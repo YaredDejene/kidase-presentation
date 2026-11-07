@@ -4,6 +4,7 @@ import type { Variable } from "../domain/entities/Variable";
 import type { AppSettings } from "../domain/entities/AppSettings";
 import type { Gitsawe } from "../domain/entities/Gitsawe";
 import type { RuleDefinition } from "../domain/entities/RuleDefinition";
+import { READING_FIELDS, splitReading, type ReadingChoice } from "../domain/titleSlide";
 import { RuleContext, RuleEntry } from "./types";
 import { RuleEngine } from "./engine";
 
@@ -67,6 +68,7 @@ export interface BuildContextArgs {
   gitsaweRules?: RuleDefinition[];
   overrideDate?: Date;
   extra?: Record<string, unknown>;
+  readingChoice?: ReadingChoice;
 }
 
 export function buildContext(args: BuildContextArgs): RuleContext {
@@ -159,7 +161,20 @@ export function buildContext(args: BuildContextArgs): RuleContext {
     meta,
   );
   if (matched) {
-    meta.gitsawe = toRecord(matched);
+    const gitsawe = toRecord(matched);
+    // Readings and anaphora with alternatives: everything downstream (slides, rules, the secondary
+    // kidase, title slide) sees only the chosen one.
+    const options: Record<string, string[]> = {};
+    for (const r of READING_FIELDS) {
+      const value = gitsawe[r.field];
+      if (typeof value !== "string") continue;
+      const parts = splitReading(value);
+      if (parts.length < 2) continue;
+      options[r.key] = parts;
+      gitsawe[r.field] = parts[args.readingChoice?.[r.key] ?? 0] ?? parts[0];
+    }
+    meta.gitsawe = gitsawe;
+    if (Object.keys(options).length > 0) meta.readingOptions = options;
   }
 
   return {

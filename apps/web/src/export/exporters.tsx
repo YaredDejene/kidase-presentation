@@ -4,14 +4,13 @@ import jsPDF from 'jspdf';
 import type { OrderedLanguage } from '@kidase/shared';
 import { WebSlideRenderer } from '../components/WebSlideRenderer';
 import type { RenderPayload } from '../api/client';
-import { buildPptx, Progress } from './pptx';
 
-export type { Progress };
+export type Progress = (current: number, total: number) => void;
 type RSlide = RenderPayload['slides'][number];
 
 const DESIGN_W = 1920;
 const DESIGN_H = 1080;
-/** Page in points (13.33 x 7.5 in, same as the PPTX). jsPDF's px unit mis-scales fonts, so everything is points. */
+/** Page in points (13.33 x 7.5 in). jsPDF's px unit mis-scales fonts, so everything is points. */
 const PAGE_W = 960;
 const PAGE_H = 540;
 /** Design px to page points. */
@@ -30,7 +29,7 @@ function mountSlide(payload: RenderPayload, slide: RSlide, languages: OrderedLan
   document.body.appendChild(host);
   const root = createRoot(host);
   flushSync(() => root.render(
-    <WebSlideRenderer definition={def} languages={languages} block={slide.block} title={slide.title} footer={slide.footer} pageLabel={pageLabel} />,
+    <WebSlideRenderer definition={def} languages={languages} block={slide.block} title={slide.title} footer={slide.footer} titleInfo={slide.titleInfo} pageLabel={pageLabel} />,
   ));
   return { host, def, unmount: () => { root.unmount(); document.body.removeChild(host); } };
 }
@@ -89,6 +88,15 @@ function drawSlide(pdf: jsPDF, host: HTMLElement, background: string): void {
     const y = (w.rect.top - origin.top + w.rect.height * baseline) * K;
     pdf.text(w.text, x, y, { renderingMode: bold ? 'fillThenStroke' : 'fill' });
   }
+  for (const el of host.querySelectorAll<HTMLElement>('[data-href]')) {
+    const r = el.getBoundingClientRect();
+    pdf.link((r.left - origin.left) * K, (r.top - origin.top) * K, r.width * K, r.height * K, { url: el.dataset.href! });
+  }
+  // Jumps within the PDF, e.g. a reading on the title slide to its page (one page per slide).
+  for (const el of host.querySelectorAll<HTMLElement>('[data-page]')) {
+    const r = el.getBoundingClientRect();
+    pdf.link((r.left - origin.left) * K, (r.top - origin.top) * K, r.width * K, r.height * K, { pageNumber: Number(el.dataset.page) + 1 });
+  }
 }
 
 export async function exportPdf(payload: RenderPayload, languages: OrderedLanguage[], filename: string, onProgress?: Progress): Promise<void> {
@@ -113,7 +121,3 @@ export async function exportPdf(payload: RenderPayload, languages: OrderedLangua
   pdf.save(filename);
 }
 
-export async function exportPptx(payload: RenderPayload, languages: OrderedLanguage[], filename: string, onProgress?: Progress): Promise<void> {
-  const pptx = buildPptx(payload, languages, onProgress);
-  await pptx.writeFile({ fileName: filename });
-}

@@ -3,7 +3,7 @@ import { Slide } from '@kidase/shared/domain/entities/Slide';
 import { Template, TemplateDefinition, EnabledLanguage, templateLanguages } from '@kidase/shared/domain/entities/Template';
 import { Variable } from '@kidase/shared/domain/entities/Variable';
 import { OrderedLanguage, LangSlot, firstText } from '@kidase/shared/domain/entities/Presentation';
-import { placeholderService } from '@kidase/shared';
+import { placeholderService, TITLE_SLIDE_ID, buildTitleSlideInfo, addTitleSlidePptx, withReadingSlides } from '@kidase/shared';
 import { computeFontScale } from '@kidase/shared/domain/formatting';
 
 /** Template font sizes are designed for this resolution */
@@ -61,6 +61,11 @@ export class PptxExportService {
       const slideVariables = variablesMap?.get(slide.id) || variables;
       const slideLanguages = languagesMap?.get(slide.id) || languages;
 
+      if (slide.id === TITLE_SLIDE_ID) {
+        const info = withReadingSlides(buildTitleSlideInfo(meta, slide.titleJson?.Lang1 ?? ''), slides);
+        addTitleSlidePptx(pptx.addSlide(), slideTemplate.definitionJson, info);
+        continue;
+      }
       this.addSlide(pptx, slide, slideTemplate, slideVariables, slideLanguages, meta ?? undefined);
     }
 
@@ -234,7 +239,7 @@ export class PptxExportService {
 
     if (!processedFooterTitle && !processedFooterText) return;
 
-    const footerFontSize = pxToPoints(def.title.fontSize) * fontScale * 0.6;
+    const footerFontSize = pxToPoints(def.title.fontSize) * fontScale;
     const runs: PptxGenJS.TextProps[] = [];
     let hasContent = false;
 
@@ -259,7 +264,7 @@ export class PptxExportService {
             options: {
               fontSize: footerFontSize,
               fontFace: cleanFontFamily(langDef.fontFamily),
-              color: colorToHex6(langDef.color),
+              color: colorToHex6(def.title.color),
               bold: true,
             },
           });

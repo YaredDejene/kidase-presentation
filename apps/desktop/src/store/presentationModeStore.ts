@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Slide } from '@kidase/shared/domain/entities/Slide';
 import { getMergedEnabledSlides } from '@kidase/shared/domain/slideFiltering';
+import { TITLE_SLIDE_ID, buildTitleSlideInfo } from '@kidase/shared/domain/titleSlide';
 import { usePresentationDataStore } from './presentationDataStore';
 import { useRuleStore } from './ruleStore';
 import { monitorService } from '../services/MonitorService';
@@ -29,13 +30,28 @@ interface PresentationModeState {
 function computeMergedSlides(): Slide[] {
   const dataState = usePresentationDataStore.getState();
   const ruleState = useRuleStore.getState();
-  return getMergedEnabledSlides(
+  const slides = getMergedEnabledSlides(
     dataState.currentSlides,
     dataState.secondarySlides,
     ruleState.ruleFilteredSlideIds,
     dataState.verses,
     ruleState.ruleContextMeta,
   );
+  const presentation = dataState.currentPresentation;
+  if (!presentation || slides.length === 0) return slides;
+
+  // Generated summary slide; SlideRenderer draws it from the title (the liturgy name) and the meta.
+  const info = buildTitleSlideInfo(ruleState.ruleContextMeta, presentation.name);
+  const titleSlide: Slide = {
+    id: TITLE_SLIDE_ID,
+    presentationId: presentation.id,
+    slideOrder: 0,
+    titleJson: { Lang1: presentation.name },
+    blocksJson: [{ Lang1: [info.name, info.ethDate].filter(Boolean).join(' · ') }],
+    isDisabled: false,
+    isDynamic: false,
+  };
+  return [titleSlide, ...slides];
 }
 
 export const usePresentationModeStore = create<PresentationModeState>()((set, get) => ({

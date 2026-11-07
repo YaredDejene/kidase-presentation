@@ -28,8 +28,10 @@ const MIN_FIT = 0.6;
 const MAX_FIT = 2;
 /** Slides are never split, so text too long for MIN_FIT may shrink down to this. */
 const FLOOR_FIT = 0.2;
-/** Footer size relative to the template's title size. */
-const FOOTER_RATIO = 0.6;
+/** Footer size relative to the template's title size; the footer matches the header title. */
+const FOOTER_RATIO = 1;
+/** A long footer shrinks to stay on one line, but not below this; past it, it wraps. */
+const MIN_FOOTER_FIT = 0.6;
 
 /**
  * One decision per slide, so every language looks the same: when all blocks
@@ -48,12 +50,28 @@ function alignTexts(root: HTMLElement): void {
       && (el.textContent ?? '').length / lines >= MIN_JUSTIFIED_CHARS_PER_LINE;
   });
   const justified = texts.filter(el => el.dataset.slideText === 'justify');
+  if (root.dataset.alwaysJustify === 'true') {
+    for (const el of texts) el.style.setProperty('text-wrap-style', 'pretty');
+    for (const el of justified) el.style.textAlign = 'justify';
+    return;
+  }
   const apply = (justify: boolean) => {
     for (const el of texts) el.style.setProperty('text-wrap-style', 'pretty');
     for (const el of justified) el.style.textAlign = justify ? 'justify' : 'left';
   };
   apply(allLong);
   if (allLong && justified.some(el => wordGapEm(el) > MAX_WORD_GAP_EM)) apply(false);
+}
+
+/** Shrink a footer that would wrap so it fits on one line (see MIN_FOOTER_FIT). */
+function fitFooter(root: HTMLElement): void {
+  const footer = root.querySelector<HTMLElement>('[data-footer]');
+  if (!footer) return;
+  root.style.setProperty('--footer-fit', '1');
+  footer.style.whiteSpace = 'nowrap';
+  const ratio = footer.clientWidth / footer.scrollWidth;
+  footer.style.whiteSpace = '';
+  if (ratio < 1) root.style.setProperty('--footer-fit', String(Math.max(MIN_FOOTER_FIT, ratio * 0.98)));
 }
 
 /**
@@ -65,6 +83,10 @@ function alignTexts(root: HTMLElement): void {
 function fitSlide(root: HTMLElement): void {
   const box = root.querySelector<HTMLElement>('[data-fit-box]');
   if (!box || box.clientHeight === 0) return;
+
+  // The footer is at full size while --fit >= 1; settle its size before measuring the text room.
+  root.style.setProperty('--fit', String(MAX_FIT));
+  fitFooter(root);
 
   const gap = parseFloat(getComputedStyle(box).rowGap) || 0;
   const rows = Array.from(box.children) as HTMLElement[];
@@ -194,7 +216,8 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
           fontSize: `${def.title.fontSize * scale}px`,
           color: def.title.color,
           textAlign: def.title.alignment,
-          marginBottom: `${24 * scale}px`,
+          // Tight under the title; the footer gets the larger gap so it reads as separate.
+          marginBottom: `${8 * scale}px`,
           fontWeight: 'bold',
         }}
       >
@@ -227,8 +250,9 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
             key={`footer-${langDef.slot}`}
             style={{ fontFamily: withSlideFont(langDef.fontFamily), color: langDef.color }}
           >
+            {/* The footer title takes the header title's color; the text keeps its language color. */}
             {titlePart && (
-              <span style={{ fontWeight: 'bold' }}>
+              <span style={{ fontWeight: 'bold', color: def.title.color }}>
                 {titlePart}
                 {textPart && ': '}
               </span>
@@ -243,10 +267,11 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
 
     return (
       <div
+        data-footer
         style={{
-          marginTop: `${8 * scale}px`,
-          // A small caption; shrinks further with dense text, never grows.
-          fontSize: `calc(min(var(--fit), 1) * ${def.title.fontSize * FOOTER_RATIO * scale}px)`,
+          marginTop: `${24 * scale}px`,
+          // Shrinks with dense text and to stay on one line; never grows.
+          fontSize: `calc(min(var(--fit), 1) * var(--footer-fit, 1) * ${def.title.fontSize * FOOTER_RATIO * scale}px)`,
           textAlign: 'left',
         }}
       >
@@ -303,6 +328,7 @@ export const SlideView: React.FC<SlideViewProps> = React.memo(({
   return (
     <div
       ref={rootRef}
+      data-always-justify={def.layout.alwaysJustify ? 'true' : undefined}
       style={{
         // Starting guess from the character-count heuristic; fitSlide refines it by measuring.
         ['--fit' as string]: fontScaleFactor,

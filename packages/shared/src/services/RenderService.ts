@@ -8,7 +8,6 @@ import {
   getAllLanguages,
   LANG_SLOTS,
 } from '../domain/entities/Presentation';
-import { Gitsawe } from '../domain/entities/Gitsawe';
 import { RuleDefinition } from '../domain/entities/RuleDefinition';
 import { getMergedEnabledSlides, dynamicSegmentId } from '../domain/slideFiltering';
 import { placeholderService } from './PlaceholderService';
@@ -16,7 +15,11 @@ import { ruleEngine } from '../engine';
 import { buildContext, BuildContextArgs } from '../engine/contextBuilder';
 import { RuleEntry, RuleContext } from '../engine/types';
 import { formatEthiopianDate } from '../domain/formatting';
+import { formatRefEn } from '../domain/bookNames';
+import { READING_FIELDS, buildTitleSlideInfo, type ReadingChoice, type TitleSlideInfo } from '../domain/titleSlide';
 import { BLANK_FOR_COUNTRY, BLANK_VALUE, COUNTRY_VARIABLES, type Country } from '../domain/country';
+
+export { READING_FIELDS };
 
 export interface ResolvedReading {
   key: string;
@@ -27,6 +30,9 @@ export interface ResolvedReading {
   value: string;
   /** Position of the slide showing this reading, when one is displayed. */
   slideIndex?: number;
+  /** Alternatives the gitsawe lists for this reading; `value` is options[choice]. */
+  options?: string[];
+  choice?: number;
 }
 
 export interface ResolvedSection {
@@ -70,6 +76,8 @@ export interface RenderResult {
   templates: Record<string, TemplateDefinition>;
   sections: ResolvedSection[];
   slides: ResolvedSlide[];
+  /** Summary for the viewer's generated first slide; not one of `slides`. */
+  titleSlide: TitleSlideInfo;
 }
 
 export interface RenderArgs {
@@ -77,19 +85,11 @@ export interface RenderArgs {
   /** YYYY-MM-DD; defaults to today when omitted. */
   date?: string;
   isMehella?: boolean;
+  /** Chosen alternative per reading key, for readings that list more than one. */
+  readingChoice?: ReadingChoice;
   /** Swaps the patriarch and country placeholders and blanks the parish ones (public viewer). */
   country?: Country;
 }
-
-/** Maps Gitsawe record fields to the viewer's info panel. */
-export const READING_FIELDS: { key: string; field: keyof Gitsawe; label: string; labelAmh: string; labelTi: string }[] = [
-  { key: 'kidaseType', field: 'kidaseType', label: 'Kidase Type', labelAmh: 'የቅዳሴ ዓይነት', labelTi: 'ዓይነት ቅዳሴ' },
-  { key: 'pauline', field: 'messageStPaul', label: 'Pauline Epistle', labelAmh: 'መልእክተ ጳውሎስ', labelTi: 'መልእኽቲ ጳውሎስ' },
-  { key: 'apostle', field: 'messageApostle', label: 'Catholic Epistle', labelAmh: 'መልእክተ ሐዋርያት', labelTi: 'መልእኽቲ ሓዋርያት' },
-  { key: 'acts', field: 'messageBookOfActs', label: 'Acts of the Apostles', labelAmh: 'ግብረ ሐዋርያት', labelTi: 'ግብሪ ሓዋርያት' },
-  { key: 'misbak', field: 'misbak', label: 'Misbak', labelAmh: 'ምስባክ', labelTi: 'ምስባክ' },
-  { key: 'gospel', field: 'wengel', label: 'Gospel', labelAmh: 'ወንጌል', labelTi: 'ወንጌል' },
-];
 
 interface LoadedSet {
   presentation: Presentation;
@@ -151,6 +151,7 @@ export class RenderService {
       gitsaweRules,
       overrideDate,
       extra: { isMehella },
+      readingChoice: args.readingChoice,
     };
     const context = buildContext(baseCtxArgs);
     const meta = context.meta;
@@ -258,12 +259,13 @@ export class RenderService {
         secondaryName: secondary?.presentation.name,
       },
       context: this.buildRenderedContext(meta, isMehella, gitsaweMeta, overrideDate),
-      readings: this.buildReadings(gitsaweMeta, displaySlides),
+      readings: this.buildReadings(gitsaweMeta, displaySlides, meta.readingOptions as Record<string, string[]> | undefined),
       languages: getAllLanguages(primary.presentation.languageSettings, primary.presentation.languageMap)
         .filter(lang => slotsWithText.has(lang.slot)),
       templates,
       sections: [],
       slides,
+      titleSlide: buildTitleSlideInfo(meta, primary.presentation.name),
     };
   }
 
@@ -321,7 +323,7 @@ export class RenderService {
     };
   }
 
-  private buildReadings(gitsaweMeta: Record<string, unknown> | undefined, displaySlides: Slide[]): ResolvedReading[] {
+  private buildReadings(gitsaweMeta: Record<string, unknown> | undefined, displaySlides: Slide[], options: Record<string, string[]> = {}): ResolvedReading[] {
     if (!gitsaweMeta) return [];
     const readings: ResolvedReading[] = [];
     for (const r of READING_FIELDS) {
@@ -329,7 +331,14 @@ export class RenderService {
       if (value !== undefined && value !== null && String(value).trim() !== '') {
         // The dynamic slide for a reading names its gitsawe field, e.g. @meta.gitsawe.wengel.
         const slideIndex = displaySlides.findIndex(s => s.lineId === `@meta.gitsawe.${r.field}`);
-        readings.push({ key: r.key, label: r.label, labelAmh: r.labelAmh, labelTi: r.labelTi, value: String(value), ...(slideIndex >= 0 ? { slideIndex } : {}) });
+        const opts = options[r.key];
+        readings.push({
+          key: r.key, label: r.label, labelAmh: r.labelAmh, labelTi: r.labelTi, value: String(value),
+          // English reference for English viewers, e.g. "Romans 11:13-25"; the anaphora has none.
+          ...(r.key !== 'kidaseType' ? { ref: formatRefEn(String(value)) } : {}),
+          ...(slideIndex >= 0 ? { slideIndex } : {}),
+          ...(opts ? { options: opts, choice: Math.max(0, opts.indexOf(String(value))) } : {}),
+        });
       }
     }
     return readings;

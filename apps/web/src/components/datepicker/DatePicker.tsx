@@ -17,5 +17,5 @@ export const DatePicker: React.FC<Props> = ({ value, onChange, uiLang }) => {
   const todayLabel = TODAY_LABEL[uiLang];
   return uiLang === 'en'
     ? <GregorianDatePicker value={value} onChange={onChange} todayLabel={todayLabel} />
-    : <EthiopianDatePicker value={value} onChange={onChange} todayLabel={todayLabel} />;
+    : <EthiopianDatePicker value={value} onChange={onChange} todayLabel={todayLabel} uiLang={uiLang} />;
 };
