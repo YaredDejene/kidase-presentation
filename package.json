@@ -5,6 +5,12 @@
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "pnpm --filter desktop dev",
+    "desktop": "pnpm --filter desktop dev",
+    "api": "pnpm --filter api dev",
+    "web": "pnpm --filter web dev",
+    "web:dev": "pnpm --parallel --filter api --filter web run dev",
+    "sync:desktop": "pnpm --filter api sync-desktop",
+    "seed": "pnpm --filter api seed",
     "build": "pnpm --filter desktop build",
     "preview": "pnpm --filter desktop preview",
     "tauri": "pnpm --filter desktop tauri",

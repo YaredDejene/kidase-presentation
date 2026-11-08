@@ -357,3 +357,39 @@ describe('$nthDayAfter validation', () => {
     expect(result.issues.some(i => i.message.includes('comparison operator'))).toBe(true);
   });
 });
+
+describe('$nthDayAfter inclusive', () => {
+  const engine = new RuleEngine();
+
+  it('counts the anchor itself when it falls on the target day', () => {
+    // Quskuam 2026 (Hidar 6) is a Sunday: the 1st Sunday of Astemhro is that same day.
+    const rule = makeRule({ from: '2026-11-15', day: 'Sun', nth: 1, inclusive: true, $eq: '2026-11-15' });
+    expect(engine.evaluateRule(rule, makeContext()).matched).toBe(true);
+    const fourth = makeRule({ from: '2026-11-15', day: 'Sun', nth: 4, inclusive: true, $eq: '2026-12-06' });
+    expect(engine.evaluateRule(fourth, makeContext()).matched).toBe(true);
+  });
+
+  it('is identical to strict counting when the anchor is not on the target day', () => {
+    // 2026-11-16 is a Monday; 1st Sunday either way is 2026-11-22.
+    const strict = makeRule({ from: '2026-11-16', day: 'Sun', nth: 1, $eq: '2026-11-22' });
+    const incl = makeRule({ from: '2026-11-16', day: 'Sun', nth: 1, inclusive: true, $eq: '2026-11-22' });
+    expect(engine.evaluateRule(strict, makeContext()).matched).toBe(true);
+    expect(engine.evaluateRule(incl, makeContext()).matched).toBe(true);
+  });
+
+  it('rejects a non-boolean inclusive flag', () => {
+    const result = engine.validate({ id: 'x', when: { $nthDayAfter: { from: '2026-11-15', day: 'Sun', nth: 1, inclusive: 'yes', $eq: '2026-11-15' } }, then: {} });
+    expect(result.valid).toBe(false);
+  });
+});
+
+describe('rule AST cache', () => {
+  it('re-normalizes when a rule changes under the same id', () => {
+    const engine = new RuleEngine();
+    const ctx = makeContext({ meta: { isFastingSeason: false } });
+    const before: RuleEntry = { id: 'display-rule-slide-283', when: { 'meta.isFastingSeason': { $eq: true } }, then: { visible: true }, otherwise: { visible: false } };
+    const after: RuleEntry = { ...before, when: { 'meta.isFastingSeason': { $eq: false } } };
+    expect(engine.evaluateRule(before, ctx).matched).toBe(false);
+    expect(engine.evaluateRule(after, ctx).matched).toBe(true);
+  });
+});

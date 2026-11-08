@@ -191,6 +191,10 @@ export class RuleValidator {
       issues.push({ path: `${path}.nth`, message: '"nth" must be a positive integer (1, 2, 3, ...)', severity: 'error' });
     }
 
+    if (clause.inclusive !== undefined && typeof clause.inclusive !== 'boolean') {
+      issues.push({ path: `${path}.inclusive`, message: '"inclusive" must be true or false', severity: 'error' });
+    }
+
     // Must have at least one comparison operator
     const hasOp = Object.keys(clause).some(k => COMPARISON_OPERATORS.has(k));
     if (!hasOp) {

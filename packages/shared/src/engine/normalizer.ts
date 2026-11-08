@@ -161,7 +161,7 @@ export class RuleNormalizer {
     let value: DSLValue | undefined;
 
     for (const [key, val] of Object.entries(clause)) {
-      if (key !== 'from' && key !== 'day' && key !== 'nth') {
+      if (key !== 'from' && key !== 'day' && key !== 'nth' && key !== 'inclusive') {
         if (COMPARISON_OPERATORS.has(key)) {
           operator = key as ComparisonOperator;
           value = val as DSLValue;
@@ -178,6 +178,7 @@ export class RuleNormalizer {
       from: this.toResolvedValue(from),
       dayOfWeek,
       nth,
+      inclusive: clause.inclusive === true,
       operator,
       value: this.toResolvedValue(value),
     };

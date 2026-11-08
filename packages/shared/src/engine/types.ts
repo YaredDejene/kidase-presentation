@@ -49,7 +49,9 @@ export interface NthDayAfterClause {
     from: DSLValue;
     day: DayOfWeekName | number;
     nth: number;
-    [op: string]: DSLValue | string | number;
+    /** Count the `from` date itself when it falls on `day`. Default false: strictly after. */
+    inclusive?: boolean;
+    [op: string]: DSLValue | string | number | boolean | undefined;
   };
 }
 
@@ -123,6 +125,7 @@ export interface NthDayAfterNode {
   from: ResolvedValue;
   dayOfWeek: number;  // 0=Sun, 1=Mon, ..., 6=Sat
   nth: number;
+  inclusive: boolean;
   operator: ComparisonOperator;
   value: ResolvedValue;
 }

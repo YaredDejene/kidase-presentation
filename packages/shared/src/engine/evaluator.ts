@@ -80,7 +80,7 @@ export class RuleEvaluator {
     const fromDate = toDate(fromRaw);
     if (!fromDate) return false;
 
-    const computedDate = computeNthDayAfter(fromDate, node.dayOfWeek, node.nth);
+    const computedDate = computeNthDayAfter(fromDate, node.dayOfWeek, node.nth, node.inclusive);
     const computedStr = formatDateYMD(computedDate);
 
     const ruleVal = this.resolver.resolveValue(node.value, context);
@@ -116,9 +116,9 @@ function toDate(val: unknown): Date | null {
   return null;
 }
 
-function computeNthDayAfter(from: Date, dayOfWeek: number, nth: number): Date {
+function computeNthDayAfter(from: Date, dayOfWeek: number, nth: number, inclusive = false): Date {
   const d = new Date(from.getTime());
-  d.setDate(d.getDate() + 1); // start from day after `from`
+  if (!inclusive) d.setDate(d.getDate() + 1); // strictly after `from` unless the anchor itself may count
   let count = 0;
   while (count < nth) {
     if (d.getDay() === dayOfWeek) {

@@ -62,11 +62,14 @@ export interface RenderedContext {
   feastAmh?: string;
   dayOfWeek: string;
   isMehella: boolean;
+  isFastingSeason: boolean;
 }
 
 export interface RenderResult {
   presentation: { id: string; name: string; amh?: string; type: string; secondaryName?: string };
   context: RenderedContext;
+  /** Raw engine meta the slides and rules were evaluated against. */
+  meta: Record<string, unknown>;
   readings: ResolvedReading[];
   /**
    * Every language that has text in these slides, in display order. `enabled` marks the
@@ -259,6 +262,7 @@ export class RenderService {
         secondaryName: secondary?.presentation.name,
       },
       context: this.buildRenderedContext(meta, isMehella, gitsaweMeta, overrideDate),
+      meta,
       readings: this.buildReadings(gitsaweMeta, displaySlides, meta.readingOptions as Record<string, string[]> | undefined),
       languages: getAllLanguages(primary.presentation.languageSettings, primary.presentation.languageMap)
         .filter(lang => slotsWithText.has(lang.slot)),
@@ -320,6 +324,7 @@ export class RenderService {
       feastAmh: gitsaweMeta?.additionalInfo as string | undefined,
       dayOfWeek: String(meta.dayOfWeek ?? ''),
       isMehella,
+      isFastingSeason: Boolean(meta.isFastingSeason),
     };
   }
 
