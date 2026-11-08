@@ -171,6 +171,7 @@ export const App: React.FC = () => {
     fetchRender(selectedId, gregDate, isMehella, country, readingsParam)
       .then(payload => {
         if (cancelled) return;
+        console.log("gitsawe context", { meta: payload.meta, context: payload.context, readings: payload.readings, titleSlide: payload.titleSlide });
         setRender(payload);
         // First load honours the shared link's slide; later reloads (date, country, mehella) keep the place.
         const wanted = pendingSlide.current;

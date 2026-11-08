@@ -51,8 +51,11 @@ export class ASTCache {
     return this.get(id) !== undefined;
   }
 
-  invalidate(id: string): void {
-    this.cache.delete(id);
+  /** Drop the entry with this key, and every entry whose key starts with it (a rule id prefix). */
+  invalidate(idOrPrefix: string): void {
+    for (const key of [...this.cache.keys()]) {
+      if (key === idOrPrefix || key.startsWith(idOrPrefix)) this.cache.delete(key);
+    }
   }
 
   clear(): void {

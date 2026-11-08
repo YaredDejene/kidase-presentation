@@ -59,11 +59,14 @@ export class RuleEngine {
 
   /** Normalize a rule into an AST (uses cache) */
   normalize(rule: RuleEntry): NormalizedRule {
-    const cached = this.cache.get(rule.id);
+    // Keyed by content, not just id: a rule edited or re-imported under the same id must not
+    // keep serving the previous AST until the TTL expires.
+    const key = rule.id + ":" + JSON.stringify(rule);
+    const cached = this.cache.get(key);
     if (cached) return cached;
 
     const normalized = this.normalizer.normalize(rule);
-    this.cache.set(rule.id, normalized);
+    this.cache.set(key, normalized);
     return normalized;
   }
 
@@ -88,7 +91,7 @@ export class RuleEngine {
 
   /** Invalidate cached AST for a rule */
   invalidateRule(ruleId: string): void {
-    this.cache.invalidate(ruleId);
+    this.cache.invalidate(ruleId + ":");
   }
 
   /** Clear all cached ASTs */
