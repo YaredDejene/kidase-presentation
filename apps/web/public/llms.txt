@@ -1,0 +1,8 @@
+# Kidase Presentation
+
+> Free Ethiopian and Eritrean Orthodox Tewahedo liturgy (Kidase, ቅዳሴ) slides for church projection, with the daily Gitsawe (ግፃዌ) readings chosen from the Ethiopian calendar date. Texts are in Ge'ez, Amharic, Tigrinya and English, and any day can be downloaded as PDF or PowerPoint.
+
+## Pages
+
+- [Kidase viewer](https://kidase.org/): pick a date, languages and country, then present or export the slides.
+- [Sitemap](https://kidase.org/sitemap.xml)

@@ -31,12 +31,19 @@ function withTitleSlide(payload: RenderPayload): RenderPayload {
   };
 }
 
+declare global {
+  interface Window { __presentations?: Promise<Response> }
+}
+
 // Empty base => same-origin (works with the Vite dev proxy and a CDN deploy).
 const BASE = import.meta.env.VITE_API_BASE ?? '';
 
 export async function fetchPresentations(): Promise<PresentationSummary[]> {
+  // index.html starts this same request early (keep the URL and cache option in sync); use it once, then fetch normally.
+  const early = BASE === '' ? window.__presentations : undefined;
+  window.__presentations = undefined;
   // Always re-check with the server (a cheap 304 via the ETag), so content edits show up on the next load.
-  const res = await fetch(`${BASE}/api/v1/presentations`, { cache: 'no-cache' });
+  const res = await (early ?? fetch(`${BASE}/api/v1/presentations`, { cache: 'no-cache' }));
   if (!res.ok) throw new Error(`Failed to load presentations (${res.status})`);
   return res.json();
 }

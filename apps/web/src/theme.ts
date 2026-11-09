@@ -7,13 +7,13 @@ export function themeVars(theme: ThemeName): CSSProperties {
   if (theme === 'light') {
     return {
       ['--bg' as string]: '#f7f7f8', ['--surface' as string]: '#ffffff', ['--surface2' as string]: '#f7f7f8', ['--elevated' as string]: '#eef0f2',
-      ['--border' as string]: '#e5e7eb', ['--border2' as string]: '#d1d5db', ['--text' as string]: '#1f2937', ['--text2' as string]: '#6b7280', ['--muted' as string]: '#9ca3af',
+      ['--border' as string]: '#e5e7eb', ['--border2' as string]: '#d1d5db', ['--text' as string]: '#1f2937', ['--text2' as string]: '#4b5563', ['--muted' as string]: '#5f6673',
       ['--accent' as string]: '#8A2232', ['--accent-hover' as string]: '#5E1620', ['--on-accent' as string]: '#ffffff', ['--accent2' as string]: '#6366f1', ['--info' as string]: '#0891b2', ['--warning' as string]: '#d97706',
     } as CSSProperties;
   }
   return {
     ['--bg' as string]: '#0a0a0a', ['--surface' as string]: '#141414', ['--surface2' as string]: '#1a1a1a', ['--elevated' as string]: '#222222',
-    ['--border' as string]: '#222222', ['--border2' as string]: '#333333', ['--text' as string]: '#ffffff', ['--text2' as string]: '#b0b0b0', ['--muted' as string]: '#6b7280',
+    ['--border' as string]: '#222222', ['--border2' as string]: '#333333', ['--text' as string]: '#ffffff', ['--text2' as string]: '#b0b0b0', ['--muted' as string]: '#8b8b8b',
     ['--accent' as string]: '#E3B341', ['--accent-hover' as string]: '#EDC25E', ['--on-accent' as string]: '#1C1713', ['--accent2' as string]: '#6366f1', ['--info' as string]: '#06b6d4', ['--warning' as string]: '#f59e0b',
   } as CSSProperties;
 }
