@@ -9,6 +9,9 @@
     <title>Kidase Presentation · ቅዳሴ | Ethiopian &amp; Eritrean Orthodox Liturgy Slides in Ge'ez, Amharic, Tigrinya &amp; English</title>
     <meta name="description" content="Free Ethiopian and Eritrean Orthodox Tewahedo Kidase (ቅዳሴ) slides for church projection. Daily Gitsawe readings by Ethiopian calendar date, in Ge'ez, Amharic, Tigrinya and English. Download as PDF or PowerPoint." />
     <meta name="keywords" content="Kidase, ቅዳሴ, Ethiopian Orthodox, Tewahedo, liturgy, Gitsawe, ግፃዌ, Geez, ግዕዝ, Amharic, Tigrinya, church slides, PowerPoint, Mehella, ምህላ, Eritrean Orthodox, Eritrea, ቅዳሴ ኤርትራ, Qiddaasee, Afaan Oromoo, Kinyarwanda, Liturujiya, Etiopisk ortodox, Eritreansk ortodox, liturgi, mässa, Qidase, Qiddase, Kedase, Kidasie, Keddase, Metsehafe Kidase, Mashafa Qeddase, መጽሐፈ ቅዳሴ, ሥርዓተ ቅዳሴ, ቅዳሴ ማርያም, Kidase Mariam, Anaphora, Ethiopian anaphoras, Gitsawe, Gitsewe, Gisawe, ግጻዌ, Mahlet, Tewahido, Tewahdo" />
+    <!-- Start the presentation list while the app bundle downloads instead of after it runs. -->
+    <!-- The no-op catch only silences the console if it fails; the app still sees the error when it awaits. -->
+    <script>(window.__presentations = fetch('/api/v1/presentations', { cache: 'no-cache' })).catch(function () {});</script>
     <link rel="canonical" href="https://kidase.org/" />
     <meta name="theme-color" content="#5E1620" />
 

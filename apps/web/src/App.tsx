@@ -1,18 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LangSlot, Country } from '@kidase/shared';
 import { isVerseSlide, DEFAULT_LANG_COLORS } from '@kidase/shared';
 import { fetchPresentations, fetchRender, RenderPayload } from './api/client';
 import { WebSlideRenderer } from './components/WebSlideRenderer';
 import { Stage } from './components/Stage';
-import { ConfigDrawer } from './components/ConfigDrawer';
-import { Admin } from './components/Admin';
 import { InfoPanel, readingLabel } from './components/InfoPanel';
 import { toEC } from 'kenat';
-import { ExportDialog } from './components/ExportDialog';
-import { HelpOverlay } from './components/HelpOverlay';
 import { themeVars, iconBtn, ThemeName } from './theme';
 import { T, UiLang, LANG_BY_SLOT, ethDateText, langName } from './i18n';
 import * as I from './icons';
+
+// Panels that only open on click load in their own chunks, keeping the first download small.
+const ConfigDrawer = lazy(() => import('./components/ConfigDrawer').then(m => ({ default: m.ConfigDrawer })));
+const Admin = lazy(() => import('./components/Admin').then(m => ({ default: m.Admin })));
+const ExportDialog = lazy(() => import('./components/ExportDialog').then(m => ({ default: m.ExportDialog })));
+const HelpOverlay = lazy(() => import('./components/HelpOverlay').then(m => ({ default: m.HelpOverlay })));
 
 const pad = (n: number) => String(n).padStart(2, '0');
 function todayIso(): string {
@@ -293,7 +295,7 @@ export const App: React.FC = () => {
     const isVerse = isVerseSlide(s.id); // dynamically loaded verse, marked like desktop
     return (
       <div key={s.id} ref={activeRow ? activeThumb : undefined} onClick={() => setSlideIndex(i)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 5, borderRadius: 8, cursor: 'pointer', flexShrink: 0, border: `1px solid ${activeRow ? 'var(--accent)' : 'transparent'}`, boxShadow: isVerse ? 'inset 3px 0 0 #4a6a4a' : undefined, background: activeRow ? 'var(--elevated)' : 'transparent' }}>
-        <span style={{ fontSize: 11, color: isVerse ? '#9a8acd' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
+        <span style={{ fontSize: 11, color: isVerse ? '#b3a6e0' : activeRow ? 'var(--accent)' : 'var(--muted)', background: isVerse ? '#3a2a6a' : undefined, borderRadius: 4, padding: '4px 0', width: 20, flexShrink: 0, fontWeight: 600, textAlign: 'center' }}>{pad(i + 1)}</span>
         <div style={{ width: 150, height: 84, flexShrink: 0, borderRadius: 5, overflow: 'hidden', background: '#000' }}>
           {def && <LazyMount><Stage><WebSlideRenderer definition={def} languages={activeLanguages} block={s.block} title={s.title} footer={s.footer} titleInfo={s.titleInfo} /></Stage></LazyMount>}
         </div>
@@ -327,10 +329,12 @@ export const App: React.FC = () => {
       <div style={{ position: 'absolute', left: 0, right: 0, top: 5, height: 2, background: 'var(--border2)' }} />
       <div style={{ position: 'absolute', left: 0, top: 5, height: 2, width: `${pctDone}%`, background: 'var(--accent)', transition: 'width .15s' }} />
       {render?.readings.filter(r => r.slideIndex !== undefined).map(r => (
-        <button key={r.key} title={readingLabel(r, uiLang)} onClick={e => { e.stopPropagation(); setSlideIndex(r.slideIndex!); }} style={{ position: 'absolute', left: `${(r.slideIndex! / (slideCount - 1)) * 100}%`, top: 1, width: 10, height: 10, marginLeft: -5, padding: 0, border: '2px solid var(--surface)', borderRadius: '50%', background: r.slideIndex! <= slideIndex ? 'var(--accent)' : 'var(--text2)', cursor: 'pointer' }} />
+        <button key={r.key} title={readingLabel(r, uiLang)} onClick={e => { e.stopPropagation(); setSlideIndex(r.slideIndex!); }} style={{ position: 'absolute', left: `${(r.slideIndex! / (slideCount - 1)) * 100}%`, top: -6, width: 24, height: 24, marginLeft: -12, padding: 0, border: 'none', borderRadius: '50%', background: `radial-gradient(circle, ${r.slideIndex! <= slideIndex ? 'var(--accent)' : 'var(--text2)'} 3px, var(--surface) 3px 5px, transparent 5px)`, cursor: 'pointer' }} />
       ))}
       {secondaryStart > 0 && (
-        <button title={render!.presentation.secondaryName} onClick={e => { e.stopPropagation(); setSlideIndex(secondaryStart); }} style={{ position: 'absolute', left: `${(secondaryStart / (slideCount - 1)) * 100}%`, top: 0, width: 12, height: 12, marginLeft: -6, padding: 0, border: '2px solid var(--surface)', borderRadius: 2, transform: 'rotate(45deg)', background: 'var(--accent)', cursor: 'pointer' }} />
+        <button title={render!.presentation.secondaryName} onClick={e => { e.stopPropagation(); setSlideIndex(secondaryStart); }} style={{ position: 'absolute', left: `${(secondaryStart / (slideCount - 1)) * 100}%`, top: -6, width: 24, height: 24, marginLeft: -12, padding: 0, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <span style={{ width: 12, height: 12, border: '2px solid var(--surface)', borderRadius: 2, transform: 'rotate(45deg)', background: 'var(--accent)' }} />
+        </button>
       )}
     </div>
   );
@@ -375,7 +379,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-root" style={rootStyle}>
-      <div className="app-root" style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden', position: 'relative' }}>
+      <div className="app-root" role="main" style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden', position: 'relative' }}>
 
         {/* floating nav pill (desktop) */}
         {!isMobile && (
@@ -482,23 +486,26 @@ export const App: React.FC = () => {
         )}
       </div>
 
-      {configOpen && (
-        <ConfigDrawer
-          isDark={isDark} t={t} onClose={() => setConfigOpen(false)}
-          gregDate={gregDate} onGreg={d => { setGregDate(d); setReadingChoice({}); }}
-          languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
-          isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
-          readings={render?.readings ?? []}
-          chooseReading={(key, i) => setReadingChoice(c => ({ ...c, [key]: i }))}
-          uiLang={uiLang} setUiLang={setUiLang}
-          country={country} setCountry={setCountry}
-          shareUrl={shareUrl}
-          sections={[]}
-        />
-      )}
-      {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} onJump={i => { setSlideIndex(i); setInfoOpen(false); }} />}
-      {exportOpen && render && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
-      {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
+      {/* Separate from the Admin boundary below so a loading panel never blanks the fullscreen projection. */}
+      <Suspense fallback={null}>
+        {configOpen && (
+          <ConfigDrawer
+            isDark={isDark} t={t} onClose={() => setConfigOpen(false)}
+            gregDate={gregDate} onGreg={d => { setGregDate(d); setReadingChoice({}); }}
+            languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
+            isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
+            readings={render?.readings ?? []}
+            chooseReading={(key, i) => setReadingChoice(c => ({ ...c, [key]: i }))}
+            uiLang={uiLang} setUiLang={setUiLang}
+            country={country} setCountry={setCountry}
+            shareUrl={shareUrl}
+            sections={[]}
+          />
+        )}
+        {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} onJump={i => { setSlideIndex(i); setInfoOpen(false); }} />}
+        {exportOpen && render && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
+        {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
+      </Suspense>
 
       {/* fullscreen projection */}
       {fullscreen && current && definition && (
@@ -528,7 +535,7 @@ export const App: React.FC = () => {
       )}
 
       {screen === 'admin' && (
-        <Admin token={adminToken} setToken={updateToken} onBack={() => setScreen('viewer')} theme={theme} toggleTheme={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} isDark={isDark} />
+        <Suspense fallback={null}><Admin token={adminToken} setToken={updateToken} onBack={() => setScreen('viewer')} theme={theme} toggleTheme={() => setTheme(v => v === 'dark' ? 'light' : 'dark')} isDark={isDark} /></Suspense>
       )}
     </div>
   );
