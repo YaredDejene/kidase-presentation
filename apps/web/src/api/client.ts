@@ -10,7 +10,8 @@ export interface PresentationSummary {
 }
 
 export type RenderSlide = RenderResult['slides'][number] & { titleInfo?: TitleSlideInfo };
-export type RenderPayload = Omit<RenderResult, 'slides'> & { slides: RenderSlide[]; dataVersion: string };
+/** `slides` may be only the first few (see fetchRender's limit); `totalSlides` is always the full count. */
+export type RenderPayload = Omit<RenderResult, 'slides'> & { slides: RenderSlide[]; totalSlides: number; dataVersion: string };
 
 /** Puts the generated title slide first; reading jumps move with the slides. */
 function withTitleSlide(payload: RenderPayload): RenderPayload {
@@ -28,6 +29,7 @@ function withTitleSlide(payload: RenderPayload): RenderPayload {
       ...payload.slides,
     ],
     readings,
+    totalSlides: payload.totalSlides + 1,
   };
 }
 
@@ -54,13 +56,17 @@ export async function fetchRender(
   isMehella: boolean,
   country: Country,
   readings = '',
+  limit?: number,
 ): Promise<RenderPayload> {
   const q = new URLSearchParams();
   if (date) q.set('date', date);
   if (isMehella) q.set('mehella', '1');
   q.set('country', country);
   if (readings) q.set('readings', readings);
+  if (limit) q.set('limit', String(limit));
   const res = await fetch(`${BASE}/api/v1/presentations/${id}/render?${q.toString()}`, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to render (${res.status})`);
-  return withTitleSlide(await res.json());
+  const payload = await res.json();
+  payload.totalSlides ??= payload.slides.length; // responses cached before totalSlides existed
+  return withTitleSlide(payload);
 }

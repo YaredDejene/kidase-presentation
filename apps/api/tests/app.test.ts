@@ -103,6 +103,22 @@ describe('public API', () => {
     expect(res.headers.etag).toBeTruthy();
   });
 
+  it('GET /:id/render?limit= returns only the first slides, with everything else intact', async () => {
+    const full = (await app.inject({ method: 'GET', url: '/api/v1/presentations/p1/render?date=2026-06-25' }));
+    const res = await app.inject({ method: 'GET', url: '/api/v1/presentations/p1/render?date=2026-06-25&limit=1' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.slides.map((s: { id: string }) => s.id)).toEqual(['s2']);
+    expect(body.totalSlides).toBe(2);
+    expect(full.json().totalSlides).toBe(2);
+    expect(body.readings).toEqual(full.json().readings);
+    expect(body.templates).toEqual(full.json().templates);
+    expect(res.headers.etag).not.toBe(full.headers.etag);
+
+    const bad = await app.inject({ method: 'GET', url: '/api/v1/presentations/p1/render?limit=0' });
+    expect(bad.statusCode).toBe(400);
+  });
+
   it('honors conditional GET (304) and busts the cache on content bump', async () => {
     const first = await app.inject({ method: 'GET', url: '/api/v1/presentations/p1/render?date=2026-06-25' });
     const etag = first.headers.etag as string;

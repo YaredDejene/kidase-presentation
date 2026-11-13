@@ -10,6 +10,9 @@ import { themeVars, iconBtn, ThemeName } from './theme';
 import { T, UiLang, LANG_BY_SLOT, ethDateText, langName } from './i18n';
 import * as I from './icons';
 
+/** Slides in the first, small render request; enough for the title slide and the thumbnails in view. */
+const FIRST_BATCH = 20;
+
 // Panels that only open on click load in their own chunks, keeping the first download small.
 const ConfigDrawer = lazy(() => import('./components/ConfigDrawer').then(m => ({ default: m.ConfigDrawer })));
 const Admin = lazy(() => import('./components/Admin').then(m => ({ default: m.Admin })));
@@ -166,11 +169,19 @@ export const App: React.FC = () => {
     }).catch(e => setError(String(e.message ?? e)));
   }, []);
 
+  // Read by the render effect without re-running it on every slide change.
+  const slideIndexRef = useRef(0);
+  slideIndexRef.current = slideIndex;
+
   useEffect(() => {
     if (!selectedId) return;
     let cancelled = false;
     setLoading(true); setError(null);
-    fetchRender(selectedId, gregDate, isMehella, country, readingsParam)
+    const load = (limit?: number) => fetchRender(selectedId, gregDate, isMehella, country, readingsParam, limit);
+    // Draw the first slides from a small request, then fetch the whole deck. Skip that when
+    // opening (or staying) past the first batch, where the small request has nothing to show.
+    const startAt = pendingSlide.current || slideIndexRef.current;
+    (startAt < FIRST_BATCH ? load(FIRST_BATCH) : load())
       .then(payload => {
         if (cancelled) return;
         console.log("gitsawe context", { meta: payload.meta, context: payload.context, readings: payload.readings, titleSlide: payload.titleSlide });
@@ -178,7 +189,7 @@ export const App: React.FC = () => {
         // First load honours the shared link's slide; later reloads (date, country, mehella) keep the place.
         const wanted = pendingSlide.current;
         pendingSlide.current = 0;
-        setSlideIndex(i => Math.min(wanted || i, Math.max(payload.slides.length - 1, 0)));
+        setSlideIndex(i => Math.min(wanted || i, Math.max(payload.totalSlides - 1, 0)));
         // Start with the presentation's own selection; viewers can switch to any other language.
         const avail = payload.languages.map(l => l.slot);
         const defaults = payload.languages.filter(l => l.enabled !== false).map(l => l.slot); // older payloads have no flag
@@ -186,13 +197,23 @@ export const App: React.FC = () => {
         const linked = pendingLanguages.current?.map(n => payload.languages.find(l => langSlug(l.name) === n)?.slot).filter((s): s is LangSlot => !!s);
         pendingLanguages.current = undefined;
         setActiveSlots(prev => { const kept = (linked?.length ? linked : prev).filter(s => avail.includes(s)).slice(0, cap); return kept.length ? kept : defaults.slice(0, cap); });
+        setLoading(false);
+        if (payload.slides.length >= payload.totalSlides) return;
+        // Wait until the first slide is painted (two frames, so React has committed and the browser
+        // has asked for the fonts) and its fonts are in, so the big request doesn't compete with them.
+        return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+          .then(() => document.fonts.ready)
+          .then(() => load())
+          .then(full => { if (!cancelled) setRender(full); });
       })
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
   }, [selectedId, gregDate, isMehella, country, readingsParam]);
 
-  const slideCount = render?.slides.length ?? 0;
+  const slideCount = render?.totalSlides ?? 0;
+  // False for the moment between the first batch and the full deck arriving.
+  const complete = !!render && render.slides.length >= render.totalSlides;
   const next = useCallback(() => setSlideIndex(i => Math.min(i + 1, Math.max(slideCount - 1, 0))), [slideCount]);
   const prev = useCallback(() => setSlideIndex(i => Math.max(i - 1, 0)), []);
   const swipe = useSwipe(next, prev);
@@ -277,7 +298,8 @@ export const App: React.FC = () => {
     activeThumb.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [slideIndex, railOpen, isMobile]);
 
-  const current = render?.slides[slideIndex];
+  // Until the full deck arrives, a jump past the first batch shows its last slide, then lands.
+  const current = render?.slides[Math.min(slideIndex, Math.max(render.slides.length - 1, 0))];
   const definition = current ? render?.templates[current.templateId] : undefined;
   const pageLabel = slideCount ? `${slideIndex + 1} / ${slideCount}` : '';
 
@@ -503,7 +525,7 @@ export const App: React.FC = () => {
           />
         )}
         {infoOpen && <InfoPanel t={t} uiLang={uiLang} onClose={() => setInfoOpen(false)} render={render} onJump={i => { setSlideIndex(i); setInfoOpen(false); }} />}
-        {exportOpen && render && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
+        {exportOpen && render && complete && <ExportDialog t={t} onClose={() => setExportOpen(false)} payload={render} languages={activeLanguages} />}
         {helpOpen && <HelpOverlay t={t} onClose={() => setHelpOpen(false)} />}
       </Suspense>
 
