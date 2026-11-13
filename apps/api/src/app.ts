@@ -155,7 +155,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   // The heavy, deterministic, cacheable render.
-  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string; country?: Country; readings?: string } }>(
+  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string; country?: Country; readings?: string; limit?: number } }>(
     '/api/v1/presentations/:id/render',
     {
       schema: {
@@ -169,6 +169,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
             mehella: { type: 'string', description: '"1"/"true" for the Mehella variant', enum: ['0', '1', 'true', 'false'] },
             country: { type: 'string', description: 'Patriarch and country placeholders for this country; parish placeholders left blank', enum: COUNTRIES },
             readings: { type: 'string', description: 'Chosen alternative for readings that list more than one, e.g. "gospel:1,misbak:1" (0-based; default 0)', pattern: '^[A-Za-z]+:\\d{1,2}(,[A-Za-z]+:\\d{1,2})*$' },
+            limit: { type: 'integer', minimum: 1, maximum: 100, description: 'Return only the first N slides (everything else is complete); totalSlides gives the full count' },
           },
         },
       },
@@ -184,7 +185,9 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       const readingsKey = Object.entries(readingChoice).map(([k, n]) => `${k}${n}`).join('.');
       const cv = await getContentVersion(opts.db);
       repoCache.atVersion(cv);
-      const key = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}:${readingsKey}`;
+      const fullKey = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}:${readingsKey}`;
+      const limit = req.query.limit;
+      const key = limit ? `${fullKey}:l${limit}` : fullKey;
       const etag = `"${key}"`;
 
       if (req.headers['if-none-match'] === etag) {
@@ -199,15 +202,25 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
         return reply.send(cached.body);
       }
 
-      let result;
-      try {
-        result = await renderService.render({ presentationId: id, date, isMehella: mehella, country, readingChoice });
-      } catch {
-        return reply.code(404).send({ error: 'Presentation not found' });
+      // A limited response is sliced from the full one, so both share a single render.
+      let full = cache.get(fullKey)?.body;
+      if (!full) {
+        let result;
+        try {
+          result = await renderService.render({ presentationId: id, date, isMehella: mehella, country, readingChoice });
+        } catch {
+          return reply.code(404).send({ error: 'Presentation not found' });
+        }
+        full = JSON.stringify({ ...result, totalSlides: result.slides.length, dataVersion: String(cv) });
+        cache.set(fullKey, { etag: `"${fullKey}"`, body: full });
       }
 
-      const body = JSON.stringify({ ...result, dataVersion: String(cv) });
-      cache.set(key, { etag, body });
+      let body = full;
+      if (limit) {
+        const parsed = JSON.parse(full);
+        body = JSON.stringify({ ...parsed, slides: parsed.slides.slice(0, limit) });
+        cache.set(key, { etag, body });
+      }
       cacheHeaders(reply, etag);
       reply.header('content-type', 'application/json; charset=utf-8');
       return reply.send(body);
