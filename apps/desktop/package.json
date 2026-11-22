@@ -34,13 +34,13 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.10.0",
+    "@tauri-apps/cli": "^2.12.6",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/uuid": "^11.0.0",
-    "@vitejs/plugin-react": "^4.6.0",
-    "typescript": "~5.8.3",
-    "vite": "^7.0.4",
-    "vitest": "^4.0.18"
+    "@vitejs/plugin-react": "^6.3.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
   }
 }
