@@ -68,7 +68,10 @@ export interface BuildContextArgs {
   gitsaweRules?: RuleDefinition[];
   overrideDate?: Date;
   extra?: Record<string, unknown>;
+  /** `line` picks among the matching gitsawe lines by priority (0 = the default); other keys pick reading alternatives. */
   readingChoice?: ReadingChoice;
+  /** Collect every matching gitsawe line into meta.gitsaweLines (costs evaluating all selection rules). */
+  listGitsaweLines?: boolean;
 }
 
 export function buildContext(args: BuildContextArgs): RuleContext {
@@ -154,12 +157,19 @@ export function buildContext(args: BuildContextArgs): RuleContext {
     presentation: {}, slide: {}, vars: {}, settings: {}, meta,
   }).matched;
 
-  // Resolve the current Gitsawe based on selection rules and priority
-  const matched = getCurrentGitsawe(
+  // Resolve the current Gitsawe based on selection rules and priority; `line` picks a lower-priority match.
+  const line = args.readingChoice?.line ?? 0;
+  const matches = getMatchingGitsawes(
     args.gitsawes ?? [],
     args.gitsaweRules ?? [],
     meta,
+    args.listGitsaweLines ? Infinity : line + 1,
   );
+  const matched = matches[line] ?? matches[0];
+  if (args.listGitsaweLines && matches.length > 1) {
+    meta.gitsaweLines = matches.map(g => ({ id: g.id, lineId: g.lineId, name: g.name, additionalInfo: g.additionalInfo, kidaseType: g.kidaseType }));
+    meta.gitsaweLine = matches.indexOf(matched);
+  }
   if (matched) {
     const gitsawe = toRecord(matched);
     // Readings and anaphora with alternatives: everything downstream (slides, rules, the secondary
@@ -189,14 +199,16 @@ export function buildContext(args: BuildContextArgs): RuleContext {
 /**
  * Walk Gitsawe records by priority (1 → 2 → 3).
  * For each record, evaluate its selection rules against the meta object.
- * Return the first record whose rule matches.
+ * Return the matching records in priority order, stopping once `limit` are found.
  */
-function getCurrentGitsawe(
+function getMatchingGitsawes(
   gitsawes: Gitsawe[],
   gitsaweRules: RuleDefinition[],
   meta: Record<string, unknown>,
-): Gitsawe | null {
-  if (gitsawes.length === 0) return null;
+  limit = 1,
+): Gitsawe[] {
+  const found: Gitsawe[] = [];
+  if (gitsawes.length === 0) return found;
 
   // Group enabled rules by gitsaweId for fast lookup
   const rulesByGitsaweId = new Map<string, RuleDefinition[]>();
@@ -233,15 +245,17 @@ function getCurrentGitsawe(
         if (!ruleEntry.id) ruleEntry.id = ruleDef.id;
         const result = localEngine.evaluateRule(ruleEntry, evalContext);
         if (result.matched) {
-          return record;
+          found.push(record);
+          break;
         }
       } catch (err) {
         console.warn(`Skipping malformed rule "${ruleDef.name}":`, err);
       }
     }
+    if (found.length >= limit) break;
   }
 
-  return null;
+  return found;
 }
 
 /** Shallow-convert a typed entity to Record<string, unknown> */

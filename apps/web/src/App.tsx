@@ -518,6 +518,8 @@ export const App: React.FC = () => {
             isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
             readings={render?.readings ?? []}
             chooseReading={(key, i) => setReadingChoice(c => ({ ...c, [key]: i }))}
+            lines={render?.lines} lineChoice={render?.lineChoice}
+            chooseLine={i => setReadingChoice({ line: i })}
             uiLang={uiLang} setUiLang={setUiLang}
             country={country} setCountry={setCountry}
             shareUrl={shareUrl}

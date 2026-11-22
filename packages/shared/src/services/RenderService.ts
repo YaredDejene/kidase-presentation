@@ -35,6 +35,13 @@ export interface ResolvedReading {
   choice?: number;
 }
 
+export interface ResolvedLine {
+  lineId: string;
+  name?: string;
+  additionalInfo?: string;
+  kidaseType?: string;
+}
+
 export interface ResolvedSection {
   id: string;
   name: string;
@@ -71,6 +78,9 @@ export interface RenderResult {
   /** Raw engine meta the slides and rules were evaluated against. */
   meta: Record<string, unknown>;
   readings: ResolvedReading[];
+  /** Every gitsawe line whose rules match the date, by priority, when more than one does; `lineChoice` is the one shown. */
+  lines?: ResolvedLine[];
+  lineChoice?: number;
   /**
    * Every language that has text in these slides, in display order. `enabled` marks the
    * presentation's own selection, which viewers start with; they may pick others.
@@ -156,7 +166,7 @@ export class RenderService {
       extra: { isMehella },
       readingChoice: args.readingChoice,
     };
-    const context = buildContext(baseCtxArgs);
+    const context = buildContext({ ...baseCtxArgs, listGitsaweLines: true });
     const meta = context.meta;
 
     // Secondary kidase auto-merge (driven by resolved gitsawe.kidaseType)
@@ -264,6 +274,10 @@ export class RenderService {
       context: this.buildRenderedContext(meta, isMehella, gitsaweMeta, overrideDate),
       meta,
       readings: this.buildReadings(gitsaweMeta, displaySlides, meta.readingOptions as Record<string, string[]> | undefined),
+      ...(meta.gitsaweLines ? {
+        lines: (meta.gitsaweLines as (ResolvedLine & { id: string })[]).map(({ id: _id, ...l }) => l),
+        lineChoice: meta.gitsaweLine as number,
+      } : {}),
       languages: getAllLanguages(primary.presentation.languageSettings, primary.presentation.languageMap)
         .filter(lang => slotsWithText.has(lang.slot)),
       templates,

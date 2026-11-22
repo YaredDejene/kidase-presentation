@@ -10,6 +10,7 @@ export type {
   RenderedContext,
   ResolvedSlide,
   ResolvedReading,
+  ResolvedLine,
   ResolvedSection,
 } from './RenderService';
 export { ReadingsService, READING_LANG_CODES, parseIsoDate, splitVerseNumber, dayKind } from './ReadingsService';

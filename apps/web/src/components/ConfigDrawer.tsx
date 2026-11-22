@@ -23,6 +23,11 @@ interface Props {
   isMehella: boolean;
   toggleMehella: () => void;
   readings: RenderPayload['readings'];
+  /** Gitsawe lines matching the date, when more than one does. */
+  lines?: RenderPayload['lines'];
+  lineChoice?: number;
+  /** Picks another matching gitsawe line; its reading choices start over. */
+  chooseLine: (index: number) => void;
   /** Picks one of a reading's alternatives; the slides reload. */
   chooseReading: (key: string, index: number) => void;
   uiLang: UiLang;
@@ -82,6 +87,16 @@ export const ConfigDrawer: React.FC<Props> = (p) => {
               <p style={sub}>{p.t.dateSub}</p>
               <DatePicker value={p.gregDate} onChange={p.onGreg} uiLang={p.uiLang} />
             </div>
+
+            {p.lines && p.lines.length > 1 && (
+              <div>
+                <h3 style={h3}>{p.t.lineTitle}</h3>
+                <p style={sub}>{p.t.lineSub}</p>
+                <select value={p.lineChoice ?? 0} onChange={e => p.chooseLine(Number(e.target.value))} style={{ ...sel, width: '100%' }}>
+                  {p.lines.map((l, i) => <option key={i} value={i}>{[l.name, l.additionalInfo, l.kidaseType].filter(Boolean).join(' · ') || l.lineId}</option>)}
+                </select>
+              </div>
+            )}
 
             {p.readings.some(r => r.options) && (
               <div>
