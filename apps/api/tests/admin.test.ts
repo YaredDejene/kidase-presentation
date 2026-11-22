@@ -56,6 +56,18 @@ describe('login hardening', () => {
   });
 });
 
+describe('line overlaps', () => {
+  it('needs a token and a valid range', async () => {
+    const url = '/api/v1/admin/line-overlaps?from=2026-10-22&to=2026-10-24';
+    expect((await app.inject({ method: 'GET', url })).statusCode).toBe(401);
+    const authorization = `Bearer ${await login()}`;
+    const ok = await app.inject({ method: 'GET', url, headers: { authorization } });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json()).toEqual({ days: [] });
+    expect((await app.inject({ method: 'GET', url: '/api/v1/admin/line-overlaps?from=2026-10-24&to=2026-10-22', headers: { authorization } })).statusCode).toBe(400);
+  });
+});
+
 describe('admin auth + backup/restore', () => {
   it('rejects bad credentials and issues a token for valid ones', async () => {
     const bad = await app.inject({ method: 'POST', url: '/api/v1/admin/login', payload: { email: ADMIN.email, password: 'wrong' } });

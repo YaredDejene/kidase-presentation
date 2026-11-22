@@ -155,7 +155,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   });
 
   // The heavy, deterministic, cacheable render.
-  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string; country?: Country; readings?: string; limit?: number } }>(
+  app.get<{ Params: { id: string }; Querystring: { date?: string; mehella?: string; country?: Country; readings?: string; line?: string; limit?: number } }>(
     '/api/v1/presentations/:id/render',
     {
       schema: {
@@ -168,7 +168,8 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
             date: { type: 'string', description: 'Service date, YYYY-MM-DD (defaults to today)' },
             mehella: { type: 'string', description: '"1"/"true" for the Mehella variant', enum: ['0', '1', 'true', 'false'] },
             country: { type: 'string', description: 'Patriarch and country placeholders for this country; parish placeholders left blank', enum: COUNTRIES },
-            readings: { type: 'string', description: 'Chosen alternative for readings that list more than one, e.g. "gospel:1,misbak:1" (0-based; default 0)', pattern: '^[A-Za-z]+:\\d{1,2}(,[A-Za-z]+:\\d{1,2})*$' },
+            readings: { type: 'string', description: 'Chosen alternative for readings that list more than one, e.g. "gospel:1,misbak:1" (0-based; default 0)', pattern: '^([A-Za-z]+:\\d{1,2}(,[A-Za-z]+:\\d{1,2})*)?$' },
+            line: { type: 'string', maxLength: 40, description: 'lineId of another gitsawe line matching the date (see `lines` in the response); defaults to the highest-priority one' },
             limit: { type: 'integer', minimum: 1, maximum: 100, description: 'Return only the first N slides (everything else is complete); totalSlides gives the full count' },
           },
         },
@@ -179,13 +180,14 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       const date = req.query.date;
       const mehella = req.query.mehella === '1' || req.query.mehella === 'true';
       const country = req.query.country;
+      const line = req.query.line || undefined;
       // Sorted and without zeros (the default), so equivalent choices share a cache entry.
       const readingChoice = Object.fromEntries((req.query.readings ?? '').split(',').filter(Boolean)
         .map(p => p.split(':')).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Number(n)]).sort(([a], [b]) => String(a).localeCompare(String(b))));
       const readingsKey = Object.entries(readingChoice).map(([k, n]) => `${k}${n}`).join('.');
       const cv = await getContentVersion(opts.db);
       repoCache.atVersion(cv);
-      const fullKey = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}:${readingsKey}`;
+      const fullKey = `${cv}.${build}:${id}:${date ?? ''}:${mehella ? 1 : 0}:${country ?? ''}:${readingsKey}:${encodeURIComponent(line ?? '')}`;
       const limit = req.query.limit;
       const key = limit ? `${fullKey}:l${limit}` : fullKey;
       const etag = `"${key}"`;
@@ -207,7 +209,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       if (!full) {
         let result;
         try {
-          result = await renderService.render({ presentationId: id, date, isMehella: mehella, country, readingChoice });
+          result = await renderService.render({ presentationId: id, date, isMehella: mehella, country, readingChoice, line });
         } catch {
           return reply.code(404).send({ error: 'Presentation not found' });
         }
@@ -316,6 +318,23 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     reply.header('content-type', 'application/json; charset=utf-8');
     reply.header('content-disposition', `attachment; filename="kidase-backup-${backup.createdAt.slice(0, 10)}.kidase"`);
     return backup;
+  });
+
+  app.get<{ Querystring: { from: string; to: string } }>('/api/v1/admin/line-overlaps', {
+    preHandler: requireAdmin,
+    schema: {
+      tags: ['admin'], summary: 'Dates where more than one gitsawe line matches, with the lines in priority order',
+      security: [{ bearerAuth: [] }],
+      querystring: { type: 'object', required: ['from', 'to'], properties: { from: dateDesc, to: dateDesc } },
+    },
+  }, async (req, reply) => {
+    const { from, to } = req.query;
+    const start = parseIsoDate(from);
+    const end = parseIsoDate(to);
+    if (!start || !end || end < start) return reply.code(400).send({ error: 'from and to must be valid YYYY-MM-DD dates, from first' });
+    if ((end.getTime() - start.getTime()) / 86_400_000 >= MAX_RANGE_DAYS) return reply.code(400).send({ error: `Range longer than ${MAX_RANGE_DAYS} days` });
+    repoCache.atVersion(await getContentVersion(opts.db));
+    return { days: await readingsService.getLineOverlaps(from, to) };
   });
 
   app.post<{ Body: BackupData }>('/api/v1/admin/restore', {

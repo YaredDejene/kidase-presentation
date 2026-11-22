@@ -129,3 +129,15 @@ describe('ReadingsService', () => {
     ]);
   });
 });
+
+describe('ReadingsService.getLineOverlaps', () => {
+  it('lists only dates where several lines match, in priority order', async () => {
+    const overlapping = new ReadingsService(fakeRepositories({
+      gitsawes, verses, presentations,
+      rules: [...rules, rule('r-sun-1013', 'g-sun', { 'meta.ethMonthDay': { $eq: '02-13' } })],
+    }));
+    const days = await overlapping.getLineOverlaps('2026-10-22', '2026-10-24');
+    expect(days).toEqual([{ date: '2026-10-23', lines: [expect.objectContaining({ lineId: 'ሰን7' }), expect.objectContaining({ lineId: 'ዘወ43', kidaseType: 'ዘዮሐንስ አፈወርቅ' })] }]);
+    expect(await service.getLineOverlaps('2026-10-22', '2026-10-24')).toEqual([]);
+  });
+});

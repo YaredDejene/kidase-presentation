@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { field, ThemeName } from '../theme';
 import * as I from '../icons';
-import { adminLogin, downloadBackup, restoreBackup, RestoreResult } from '../admin/adminApi';
+import { adminLogin, downloadBackup, restoreBackup, fetchLineOverlaps, LineOverlap, RestoreResult } from '../admin/adminApi';
 
 interface Props {
   token: string | null;
@@ -54,7 +54,7 @@ const SignIn: React.FC<{ onAuthed: (t: string) => void; onBack: () => void; isDa
   );
 };
 
-const Authed: React.FC<{ token: string; onSignOut: () => void; onBack: () => void; theme: ThemeName; toggleTheme: () => void; isDark: boolean }> = ({ token, onSignOut, onBack }) => {
+const Authed: React.FC<{ token: string; onSignOut: () => void; onBack: () => void; theme: ThemeName; toggleTheme: () => void; isDark: boolean }> = ({ token, onSignOut, onBack, isDark }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<'idle' | 'backing' | 'restoring' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -120,9 +120,11 @@ const Authed: React.FC<{ token: string; onSignOut: () => void; onBack: () => voi
                 </div>
               )}
               {status === 'error' && (
-                <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: '#ff8a80', fontSize: 13 }}>{message}</div>
+                <div style={errorBox}>{message}</div>
               )}
             </section>
+
+            <LineOverlaps token={token} onSignOut={onSignOut} isDark={isDark} />
           </div>
         </main>
       </div>
@@ -132,3 +134,52 @@ const Authed: React.FC<{ token: string; onSignOut: () => void; onBack: () => voi
 
 const lbl: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--text2)', marginBottom: 7 };
 const dataBtn: React.CSSProperties = { flex: 1, height: 42, borderRadius: 9, border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text)', fontSize: 13.5, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 };
+const errorBox: React.CSSProperties = { marginTop: 16, padding: '12px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: '#ff8a80', fontSize: 13 };
+
+const isoDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** Dates where more than one gitsawe line matches, to spot rules that overlap by mistake. */
+const LineOverlaps: React.FC<{ token: string; onSignOut: () => void; isDark: boolean }> = ({ token, onSignOut, isDark }) => {
+  const today = new Date();
+  const [from, setFrom] = useState(isoDay(today));
+  const [to, setTo] = useState(isoDay(new Date(today.getFullYear() + 1, today.getMonth(), today.getDate() - 1)));
+  const [days, setDays] = useState<LineOverlap[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const fld = field(isDark);
+
+  const check = async () => {
+    setBusy(true); setError('');
+    try { setDays(await fetchLineOverlaps(token, from, to)); }
+    catch (e) { setError((e as Error).message); if (/sign in/i.test((e as Error).message)) onSignOut(); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 24, marginTop: 20 }}>
+      <h3 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px', color: 'var(--text)' }}>Overlapping gitsawe lines</h3>
+      <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 18px' }}>Dates where more than one line's rules match. The first line is used unless the viewer picks another. At most 400 days.</p>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <label style={{ flex: 1 }}><span style={lbl}>From</span><input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ ...fld, width: '100%' }} /></label>
+        <label style={{ flex: 1 }}><span style={lbl}>To</span><input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ ...fld, width: '100%' }} /></label>
+        <button className="outline-btn" onClick={check} disabled={busy} style={{ ...dataBtn, flex: 'none', padding: '0 18px' }}>{busy ? 'Checking…' : 'Check'}</button>
+      </div>
+      {error && <div style={errorBox}>{error}</div>}
+      {days && (
+        <div style={{ marginTop: 18 }}>
+          <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 10px' }}>{days.length === 0 ? 'No overlaps in this range.' : `${days.length} date${days.length === 1 ? '' : 's'} with more than one line.`}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {days.map(d => (
+              <div key={d.date} style={{ padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border)' }}>
+                <a href={`/?date=${d.date}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{d.date} ({d.lines.length})</a>
+                <ol style={{ margin: '6px 0 0', paddingLeft: 20, fontSize: 13, color: 'var(--text)' }}>
+                  {d.lines.map(l => <li key={l.lineId}>{l.lineId} · {l.name || l.additionalInfo}{l.kidaseType ? <span style={{ color: 'var(--muted)' }}> · {l.kidaseType}</span> : null}</li>)}
+                </ol>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
