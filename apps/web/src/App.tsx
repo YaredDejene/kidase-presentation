@@ -79,7 +79,7 @@ function useSwipe(onLeft: () => void, onRight: () => void) {
  * sessionStorage, for today only, so a refresh during a service keeps the
  * place while tomorrow starts fresh.
  */
-interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean; readings?: Record<string, number> }
+interface Link { presentation?: string; date?: string; slide?: number; country?: Country; languages?: string[]; mehella?: boolean; readings?: Record<string, number>; line?: string }
 function readLink(): Link {
   const q = new URLSearchParams(location.search);
   const out: Link = {};
@@ -95,6 +95,8 @@ function readLink(): Link {
   if (/^[A-Za-z]+:\d{1,2}(,[A-Za-z]+:\d{1,2})*$/.test(q.get('readings') ?? '')) {
     out.readings = Object.fromEntries(q.get('readings')!.split(',').map(p => p.split(':')).map(([k, n]) => [k, Number(n)]));
   }
+  // A lower-priority gitsawe line matching the date, by lineId, e.g. "ዘወ87".
+  if (q.get('line')) out.line = q.get('line')!.slice(0, 40);
   return out;
 }
 const LINK = readLink();
@@ -130,6 +132,8 @@ export const App: React.FC = () => {
   const [country, setCountry] = useState<Country>(LINK.country ?? PREFS.country ?? 'et');
   // Picked alternatives for readings that list more than one; a new date starts from the first of each.
   const [readingChoice, setReadingChoice] = useState<Record<string, number>>(LINK.readings ?? {});
+  // Another gitsawe line matching the date, by lineId; empty means the highest-priority one.
+  const [line, setLine] = useState(LINK.line ?? '');
   const readingsParam = Object.entries(readingChoice).filter(([, n]) => n > 0).map(([k, n]) => `${k}:${n}`).join(',');
   const [activeSlots, setActiveSlots] = useState<LangSlot[]>(PREFS.languages ?? []);
   const pendingSlide = useRef<number>(LINK.slide ?? SESSION?.slide ?? 0);
@@ -177,7 +181,7 @@ export const App: React.FC = () => {
     if (!selectedId) return;
     let cancelled = false;
     setLoading(true); setError(null);
-    const load = (limit?: number) => fetchRender(selectedId, gregDate, isMehella, country, readingsParam, limit);
+    const load = (limit?: number) => fetchRender(selectedId, gregDate, isMehella, country, readingsParam, line, limit);
     // Draw the first slides from a small request, then fetch the whole deck. Skip that when
     // opening (or staying) past the first batch, where the small request has nothing to show.
     const startAt = pendingSlide.current || slideIndexRef.current;
@@ -209,7 +213,7 @@ export const App: React.FC = () => {
       .catch(e => !cancelled && setError(String(e.message ?? e)))
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [selectedId, gregDate, isMehella, country, readingsParam]);
+  }, [selectedId, gregDate, isMehella, country, readingsParam, line]);
 
   const slideCount = render?.totalSlides ?? 0;
   // False for the moment between the first batch and the full deck arriving.
@@ -288,9 +292,10 @@ export const App: React.FC = () => {
     if (activeLanguages.length) q.set('languages', activeLanguages.map(l => langSlug(l.name)).join(','));
     if (isMehella) q.set('mehella', '1');
     if (readingsParam) q.set('readings', readingsParam);
+    if (line) q.set('line', line);
     if (selectedId && selectedId !== defaultId) q.set('presentation', selectedId);
     return `${location.origin}${location.pathname}?${q.toString().replace(/%2C/g, ',').replace(/%3A/g, ':')}`;
-  }, [gregDate, slideIndex, country, activeLanguages, isMehella, readingsParam, selectedId, defaultId]);
+  }, [gregDate, slideIndex, country, activeLanguages, isMehella, readingsParam, line, selectedId, defaultId]);
 
   // Keep the active thumbnail in view in the rail or the strip.
   const activeThumb = useRef<HTMLDivElement>(null);
@@ -335,7 +340,14 @@ export const App: React.FC = () => {
   const contextText = render && ec && (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0, lineHeight: 1.3, flexShrink: isMobile ? 0 : 1 }}>
       {!isMobile && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{render.presentation.name}{render.presentation.secondaryName && ` + ${render.presentation.secondaryName}`}</span>}
-      <span style={{ fontSize: 11, color: 'var(--text2)', whiteSpace: 'nowrap' }}><span style={uiLang === 'en' ? undefined : { fontFamily: ETHIOPIC }}>{ethDateText(uiLang, ec)}</span><span style={{ color: 'var(--muted)' }}> · {render.context.gregorian}</span></span>
+      <span style={{ fontSize: 11, color: 'var(--text2)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+        {/* Other gitsawe lines match this date: say so here, since the choice lives in settings. */}
+        {render.lines && render.lines.length > 1 && (
+          <button onClick={() => setConfigOpen(true)} title={t.lineTitle} style={{ padding: '1px 7px', borderRadius: 999, border: '1px solid var(--accent)', background: 'transparent', color: 'var(--accent)', fontSize: 10.5, fontWeight: 600, lineHeight: 1.4, cursor: 'pointer' }}>
+            {t.lineShort} {(render.lineChoice ?? 0) + 1}/{render.lines.length}
+          </button>
+        )}
+        <span style={uiLang === 'en' ? undefined : { fontFamily: ETHIOPIC }}>{ethDateText(uiLang, ec)}</span><span style={{ color: 'var(--muted)' }}> · {render.context.gregorian}</span></span>
     </div>
   );
 
@@ -513,13 +525,13 @@ export const App: React.FC = () => {
         {configOpen && (
           <ConfigDrawer
             isDark={isDark} t={t} onClose={() => setConfigOpen(false)}
-            gregDate={gregDate} onGreg={d => { setGregDate(d); setReadingChoice({}); }}
+            gregDate={gregDate} onGreg={d => { setGregDate(d); setReadingChoice({}); setLine(''); }}
             languages={render?.languages ?? []} activeSlots={activeSlots} toggleLang={toggleLang} capacity={capacity}
             isMehella={isMehella} toggleMehella={() => setIsMehella(v => !v)}
             readings={render?.readings ?? []}
             chooseReading={(key, i) => setReadingChoice(c => ({ ...c, [key]: i }))}
             lines={render?.lines} lineChoice={render?.lineChoice}
-            chooseLine={i => setReadingChoice({ line: i })}
+            chooseLine={i => { setLine(i > 0 ? render?.lines?.[i]?.lineId ?? '' : ''); setReadingChoice({}); }}
             uiLang={uiLang} setUiLang={setUiLang}
             country={country} setCountry={setCountry}
             shareUrl={shareUrl}

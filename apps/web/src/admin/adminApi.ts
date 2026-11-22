@@ -37,3 +37,12 @@ export async function restoreBackup(token: string, data: unknown): Promise<Resto
   if (!res.ok) throw new Error(`Restore failed (${res.status})`);
   return res.json();
 }
+
+export interface LineOverlap { date: string; lines: { lineId: string; name?: string; additionalInfo?: string; kidaseType?: string }[] }
+
+export async function fetchLineOverlaps(token: string, from: string, to: string): Promise<LineOverlap[]> {
+  const res = await fetch(`${BASE}/api/v1/admin/line-overlaps?from=${from}&to=${to}`, { headers: { authorization: `Bearer ${token}` } });
+  if (res.status === 401) throw new Error('Session expired — sign in again.');
+  if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? `Check failed (${res.status})`);
+  return (await res.json()).days;
+}

@@ -14,4 +14,4 @@ export type {
   ResolvedSection,
 } from './RenderService';
 export { ReadingsService, READING_LANG_CODES, parseIsoDate, splitVerseNumber, dayKind } from './ReadingsService';
-export type { DayReadings, DayReading, ReadingVerse, ReadingKey, DayKind, ReadingLanguage } from './ReadingsService';
+export type { DayReadings, DayReading, ReadingVerse, ReadingKey, DayKind, ReadingLanguage, LineOverlap } from './ReadingsService';

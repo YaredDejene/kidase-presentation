@@ -59,6 +59,11 @@ export interface DayReadings {
   holidays: Record<string, string>;
 }
 
+export interface LineOverlap {
+  date: string;
+  lines: { lineId: string; name?: string; additionalInfo?: string; kidaseType?: string }[];
+}
+
 export interface ReadingLanguage {
   code: string;
   slot: LangSlot;
@@ -133,6 +138,22 @@ export class ReadingsService {
       days.push(await this.buildDay(new Date(d), gitsawes, gitsaweRules));
     }
     return days;
+  }
+
+  /** Dates in the range where more than one gitsawe line matches, each with its lines in priority order. */
+  async getLineOverlaps(from: string, to: string): Promise<LineOverlap[]> {
+    const start = parseIsoDate(from);
+    const end = parseIsoDate(to);
+    if (!start || !end || end < start) throw new RangeError('Invalid date range');
+    const [gitsawes, rules] = await Promise.all([this.repos.gitsawe.getAll(), this.repos.rule.getEnabled()]);
+    const gitsaweRules = rules.filter(r => r.scope === 'gitsawe');
+    const out: LineOverlap[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const meta = buildContext({ gitsawes, gitsaweRules, overrideDate: new Date(d), listGitsaweLines: true }).meta;
+      const lines = meta.gitsaweLines as (LineOverlap['lines'][number] & { id: string })[] | undefined;
+      if (lines) out.push({ date: meta.date as string, lines: lines.map(({ id: _id, ...l }) => l) });
+    }
+    return out;
   }
 
   /** Languages that have verse text, by the primary presentation's language map; Ge'ez excluded. */

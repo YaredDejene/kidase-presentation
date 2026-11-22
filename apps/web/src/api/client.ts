@@ -56,6 +56,7 @@ export async function fetchRender(
   isMehella: boolean,
   country: Country,
   readings = '',
+  line = '',
   limit?: number,
 ): Promise<RenderPayload> {
   const q = new URLSearchParams();
@@ -63,6 +64,7 @@ export async function fetchRender(
   if (isMehella) q.set('mehella', '1');
   q.set('country', country);
   if (readings) q.set('readings', readings);
+  if (line) q.set('line', line);
   if (limit) q.set('limit', String(limit));
   const res = await fetch(`${BASE}/api/v1/presentations/${id}/render?${q.toString()}`, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to render (${res.status})`);

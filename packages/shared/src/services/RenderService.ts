@@ -100,6 +100,8 @@ export interface RenderArgs {
   isMehella?: boolean;
   /** Chosen alternative per reading key, for readings that list more than one. */
   readingChoice?: ReadingChoice;
+  /** lineId of another gitsawe line matching the date, to use instead of the highest-priority one. */
+  line?: string;
   /** Swaps the patriarch and country placeholders and blanks the parish ones (public viewer). */
   country?: Country;
 }
@@ -165,6 +167,7 @@ export class RenderService {
       overrideDate,
       extra: { isMehella },
       readingChoice: args.readingChoice,
+      gitsaweLineId: args.line,
     };
     const context = buildContext({ ...baseCtxArgs, listGitsaweLines: true });
     const meta = context.meta;

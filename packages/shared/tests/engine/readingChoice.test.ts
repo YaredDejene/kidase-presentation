@@ -42,8 +42,8 @@ describe('reading alternatives', () => {
 describe('gitsawe line choice', () => {
   const sunday: Gitsawe = { id: 's', lineId: 'እሑድ1', name: 'Sunday', priority: 3, createdAt: '', kidaseType: 'ዘሐዋርያት' };
   const sundayRule: RuleDefinition = { ...rule, id: 'rs', gitsaweId: 's' };
-  const lines = (readingChoice?: Record<string, number>, listGitsaweLines = true) =>
-    buildContext({ gitsawes: [sunday, gitsawe], gitsaweRules: [sundayRule, rule], overrideDate: new Date('2026-11-08T12:00:00'), readingChoice, listGitsaweLines }).meta as {
+  const lines = (gitsaweLineId?: string, listGitsaweLines = true) =>
+    buildContext({ gitsawes: [sunday, gitsawe], gitsaweRules: [sundayRule, rule], overrideDate: new Date('2026-11-08T12:00:00'), gitsaweLineId, listGitsaweLines }).meta as {
       gitsawe: Record<string, string>; gitsaweLines?: { lineId: string }[]; gitsaweLine?: number;
     };
 
@@ -54,11 +54,12 @@ describe('gitsawe line choice', () => {
     expect(m.gitsaweLine).toBe(0);
   });
 
-  it('uses the chosen line, falling back to the first when out of range', () => {
-    expect(lines({ line: 1 }).gitsawe.lineId).toBe('እሑድ1');
-    expect(lines({ line: 1 }, false).gitsawe.lineId).toBe('እሑድ1');
-    expect(lines({ line: 1 }).gitsaweLine).toBe(1);
-    expect(lines({ line: 7 }).gitsawe.lineId).toBe('ዘወ1');
+  it('uses the chosen line by lineId, falling back to the first when it does not match', () => {
+    expect(lines('እሑድ1').gitsawe.lineId).toBe('እሑድ1');
+    expect(lines('እሑድ1', false).gitsawe.lineId).toBe('እሑድ1');
+    expect(lines('እሑድ1').gitsaweLine).toBe(1);
+    expect(lines('ዘወ99').gitsawe.lineId).toBe('ዘወ1');
+    expect(lines('ዘወ99', false).gitsawe.lineId).toBe('ዘወ1');
   });
 
   it('lists nothing unless asked', () => {

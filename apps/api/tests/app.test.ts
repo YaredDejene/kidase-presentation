@@ -141,6 +141,35 @@ describe('public API', () => {
     expect(afterBump.json().dataVersion).toBe(String(bumped));
   });
 
+  it('GET /:id/render lists matching gitsawe lines and switches with ?line=', async () => {
+    // Make the Timket line (priority 0) match 2026-10-23 as well, ahead of ዘወ43.
+    const rules = db.collection('rule_definitions');
+    const timket = await rules.findOne({ _id: 'r2' as never });
+    await rules.updateOne({ _id: 'r2' as never }, { $set: { ruleJson: JSON.stringify({ id: 'sel-both', when: { 'meta.ethMonthDay': { $eq: '02-13' } }, then: {}, otherwise: {} }) } });
+    await bumpContentVersion(db);
+    try {
+      const get = (q = '') => app.inject({ method: 'GET', url: `/api/v1/presentations/p1/render?date=2026-10-23${q}` });
+      const first = await get('&readings=');
+      expect(first.statusCode).toBe(200);
+      expect(first.json().lines.map((l: { lineId: string }) => l.lineId)).toEqual(['በዓ4', 'ዘወ43']);
+      expect(first.json().lineChoice).toBe(0);
+
+      const picked = await get(`&line=${encodeURIComponent('ዘወ43')}`);
+      expect(picked.statusCode).toBe(200);
+      expect(picked.json().lineChoice).toBe(1);
+      expect(picked.json().context.feast).toBe('ጥቅምት 13');
+      expect(picked.headers.etag).not.toBe(first.headers.etag);
+
+      // An unknown line falls back to the default rather than failing.
+      const unknown = await get(`&line=${encodeURIComponent('ዘወ99')}`);
+      expect(unknown.statusCode).toBe(200);
+      expect(unknown.json().lineChoice).toBe(0);
+    } finally {
+      await rules.updateOne({ _id: 'r2' as never }, { $set: { ruleJson: timket!.ruleJson } });
+      await bumpContentVersion(db);
+    }
+  });
+
   it('GET /:id/render picks among a reading\'s alternatives via ?readings=', async () => {
     const g = db.collection('gitsawes');
     await g.updateOne({ _id: 'g1' as never }, { $set: { wengel: 'ሉቃስ ም 12 ቁ 26-32፣ ሉቃስ ም 3 ቁ 21-ፍም', kidaseType: 'ዘዮሐንስ አፈወርቅ, ዘሐዋርያት' } });

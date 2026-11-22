@@ -68,8 +68,9 @@ export interface BuildContextArgs {
   gitsaweRules?: RuleDefinition[];
   overrideDate?: Date;
   extra?: Record<string, unknown>;
-  /** `line` picks among the matching gitsawe lines by priority (0 = the default); other keys pick reading alternatives. */
   readingChoice?: ReadingChoice;
+  /** lineId of a lower-priority matching gitsawe line to use instead of the first match. */
+  gitsaweLineId?: string;
   /** Collect every matching gitsawe line into meta.gitsaweLines (costs evaluating all selection rules). */
   listGitsaweLines?: boolean;
 }
@@ -157,15 +158,15 @@ export function buildContext(args: BuildContextArgs): RuleContext {
     presentation: {}, slide: {}, vars: {}, settings: {}, meta,
   }).matched;
 
-  // Resolve the current Gitsawe based on selection rules and priority; `line` picks a lower-priority match.
-  const line = args.readingChoice?.line ?? 0;
+  // Resolve the current Gitsawe based on selection rules and priority; gitsaweLineId picks a lower-priority match.
+  const lineId = args.gitsaweLineId;
   const matches = getMatchingGitsawes(
     args.gitsawes ?? [],
     args.gitsaweRules ?? [],
     meta,
-    args.listGitsaweLines ? Infinity : line + 1,
+    args.listGitsaweLines ? () => false : lineId ? g => g.lineId === lineId : () => true,
   );
-  const matched = matches[line] ?? matches[0];
+  const matched = matches.find(g => g.lineId === lineId) ?? matches[0];
   if (args.listGitsaweLines && matches.length > 1) {
     meta.gitsaweLines = matches.map(g => ({ id: g.id, lineId: g.lineId, name: g.name, additionalInfo: g.additionalInfo, kidaseType: g.kidaseType }));
     meta.gitsaweLine = matches.indexOf(matched);
@@ -199,13 +200,13 @@ export function buildContext(args: BuildContextArgs): RuleContext {
 /**
  * Walk Gitsawe records by priority (1 → 2 → 3).
  * For each record, evaluate its selection rules against the meta object.
- * Return the matching records in priority order, stopping once `limit` are found.
+ * Return the matching records in priority order, stopping after the first one `done` accepts.
  */
 function getMatchingGitsawes(
   gitsawes: Gitsawe[],
   gitsaweRules: RuleDefinition[],
   meta: Record<string, unknown>,
-  limit = 1,
+  done: (g: Gitsawe) => boolean,
 ): Gitsawe[] {
   const found: Gitsawe[] = [];
   if (gitsawes.length === 0) return found;
@@ -246,13 +247,13 @@ function getMatchingGitsawes(
         const result = localEngine.evaluateRule(ruleEntry, evalContext);
         if (result.matched) {
           found.push(record);
+          if (done(record)) return found;
           break;
         }
       } catch (err) {
         console.warn(`Skipping malformed rule "${ruleDef.name}":`, err);
       }
     }
-    if (found.length >= limit) break;
   }
 
   return found;
